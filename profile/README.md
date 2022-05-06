@@ -28,7 +28,7 @@ on our software and by those who think our work is important.
 ### 🫶 Support our Work
 
 We cannot do any of our work without your support. If you depend on our
-software, please consider supporting us by purchasing [professional support
+software, please consider purchasing [professional support
 and consultancy services with a service-level
 agreement](https://www.nlnetlabs.nl/services/contracts/) for one of our
 products, [sponsoring](https://www.nlnetlabs.nl/sponsors/) the development of
