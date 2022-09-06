@@ -48,10 +48,3 @@ server](https://discord.gg/8dvKB5Ykhy). You are likely to run into one of us
 in real-life at industry events such as IETF or ICANN meetings, or at
 operator meetings such as RIPE or NANOG. We'd love to discuss ideas and hear
 your feedback!
-
-### 🙌 Join Us!
-
-We are always looking for talented people to join our team. If you would like
-to be our new Data Visualisation Designer/Front-End Developer with complete
-freedom and no legacy code, [read
-on](https://www.nlnetlabs.nl/careers/openings/).
