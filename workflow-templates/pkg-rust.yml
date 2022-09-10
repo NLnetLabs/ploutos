@@ -1,0 +1,52 @@
+name: Packaging
+
+on:
+  push:
+    branches:
+      - $default-branch
+    tags:
+      - v*
+
+  # Triggering on PRs and arbitrary branch pushes is not enabled because most of the time only the CI build should be
+  # triggered, not the packaging build. In cases where you want to test changes to this workflow this trigger enables
+  # you to manually invoke this workflow on an arbitrary branch as needed.
+  workflow_dispatch:
+
+jobs:
+  package:
+    #
+    # Set @vN to the latest released version.
+    #
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v0
+
+    #
+    # Docker related 'secrets' and 'with' settings are optional unless you set 'docker_build_rules' or 'docker_build_rules_path'.
+    #
+    secrets:
+      #DOCKER_HUB_ID: <ENTER YOUR DOCKER USER NAME HERE>
+      #DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+    with:
+      #docker_org: <ENTER YOUR DOCKER ORGANIZATION NAME HERE>
+      #docker_repo: <ENTER YOUR DOCKER REPOSITORY NAME HERE>
+
+      #
+      # Define the desired build stages. Each xxx_rules(_path) setting is optional but at least one should be set.
+      # See https://github.com/NLnetLabs/.github/tree/main/workflow-templates/pkg for templates for each of the files referenced
+      # below.
+      #
+      # TODO: Verify that commenting some or all of these out actually works!
+      #
+      #cross_build_rules_path: pkg/rules/cross-targets.yml
+      #docker_build_rules_path: pkg/rules/docker-images-to-build.yml
+      #package_build_rules_path: pkg/rules/packages-to-build.yml
+      #package_test_rules_path: pkg/rules/packages-to-test.yml
+      #package_test_scripts_path: pkg/test-scripts/test-<package>.sh
+
+      #
+      # Optional settings:
+      #
+      #cross_build_args: --features static-openssl
+      #deb_extra_build_packages: libssl-dev
+      #deb_maintainer: The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>
+      #rpm_extra_build_packages: openssl-devel
+
