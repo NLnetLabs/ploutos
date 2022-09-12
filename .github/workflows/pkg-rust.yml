@@ -1307,12 +1307,17 @@ jobs:
           LOWER_DOCKER_ORG="${{ steps.decode.outputs.lower_docker_org }}"
 
           ARCH_SHORT_NAMES=${{ join(fromJSON(needs.prepare.outputs.docker_build_rules).include.*.shortname, ' ') }}
+          REFERENCED_IMAGES=""
 
+          # Imagine that we are invoked with two tags: v1.0.1 and latest
+          # The first time round the loop we make a manifest for v1.0.1 referencing the v1.0.1 images.
+          # The second time round the loop we make a manifest for latest also referencing the v1.0.1 images.
           for REPO_AND_TAG in ${{ steps.decode.outputs.repo_and_tag_pairs }}; do
-            REFERENCED_IMAGES=""
-            for ARCH_SHORT_NAME in ${ARCH_SHORT_NAMES}; do
-              REFERENCED_IMAGES="${LOWER_DOCKER_ORG}/${REPO_AND_TAG}-${ARCH_SHORT_NAME} "
-            done
+            if [[ "${REFERENCED_IMAGES}" == "" ]]; then
+              for ARCH_SHORT_NAME in ${ARCH_SHORT_NAMES}; do
+                REFERENCED_IMAGES="${LOWER_DOCKER_ORG}/${REPO_AND_TAG}-${ARCH_SHORT_NAME} "
+              done
+            fi
 
             docker manifest create --amend ${LOWER_DOCKER_ORG}/${REPO_AND_TAG} ${REFERENCED_IMAGES}
           done
