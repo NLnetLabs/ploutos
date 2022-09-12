@@ -66,10 +66,12 @@
 # Multi-arch image creation is NOT done using Docker Buildkit multi-arch support because (a) that does not support
 # configuring the different invocations of the Dockerfile differently (e.g. with MODE=copy for the non-x86-64 cases
 # and providing different the binaries to copy in to the image in each case) and (b) because it compiles our app in
-# parallel for each architecture at once on a single GitHub Actions runner host which is VERY SLOW even for just a
+# parallel for each architecture at once on a single GitHub Actions runner host which is VERY SLOW [1] even for just a
 # couple of architectures. Instead we leverage the GitHub Actions matrix building support to build each image in
 # parallel. This means however that we have to manually invoke the `docker manifest` command as it is not handled
 # automagically for us.
+#
+# [1]: https://github.com/moby/buildkit/blob/master/docs/multi-platform.md#builds-are-very-slow-through-emulation
 #
 # Docker authentication:
 # ======================
@@ -128,32 +130,32 @@ on:
   workflow_call:
     inputs:
       cross_build_rules:
-        description: A JSON array of cross-compilation targets, e.g. [ 'arm-unknown-linux-musleabihf', 'armv7-unknown-linux-musleabihf' ]
+        description: "A JSON array of cross-compilation targets, e.g. [ 'arm-unknown-linux-musleabihf', 'armv7-unknown-linux-musleabihf' ]"
         required: false
         type: string
         default: ''
       cross_build_rules_path:
-        description: A relative path within the repository clone to a file containing a `cross_rules` array in YAML format.
+        description: "A relative path within the repository clone to a file containing a `cross_rules` array in YAML format. Each item in the array must be one of: https://github.com/cross-rs/cross#supported-targets"
         required: false
         type: string
         default: ''
       package_build_rules:
-        description: A GitHub Actions matrix in JSON format with pkg, image, target, extra_build_args (optional), os (optional) fields and (optional) include list.
+        description: "A GitHub Actions matrix in JSON format with pkg (your app name), image (Docker image <os>:<rel>), target (x86_64, or a Rust target triple), extra_build_args (optional), os (optional) fields and (optional) include list. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
         type: string
         default: ''
       package_build_rules_path:
-        description: A relative path within the repository clone to a file containing a `package_build_rules` matrix in YAML format.
+        description: "A relative path within the repository clone to a file containing a `package_build_rules` matrix in YAML format."
         required: false
         type: string
         default: ''
       package_test_rules:
-        description: A GitHub Actions matrix in JSON format with pkg, image, target and mode.
+        description: "A GitHub Actions matrix in JSON format with pkg (from package_build_rules), LXC image (<dist>:<rel>), target (from package_build_rules) and mode (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
         required: false
         type: string
         default: ''
       package_test_rules_path:
-        description: A relative path within the repository clone to a file containing a `package_test_rules` matrix in YAML format.
+        description: "A relative path within the repository clone to a file containing a `package_test_rules` matrix in YAML format."
         required: false
         type: string
         default: ''
@@ -170,56 +172,56 @@ on:
         required: true
         type: string
       docker_build_rules:
-        description: 'A GitHub Actions matrix in JSON format with platform, shortname, crosstarget (optional), mode (optional: build or copy) and cargo_args (optional) fields.'
+        description: "A GitHub Actions matrix in JSON format with platform, shortname, crosstarget (required if mode is copy), mode (optional: build or copy) and cargo_args (optional) fields."
         required: false
         type: string
         default: ''
       docker_build_rules_path:
-        description: 'A relative path within the repository clone to a file containing a `docker_build_rules` matrix in YAML format.'
+        description: "A relative path within the repository clone to a file containing a `docker_build_rules` matrix in YAML format."
         required: false
         type: string
         default: ''
       docker_sanity_check_command:
-        description: 'A command to run inside the Docker container to sanity check that it is working as expected.'
+        description: "A command to run inside the Docker container to sanity check that it is working as expected."
         required: false
         type: string
         default: ''
 
       deb_extra_build_packages:
-        description: 'A space separated set of additional Debian packages to install when (not cross) compiling.'
+        description: "A space separated set of additional Debian packages to install when (not cross) compiling."
         required: false
         type: string
         default: ''
       deb_maintainer:
-        description: 'The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`.'
+        description: "The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`."
         required: true
         type: string
 
       cross_build_args:
-        description: 'Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`.'
+        description: "Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`."
         required: false
         type: string
         default: ''
 
       next_ver_label:
-        description: 'A tag suffix that denotes an in-development rather than release version, e.g. `dev``.'
+        description: "A tag suffix that denotes an in-development rather than release version, e.g. `dev``."
         required: false
         type: string
         default: dev
 
       rpm_extra_build_packages:
-        description: 'A space separated set of additional RPM packages to install when (not cross) compiling.'
+        description: "A space separated set of additional RPM packages to install when (not cross) compiling."
         required: false
         type: string
         default: ''
       rpm_scriptlets_path:
-        description: 'The path to a TOML file defining one or more of pre_install_script, post_install_script and/or post_uninstall_script.'
+        description: "The path to a TOML file defining one or more of pre_install_script, post_install_script and/or post_uninstall_script."
         required: false
         type: string
         default: ''
 
       package_test_scripts_path:
-        description: 'The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade.'
+        description: "The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade."
         required: false
         type: string
         default: ''
@@ -293,7 +295,7 @@ jobs:
           from: yaml
           to: json
 
-      - name: Select inputs
+      - name: Prefer inline rules over loaded rules
         id: select_inputs
         run: |
           if [[ "${{ inputs.cross_build_rules }}" != "" ]]; then
@@ -347,11 +349,16 @@ jobs:
           echo "============================================================================="
           echo '${{ toJSON(fromJSON(steps.select_inputs.outputs.package_test_rules)) }}'
 
-      - name: Verify RPM scriptlets path
+      - name: Verify inputs
         if: ${{ inputs.rpm_scriptlets_path != '' }}
         run: |
+          if [[ '${{ inputs.next_ver_label }}' == '' ]]; then
+            echo "::error::Workflow input 'next_ver_label' must be non-empty if set."
+            exit 1
+          fi
+
           if [[ ! -f ${{ inputs.rpm_scriptlets_path }} ]]; then
-            echo "::error::RPM scriptlets file '${{ inputs.rpm_scriptlets_path }} does not exist"
+            echo "::error::Workflow input '${{ inputs.rpm_scriptlets_path }}' must refer to a file in the Git checkout"
             exit 1
           fi
 
@@ -511,6 +518,31 @@ jobs:
       CARGO_DEB_VER: 1.38.4
       CARGO_GENERATE_RPM_VER: 0.8.0
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Verify inputs
+      run: |
+        if [[ ! -f Cargo.toml ]]; then
+          echo "::error::File 'Cargo.toml' is missing. This workflow is only intended for use with Rust Cargo projects."
+          exit 1
+        fi
+
+        if [[ '${{ matrix.image }}' == '' ]]; then
+          echo "::error::Required matrix variable 'image' is not defined in package_build_rules(_path)."
+          exit 1
+        fi
+
+        if [[ '${{ matrix.target }}' == '' ]]; then
+          echo "::error::Required matrix variable 'target' is not defined in package_build_rules(_path)."
+          exit 1
+        fi
+
+        if [[ '${{ matrix.pkg }}' == '' ]]; then
+          echo "::error::Required matrix variable 'pkg' is not defined in package_build_rules(_path)."
+          exit 1
+        fi
+
     - name: Set vars
       id: setvars
       shell: bash
@@ -521,14 +553,36 @@ jobs:
         # Get the operating system and release name (e.g. ubuntu and xenial) from the image name (e.g. ubuntu:xenial) by
         # extracting only the parts before and after but not including the colon:
         IMAGE="${MATRIX_IMAGE}"
-        if [ "${MATRIX_OS}" != "" ]; then
+        if [[ "${MATRIX_OS}" != "" ]]; then
           IMAGE="${MATRIX_OS}"
         fi
+
+        if [[ "${IMAGE}" == "" ]]; then
+          echo "::error::Matrix variable 'os' must be non-empty if set in package_build_rules(_path)."
+          exit 1
+        fi
+
+        OS_NAME=${IMAGE%:*}
+        OS_REL=${IMAGE#*:}
+
+        if [[ "${OS_NAME}" == '' || "${OS_REL}" == '' ]]; then
+          echo "::error::Matrix variable 'image' and/or 'os' must be of the form '<os name>:<os release>' in package_build_rules(_path)"
+          exit 1
+        fi
+
+        case ${OS_NAME} in
+          debian|ubuntu)
+            ;;
+          centos)
+            ;;
+          *)
+            echo "::error::This workflow only supports 'debian', 'ubuntu' or 'centos' operating systems: '${IMAGE}' is not supported."
+            exit 1
+            ;;
+        esac
+
         echo "OS_NAME=${IMAGE%:*}" >> $GITHUB_ENV
         echo "OS_REL=${IMAGE#*:}" >> $GITHUB_ENV
-
-    - name: Checkout repository
-      uses: actions/checkout@v2
 
     # Allow CentOS 8 to continue working now that it is EOL
     # See: https://stackoverflow.com/a/70930049
@@ -676,6 +730,12 @@ jobs:
         # Finally, sometimes we want a version to be NEWER than the latest release but without having to decide what
         # higher semver number to bump to. In this case we do NOT want dash '-' to become '~' because `-` is treated as
         # higher and tilda is treated as lower.
+
+        if [[ '${{ matrix.image }}' == '' ]]; then
+          echo "::error::Required matrix variable 'image' is not defined in package_build_rules(_path)."
+          exit 1
+        fi
+
         APP_VER=$(cargo read-manifest | jq -r '.version')
         APP_NEW_VER=$(echo $APP_VER | tr '-' '~')
         NEXT_VER_LABEL="${{ inputs.next_ver_label }}"
@@ -683,6 +743,11 @@ jobs:
 
         case ${OS_NAME} in
           debian|ubuntu)
+            if [[ '${{ inputs.deb_maintainer }}' == '' ]]; then
+              echo "::error::Workflow input variable 'deb_maintainer' must be non-empty if set."
+              exit 1
+            fi
+
             MAINTAINER="${{ inputs.deb_maintainer }}"
 
             # Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
@@ -743,7 +808,7 @@ jobs:
 
             cargo deb --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
 
-            if [ -d target/debian ]; then ls -la target/debian/; fi
+            ls -la target/debian/
             ;;
 
           centos)
@@ -767,7 +832,8 @@ jobs:
                 EXTRA_CARGO_GENERATE_RPM_ARGS=""
                 ;;
               *)
-                echo >&2 "ERROR: Unsupported matrix image value: '${OS_NAME}:${OS_REL}'"
+                echo "::error::Unsupported matrix image value: '${OS_NAME}:${OS_REL}'"
+                exit 1
                 ;;
             esac
 
@@ -805,6 +871,8 @@ jobs:
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
                 ${SCRIPTLETS} \
                 ${EXTRA_CARGO_GENERATE_RPM_ARGS}
+
+            ls -la target/generate-rpm/
             ;;
         esac
 
@@ -860,6 +928,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Verify inputs
+      run: |
+        if [[ '${{ matrix.image }}' == '' ]]; then
+          echo "::error::Required matrix variable 'image' is not defined in package_test_rules(_path)."
+          exit 1
+        fi
+
+        if [[ '${{ matrix.target }}' == '' ]]; then
+          echo "::error::Required matrix variable 'target' is not defined in package_test_rules(_path)."
+          exit 1
+        fi
+
+        if [[ '${{ matrix.pkg }}' == '' ]]; then
+          echo "::error::Required matrix variable 'pkg' is not defined in package_test_rules(_path)."
+          exit 1
+        fi
+
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
     # that will be available in GH Action step definitions below.
     - name: Set vars
@@ -872,6 +957,11 @@ jobs:
         # extracting only the parts before and after but not including the colon:
         OS_NAME=${MATRIX_IMAGE%:*}
         OS_REL=${MATRIX_IMAGE#*:}
+
+        if [[ "${OS_NAME}" == '' || "${OS_REL}" == '' ]]; then
+          echo "::error::Matrix variable 'image' must be of the form '<os name>:<os release>' in package_test_rules(_path)"
+          exit 1
+        fi
 
         echo "OS_NAME=${OS_NAME}" >> $GITHUB_ENV
         echo "OS_REL=${OS_REL}" >> $GITHUB_ENV
@@ -1067,14 +1157,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - uses: docker/setup-qemu-action@v1
+      - name: Verify inputs
+        run: |
+          case ${{ matrix.mode }} in
+            copy)
+              if [[ "${{ matrix.platform }}" == "" ]]; then
+                echo "::error::Matrix variable 'platform' in docker_build_rules(_path) must be a supported buildx platform. See: https://github.com/moby/buildkit#building-multi-platform-images"
+                exit 1
+              fi
+              ;;
+
+            build)
+              ;;
+
+            *)
+              echo "::error::Required matrix variable 'mode' in docker_build_rules(_path) must be one of 'copy' or 'build' (default)."
+              exit 1
+              ;;
+          esac
+
+          if [[ "${{ matrix.shortname }}" == "" ]]; then
+            echo "::error::Matrix variable 'shortname' in docker_build_rules(_path) must set and non-empty."
+            exit 1
+          fi
+
+      - uses: docker/setup-qemu-action@v2
         # Don't use QEmu for compiling, it's way too slow on GitHub Actions.
         # Only use it for making images that will contain prebuilt binaries.
         if: ${{ matrix.mode == 'copy' }}
         with:
           platforms: ${{ matrix.platform }}
 
-      - uses: docker/setup-buildx-action@v1
+      - uses: docker/setup-buildx-action@v2
 
       - name: Download cross compiled binaries
         if: ${{ matrix.mode == 'copy' }}
@@ -1117,7 +1231,7 @@ jobs:
       # combined multi-arch image that lacks the architecture specific tag value extension and that will ONLY be
       # pushed if all architecture specific images build and (where supported) passt he sanity check below.
       - name: Build Docker image ${{ steps.gen.outputs.image_name }}
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           platforms: ${{ matrix.platform }}
@@ -1147,7 +1261,7 @@ jobs:
 
       - name: Publish image to Docker Hub
         if: contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           platforms: ${{ matrix.platform }}
