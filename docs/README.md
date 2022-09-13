@@ -38,7 +38,7 @@ As a more readable and easier alternative the worfklow also supports loading mat
 
 For now the best way to understand these inputs is to look at one of the following examples:
 
-- https://github.com/NLnetLabs/org-reusable-workflow-testing/blob/main/.github/workflows/pkg.yml
+- https://github.com/NLnetLabs/.github-testing/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/rtrtr/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/routinator/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/krill/blob/main/.github/workflows/pkg.yml
@@ -54,11 +54,11 @@ If working on the reusable workflow there are a couple of useful things to know:
 To test and release changes to the workflow the recommended approach is as follows:
 
 Let's call this repository the RELEASE repo.
-Let's call the https://github.com/NLnetLabs/org-reusable-workflow-testing/ repostiory the TEST repo.
+Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST repo.
 
 1. Create a branch in the RELEASE repo, let's call this the RELEASE branch.
 2. Create a matching branch in the TEST repo, let's call this the TEST branch.
-3. Create a PR in the `org-reusable-workflow-testing` repository from the TEST branch to `main`, let's call this the TEST PR.
+3. Create a PR in the `.gihub-testing` repository from the TEST branch to `main`, let's call this the TEST PR.
 3. Make the desired changes to the RELEASE branch.
 4. In the TEST branch modify `.github/workflows/pkg.yml` so that instead of referring to `pkg-rust.yml@v1` it refers to `pkg-rust.yml@<Git ref of HEAD commit on the TEST branch>` or `pkg-rust.yml@<test branch name>`.
 5. Repeat steps 3 and 4 until the the `Packaging` workflow run in the TEST PR passes and behaves as desired.
