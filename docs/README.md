@@ -36,12 +36,20 @@ As a more readable and easier alternative the worfklow also supports loading mat
 | `docker_build_rules` | A GitHub Actions **JSON** matrix definition that specifies which platforms Docker images should be built for and whether to build the application image inside a Docker container or to copy in a cross-compiled binary that was compiled per the `cross_build_rules`. |
 | `docker_build_rules_path` | A relative path to a **YAML** file containing the `docker_build_rules` matrix. |
 
-For now the best way to understand these inputs is to look at one of the following examples:
+For now the best way to understand these inputs is to look at the input descriptions in the workflow itself:
+
+- https://github.com/NLnetLabs/.github/blob/master/.github/workflows/pkg-rust.yml#L131
+
+And by looking at one of the places where the workflow is, or will soon be, used:
 
 - https://github.com/NLnetLabs/.github-testing/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/rtrtr/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/routinator/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/krill/blob/main/.github/workflows/pkg.yml
+
+To understand more about the history and design of the workflow read the comments at the top of the workflow itself:
+
+- https://github.com/NLnetLabs/.github/blob/master/.github/workflows/pkg-rust.yml#L1
 
 ## Developing the reusable workflow
 
