@@ -16,8 +16,9 @@ jobs:
   package:
     #
     # Set @vN to the latest released version.
+    # For more information see: https://github.com/NLnetLabs/.github/tree/master/docs
     #
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v0
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
 
     #
     # Docker related 'secrets' and 'with' settings are optional unless you set 'docker_build_rules' or 'docker_build_rules_path'.
@@ -33,8 +34,6 @@ jobs:
       # Define the desired build stages. Each xxx_rules(_path) setting is optional but at least one should be set.
       # See https://github.com/NLnetLabs/.github/tree/main/workflow-templates/pkg for templates for each of the files referenced
       # below.
-      #
-      # TODO: Verify that commenting some or all of these out actually works!
       #
       #cross_build_rules_path: pkg/rules/cross-targets.yml
       #docker_build_rules_path: pkg/rules/docker-images-to-build.yml
