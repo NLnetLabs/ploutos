@@ -1,5 +1,5 @@
 {
-    "name": "NLnet Labs Packaging Workflow",
+    "name": "Rust Cargo Packaging Workflow",
     "description": "Package (and for Docker also publish) your Rust Cargo application as Docker image, DEB package and/or RPM package. ",
     "categories": [
         "Rust"
