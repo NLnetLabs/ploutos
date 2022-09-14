@@ -59,6 +59,8 @@ If working on the reusable workflow there are a couple of useful things to know:
 
 2. When a calling GitHub workflow invokes a GitHub Action or reusable workflow it does so typically by major version number, e.g. <action or workflow>@v2. However, for reusable workflows this isn't actually done via GitHub selecting the nearest match according to semantic versioning rules, instead it is a trick achieved by the action and workflow publishers tagging their repository twice: once with the actual version, e.g. v2.1.3, and once with a major version only tag, e.g. v2, that **both point to the same Git ref**, i.e. the major version tag is deleted and re-created whenever a new minor or patch version tag is created.
 
+3. When you push a change to the `pkg-rust.yml` workflow in this repository, downstream workflows that call `pkg-rust.yml` (e.g. from the NLnetLabs/.github-testing project) will not see the changes unless you either update the `@<git ref>` to match the new commit, or if using `@<tag>` if the tag is moved to the new commit, or if using `@<branch>` you will need to trigger a new run of the action or do "Re-run all jobs" on the workflow run. Doing "Re-run failed jobs" is **NOT ENOUGH** as then GitHub Actions will use the workflow at the exact same commit as it used before, it won't pick up the new commit to the branch.
+
 To test and release changes to the workflow the recommended approach is as follows:
 
 Let's call this repository the RELEASE repo.
