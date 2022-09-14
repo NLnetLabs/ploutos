@@ -38,7 +38,7 @@ As a more readable and easier alternative the worfklow also supports loading mat
 
 For now the best way to understand these inputs is to look at the input descriptions in the workflow itself:
 
-- https://github.com/NLnetLabs/.github/blob/master/.github/workflows/pkg-rust.yml#L131
+- https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131
 
 And by looking at one of the places where the workflow is, or will soon be, used:
 
@@ -49,7 +49,7 @@ And by looking at one of the places where the workflow is, or will soon be, used
 
 To understand more about the history and design of the workflow read the comments at the top of the workflow itself:
 
-- https://github.com/NLnetLabs/.github/blob/master/.github/workflows/pkg-rust.yml#L1
+- https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L1
 
 ## Developing the reusable workflow
 
@@ -78,7 +78,7 @@ Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST 
 7. Verify that the automatically invoked run of the `Packaging` workflow in the TEST repo against the `main` branch passes and behaves as desired. If not, repeat steps 2-7 until the new TEST PR passes and behaves as desired.
 8. Create a release tag in the TEST repo with the same release tag as will be used in the RELEASE repo, e.g. v1.2.3. _**Note:** Remember to respect semantic versioning, i.e. if the changes being made are not backward compatible you will need to bump the MAJOR version (in MAJOR.MINOR.PATCH) **and** any workflows that invoke the reusable workflow will need to be **manually edited** to refer to the new MAJOR version._
 9. Verify that the automatically invoked run of the `Packaging` workflow in the TEST repo passes against the newly created release tag passes and behaves as desired. If not, delete the release tag **in the TEST repo** and repeat steps 2-9 until the new TEST PR passes and behaves as desired.
-10. Merge the RELEASE PR to `master` (the `.github` repo default branch is called `master`, not `main`).
+10. Merge the RELEASE PR to the `main` branch.
 11. Create the new release vX.Y.Z tag in the RELEASE repo.
 12. Update the v1 tag in the RELEASE repo to point to the new vX.Y.Z tag.
 13. Edit `.github/workflows/pkg.yml` in the `main` branch of the TEST repo to refer again to `@v1`.
