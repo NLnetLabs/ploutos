@@ -90,10 +90,10 @@ Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST 
 At the time of writing the GitHub web interface does not offer a way to delete tags, only to delete the extra "release" details which can be associated with a tag. To delete a tag one must delete it locally and remotely from the command line like so:
 
 Assuming that you want to update the v1 tag to point not at the old v1.0.2 tag but at the new v1.0.3 tag, this is one way to do it:
-```
-NEW_REF=$(git rev-list -n 1 v1.0.3)
-git rev-list -n 1 v1
-git tag --force v1 ${NEW_REF}
-git rev-list -n 1 v1 # should point to ${NEW_REF} now
-git push --force --tags
+```shell
+$ NEW_REF=$(git rev-list -n 1 v1.0.3)
+$ git rev-list -n 1 v1
+$ git tag --force v1 ${NEW_REF}
+$ git rev-list -n 1 v1 # should point to ${NEW_REF} now
+$ git push --force --tags
 ```
