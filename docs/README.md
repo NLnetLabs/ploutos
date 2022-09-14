@@ -80,7 +80,7 @@ Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST 
 9. Verify that the automatically invoked run of the `Packaging` workflow in the TEST repo passes against the newly created release tag passes and behaves as desired. If not, delete the release tag **in the TEST repo** and repeat steps 2-9 until the new TEST PR passes and behaves as desired.
 10. Merge the RELEASE PR to `master` (the `.github` repo default branch is called `master`, not `main`).
 11. Create the new release vX.Y.Z tag in the RELEASE repo.
-12. Delete and re-create the v1 tag in the RELEASE repo.
+12. Update the v1 tag in the RELEASE repo to point to the new vX.Y.Z tag.
 13. Edit `.github/workflows/pkg.yml` in the `main` branch of the TEST repo to refer again to `@v1`.
 14. Verify that the `Packaging` action in the TEST repo against the `main` branch passes and works as desired.
 15. (optional) If the MAJOR version was changed, update affected repositories that use the reusable workflow to use the new MAJOR version, including adjusting to any breaking changes introduced by the MAJOR version change.
