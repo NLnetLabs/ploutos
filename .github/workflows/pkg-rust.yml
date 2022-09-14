@@ -133,7 +133,7 @@ on:
         description: "A JSON array of cross-compilation targets, e.g. [ 'arm-unknown-linux-musleabihf', 'armv7-unknown-linux-musleabihf' ]"
         required: false
         type: string
-        default: ''
+        default: '["no-cross"]'
       cross_build_rules_path:
         description: "A relative path within the repository clone to a file containing a `cross_rules` array in YAML format. Each item in the array must be one of: https://github.com/cross-rs/cross#supported-targets"
         required: false
@@ -143,7 +143,7 @@ on:
         description: "A GitHub Actions matrix in JSON format with pkg (your app name), image (Docker image <os>:<rel>), target (x86_64, or a Rust target triple), extra_build_args (optional), os (optional) fields and (optional) include list. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
         type: string
-        default: ''
+        default: '{}'
       package_build_rules_path:
         description: "A relative path within the repository clone to a file containing a `package_build_rules` matrix in YAML format."
         required: false
@@ -153,7 +153,7 @@ on:
         description: "A GitHub Actions matrix in JSON format with pkg (from package_build_rules), LXC image (<dist>:<rel>), target (from package_build_rules) and mode (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
         required: false
         type: string
-        default: ''
+        default: '{}'
       package_test_rules_path:
         description: "A relative path within the repository clone to a file containing a `package_test_rules` matrix in YAML format."
         required: false
@@ -166,16 +166,18 @@ on:
       #   - The Tag would be v0.1.2-arm64
       # Collectively I refer to the combination of <org>/<repo>:<tag> as the 'image' name,
       docker_org:
-        required: true
+        required: false
         type: string
+        default: ''
       docker_repo:
-        required: true
+        required: false
         type: string
+        default: false
       docker_build_rules:
         description: "A GitHub Actions matrix in JSON format with platform, shortname, crosstarget (required if mode is copy), mode (optional: build or copy) and cargo_args (optional) fields."
         required: false
         type: string
-        default: ''
+        default: '{}'
       docker_build_rules_path:
         description: "A relative path within the repository clone to a file containing a `docker_build_rules` matrix in YAML format."
         required: false
@@ -194,8 +196,9 @@ on:
         default: ''
       deb_maintainer:
         description: "The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`."
-        required: true
+        required: false
         type: string
+        default: ''
 
       cross_build_args:
         description: "Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`."
@@ -246,15 +249,15 @@ jobs:
   # -------------------------------------------------------------------------------------------------------------------
   # Validate and pre-process inputs.
   prepare:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
-      cross_build_rules: ${{ steps.select_inputs.outputs.cross_build_rules }}
-      docker_build_rules: ${{ steps.select_inputs.outputs.docker_build_rules }}
-      package_build_rules: ${{ steps.select_inputs.outputs.package_build_rules }}
-      package_test_rules: ${{ steps.select_inputs.outputs.package_test_rules }}
+      cross_build_rules: ${{ steps.pre_process_rules.outputs.cross_build_rules }}
+      docker_build_rules: ${{ steps.pre_process_rules.outputs.docker_build_rules }}
+      package_build_rules: ${{ steps.pre_process_rules.outputs.package_build_rules }}
+      package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -295,59 +298,90 @@ jobs:
           from: yaml
           to: json
 
-      - name: Prefer inline rules over loaded rules
-        id: select_inputs
+      - name: Pre-process rules
+        id: pre_process_rules
         run: |
-          if [[ "${{ inputs.cross_build_rules }}" != "" ]]; then
-            echo '::set-output name=cross_build_rules::${{ inputs.cross_build_rules }}'
-          else
+          if [[ "${{ inputs.cross_build_rules_path }}" != "" ]]; then
             echo '::set-output name=cross_build_rules::${{ steps.transform_cross_build_rules_file.outputs.data }}'
+          else
+            echo '::set-output name=cross_build_rules::${{ inputs.cross_build_rules }}'
           fi
 
-          if [[ "${{ inputs.docker_build_rules }}" != "" ]]; then
-            echo '::set-output name=docker_build_rules::${{ inputs.docker_build_rules }}'
-          else
+          if [[ "${{ inputs.docker_build_rules_path }}" != "" ]]; then
             echo '::set-output name=docker_build_rules::${{ steps.transform_docker_build_rules_file.outputs.data }}'
+          else
+            echo '::set-output name=docker_build_rules::${{ inputs.docker_build_rules }}'
           fi
 
-          if [[ "${{ inputs.package_build_rules }}" != "" ]]; then
-            echo '::set-output name=package_build_rules::${{ inputs.package_build_rules }}'
-          else
+          if [[ "${{ inputs.package_build_rules_path }}" != "" ]]; then
             echo '::set-output name=package_build_rules::${{ steps.transform_package_build_rules_file.outputs.data }}'
-          fi
-
-          if [[ "${{ inputs.package_test_rules }}" != "" ]]; then
-            echo '::set-output name=package_test_rules::${{ inputs.package_test_rules }}'
           else
-            echo '::set-output name=package_test_rules::${{ steps.transform_package_test_rules_file.outputs.data }}'
+            echo '::set-output name=package_build_rules::${{ inputs.package_build_rules }}'
           fi
 
-      - name: Print the loaded rules
+          if [[ "${{ inputs.package_test_rules_path }}" != "" ]]; then
+            JSON='${{ steps.transform_package_test_rules_file.outputs.data }}'
+          else
+            JSON='${{ inputs.package_test_rules }}'
+          fi
+
+          # Exclude debian:stretch because the LXC image is no longer available
+          if [[ "${JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${JSON} | jq 'del(.image[] | select(. == "i-dont-exist"))' | jq -c)
+            MODIFIED_JSON=$(echo ${JSON} | jq 'del(.image[] | select(. == "debian:stretch"))' | jq -c)
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:stretch from package_test_rules because the LXC image no longer exists"
+              JSON="${MODIFIED_JSON}"
+            fi
+          fi
+          echo "::set-output name=package_test_rules::${JSON}"
+
+      - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
-        shell: sh
+        shell: bash
         run: |
           echo "============================================================================="
           echo "Cross build rules:"
           echo "============================================================================="
-          echo '${{ toJSON(fromJSON(steps.select_inputs.outputs.cross_build_rules)) }}'
+          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.cross_build_rules)) }}'
+          if [[ "${JSON}" != "[]" && "${JSON}" != '["no-cross"]' ]]; then
+            echo ${JSON} | jq
+          else
+            echo None
+          fi
 
           echo
           echo "============================================================================="
           echo "Docker build rules:"
           echo "============================================================================="
-          echo '${{ toJSON(fromJSON(steps.select_inputs.outputs.docker_build_rules)) }}'
+          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.docker_build_rules)) }}'
+          if [[ "${JSON}" != "{}" ]]; then
+            echo ${JSON} | jq
+          else
+            echo None
+          fi
 
           echo
           echo "============================================================================="
           echo "Package build rules:"
           echo "============================================================================="
-          echo '${{ toJSON(fromJSON(steps.select_inputs.outputs.package_build_rules)) }}'
+          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.package_build_rules)) }}'
+          if [[ "${JSON}" != "{}" ]]; then
+            echo ${JSON} | jq
+          else
+            echo None
+          fi
 
           echo
           echo "============================================================================="
           echo "Packages test rules:"
           echo "============================================================================="
-          echo '${{ toJSON(fromJSON(steps.select_inputs.outputs.package_test_rules)) }}'
+          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.package_test_rules)) }}'
+          if [[ "${JSON}" != "{}" ]]; then
+            echo ${JSON} | jq
+          else
+            echo None
+          fi
 
       - name: Verify inputs
         if: ${{ inputs.rpm_scriptlets_path != '' }}
@@ -358,12 +392,31 @@ jobs:
           fi
 
           if [[ ! -f ${{ inputs.rpm_scriptlets_path }} ]]; then
-            echo "::error::Workflow input '${{ inputs.rpm_scriptlets_path }}' must refer to a file in the Git checkout"
+            echo "::error::Workflow input 'rpm_scriptlets_path' ('${{ inputs.rpm_scriptlets_path }}') must refer to a file in the Git checkout"
             exit 1
           fi
 
+          if [[ "${{ steps.pre_process_rules.outputs.docker_build_rules }}" != '{}' ]]; then
+            if [[ "${{ inputs.docker_org }}" == "" ]]; then
+              echo "::error::Workflow input 'docker_org' must be non-empty when 'docker_build_rules' are supplied."
+              exit 1
+            fi
+
+            if [[ "${{ inputs.docker_repo }}" == "" ]]; then
+              echo "::error::Workflow input 'docker_repo' must be non-empty when 'docker_build_rules' are supplied."
+              exit 1
+            fi
+          fi
+
+          if [[ "${{ steps.pre_process_rules.outputs.package_build_rules }}" != '{}' ]]; then
+            if [[ "${{ inputs.deb_maintainer }}" == "" ]]; then
+              echo "::error::Workflow input 'deb_maintainer' must be non-empty when 'package_build_rules' are supplied."
+              exit 1
+            fi
+          fi
+
       - name: Verify Docker credentials
-        # TODO: if Docker enabled
+        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
@@ -463,10 +516,21 @@ jobs:
       matrix:
         target: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
+    - name: Verify inputs
+      id: verify
+      run: |
+        if [[ "${{ matrix.target }}" == "no-cross" ]]; then
+          echo "::set-output name=no-cross::true"
+        else
+          echo "::set-output name=no-cross::false"
+        fi
+
     - name: Checkout repository
+      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/checkout@v2
 
     - name: Cache cargo cross
+      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/cache@v3
       with:
         path: |
@@ -475,6 +539,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Cross compile
+      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions-rs/cargo@v1
       with:
         use-cross: true
@@ -482,6 +547,7 @@ jobs:
         args: --locked --release --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
+      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       run: |
         rm -f bins.tar
         find target/${{ matrix.target }}/release/ -maxdepth 1 -type f -executable | xargs tar vpcf bins.tar
@@ -493,6 +559,7 @@ jobs:
     # artifacts to be packaged by the scripts that upload to packages.nlnetlabs.nl we prefix the artifact name with
     # `tmp-` which will be ignored by packages.nlnetlabs.nl scripts.
     - name: Upload built binaries
+      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/upload-artifact@v3
       with:
         name: tmp-cross-binaries-${{ matrix.target }}
@@ -506,6 +573,7 @@ jobs:
   #   - https://github.com/mmstick/cargo-deb
   #   - https://github.com/cat-in-136/cargo-generate-rpm
   pkg:
+    if: ${{ needs.prepare.outputs.package_build_rules != '{}' }}
     needs: [cross, prepare]
     runs-on: ubuntu-latest
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
@@ -587,7 +655,7 @@ jobs:
     # Allow CentOS 8 to continue working now that it is EOL
     # See: https://stackoverflow.com/a/70930049
     - name: CentOS 8 EOL workaround
-      if: matrix.image == 'centos:8'
+      if: ${{ matrix.image == 'centos:8' }}
       run: |
         sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
 
@@ -649,7 +717,7 @@ jobs:
 
     # Only install cargo-deb or cargo-generate-rpm if not already fetched from the cache.
     - name: Install Cargo Deb if needed
-      if: steps.cache-cargo-deb.outputs.cache-hit != 'true'
+      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -668,7 +736,7 @@ jobs:
         esac
 
     - name: Install Cargo Generate RPM if needed
-      if: steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true'
+      if: ${{ steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
           centos)
@@ -918,6 +986,7 @@ jobs:
   # actual deployment targets, nor do GH runners support all targets that we want to test. Don't test in Docker
   # containers as they do not support systemd.
   pkg-test:
+    if: ${{ needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
     runs-on: ubuntu-20.04
     strategy:
@@ -1148,6 +1217,7 @@ jobs:
   # NOTE: If you extend the set of matrix includes in this job you must also extend the call to docker manifest create
   # in the docker-manifest job below.
   docker:
+    if: ${{ needs.prepare.outputs.docker_build_rules != '{}' }}
     needs: [cross, prepare]
     runs-on: ubuntu-20.04
     strategy:
@@ -1260,7 +1330,7 @@ jobs:
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
 
       - name: Publish image to Docker Hub
-        if: contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
+        if: ${{ contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -1280,7 +1350,7 @@ jobs:
   # Logs in to Docker Hub using secrets configured in this GitHub repository.
   docker-manifest:
     needs: [prepare, docker]
-    if: contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main'
+    if: ${{ contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' && needs.prepare.outputs.docker_build_rules != '{}' }}
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
@@ -1306,7 +1376,7 @@ jobs:
         run: |
           LOWER_DOCKER_ORG="${{ steps.decode.outputs.lower_docker_org }}"
 
-          ARCH_SHORT_NAMES=${{ join(fromJSON(needs.prepare.outputs.docker_build_rules).include.*.shortname, ' ') }}
+          ARCH_SHORT_NAMES="${{ join(fromJSON(needs.prepare.outputs.docker_build_rules).include.*.shortname, ' ') }}"
           REFERENCED_IMAGES=""
 
           # Imagine that we are invoked with two tags: v1.0.1 and latest
