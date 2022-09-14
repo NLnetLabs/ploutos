@@ -679,7 +679,7 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            apt-get install -y build-essential jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
+            apt-get install -y binutils build-essential jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
             ;;
           centos)
             yum install epel-release -y
@@ -875,6 +875,28 @@ jobs:
             rm -f target/debian/*.deb
 
             cargo deb --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
+
+            # https://github.com/NLnetLabs/routinator/issues/783
+            # Patch the generated DEB to have ./ paths compatible with `unattended-upgrade`:
+            pushd target/debian
+            DEB_FILE_NAME=$(ls -1 *.deb | head -n 1)
+            DATA_ARCHIVE=$(ar t ${DEB_FILE_NAME} | grep -E '^data\.tar')
+            ar x ${DEB_FILE_NAME} ${DATA_ARCHIVE}
+            tar tf ${DATA_ARCHIVE}
+            EXTRA_TAR_ARGS=
+            if [[ "${DATA_ARCHIVE}" == *.xz ]]; then
+              # Install XZ support that will be needed by TAR
+              apt install -y xz-utils
+              EXTRA_TAR_ARGS=J
+            fi
+            mkdir tar-hack
+            tar -C tar-hack -xf ${DATA_ARCHIVE}
+            pushd tar-hack
+            tar c${EXTRA_TAR_ARGS}f ../${DATA_ARCHIVE} ./*
+            popd
+            tar tf ${DATA_ARCHIVE}
+            ar r ${DEB_FILE_NAME} ${DATA_ARCHIVE}
+            popd
 
             ls -la target/debian/
             ;;
@@ -1118,6 +1140,7 @@ jobs:
         esac
 
     - name: Install previously published ${{ matrix.pkg }} package
+      id: instprev
       if: ${{ matrix.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
@@ -1128,6 +1151,20 @@ jobs:
             sg lxd -c "lxc exec testcon -- apt-key add ./aptkey.asc"
             sg lxd -c "lxc exec testcon -- apt update"
             sg lxd -c "lxc exec testcon -- apt install -y ${{ matrix.pkg }}"
+
+            # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
+            # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
+            SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
+            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ matrix.pkg }}.conffiles"
+
+            # append a line break to the conffile
+            for F in $(sg lxd -c "lxc exec testcon -- cat ${CONFIFILE_LIST_FILE}"); do
+              sg lxd -c "lxc exec testcon -- sh -c \"echo >> $F\""
+            done
+
+            # save the md5 checksums for later comparison
+            sg lxd -c "lxc exec testcon -- sh -c \"xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}\""
+            sg lxd -c "lxc exec testcon -- cat ${SAVED_MD5SUMS}"
             ;;
           centos)
             echo '[nlnetlabs]' >$HOME/nlnetlabs.repo
@@ -1169,6 +1206,18 @@ jobs:
             ;;
           centos)
             sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}"
+            ;;
+        esac
+
+    - name: Verify that conffiles have not been altered by the upgrade
+      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      run: |
+        case ${OS_NAME} in
+          debian|ubuntu)
+            SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
+            sg lxd -c "lxc exec testcon -- md5sum -c ${SAVED_MD5SUMS}"
+            ;;
+          centos)
             ;;
         esac
 
@@ -1385,7 +1434,7 @@ jobs:
           for REPO_AND_TAG in ${{ steps.decode.outputs.repo_and_tag_pairs }}; do
             if [[ "${REFERENCED_IMAGES}" == "" ]]; then
               for ARCH_SHORT_NAME in ${ARCH_SHORT_NAMES}; do
-                REFERENCED_IMAGES="${LOWER_DOCKER_ORG}/${REPO_AND_TAG}-${ARCH_SHORT_NAME} "
+                REFERENCED_IMAGES="${REFERENCED_IMAGES} ${LOWER_DOCKER_ORG}/${REPO_AND_TAG}-${ARCH_SHORT_NAME} "
               done
             fi
 
