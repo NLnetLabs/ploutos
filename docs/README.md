@@ -85,7 +85,7 @@ Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST 
 - [ ] 14. Verify that the `Packaging` action in the TEST repo against the `main` branch passes and works as desired.
 - [ ] 15. (optional) If the MAJOR version was changed, update affected repositories that use the reusable workflow to use the new MAJOR version, including adjusting to any breaking changes introduced by the MAJOR version change.
 
-**How tu update the vN tag:**
+**How to update the vN tag:**
 
 At the time of writing the GitHub web interface does not offer a way to delete tags or update tags, only to delete the extra "release" details which can be associated with a tag. To update a tag one must do it locally and remotely from the command line.
 
