@@ -384,32 +384,33 @@ jobs:
           fi
 
       - name: Verify inputs
-        if: ${{ inputs.rpm_scriptlets_path != '' }}
         run: |
           if [[ '${{ inputs.next_ver_label }}' == '' ]]; then
             echo "::error::Workflow input 'next_ver_label' must be non-empty if set."
             exit 1
           fi
 
-          if [[ ! -f ${{ inputs.rpm_scriptlets_path }} ]]; then
-            echo "::error::Workflow input 'rpm_scriptlets_path' ('${{ inputs.rpm_scriptlets_path }}') must refer to a file in the Git checkout"
-            exit 1
+          if [[ '${{ inputs.rpm_scriptlets_path }}' != '' ]]; then
+            if [[ ! -f '${{ inputs.rpm_scriptlets_path }}' ]]; then
+              echo "::error::Workflow input 'rpm_scriptlets_path' ('${{ inputs.rpm_scriptlets_path }}') must refer to a file in the Git checkout"
+              exit 1
+            fi
           fi
 
-          if [[ "${{ steps.pre_process_rules.outputs.docker_build_rules }}" != '{}' ]]; then
-            if [[ "${{ inputs.docker_org }}" == "" ]]; then
+          if [[ '${{ steps.pre_process_rules.outputs.docker_build_rules }}' != '{}' ]]; then
+            if [[ '${{ inputs.docker_org }}' == '' ]]; then
               echo "::error::Workflow input 'docker_org' must be non-empty when 'docker_build_rules' are supplied."
               exit 1
             fi
 
-            if [[ "${{ inputs.docker_repo }}" == "" ]]; then
+            if [[ '${{ inputs.docker_repo }}' == '' ]]; then
               echo "::error::Workflow input 'docker_repo' must be non-empty when 'docker_build_rules' are supplied."
               exit 1
             fi
           fi
 
-          if [[ "${{ steps.pre_process_rules.outputs.package_build_rules }}" != '{}' ]]; then
-            if [[ "${{ inputs.deb_maintainer }}" == "" ]]; then
+          if [[ '${{ steps.pre_process_rules.outputs.package_build_rules }}' != '{}' ]]; then
+            if [[ '${{ inputs.deb_maintainer }}' == '' ]]; then
               echo "::error::Workflow input 'deb_maintainer' must be non-empty when 'package_build_rules' are supplied."
               exit 1
             fi
