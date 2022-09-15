@@ -29,6 +29,7 @@ As a more readable and easier alternative the worfklow also supports loading mat
 | Input | Notes |
 | --- | --- |
 | `cross_build_rules` | A **JSON** array of [Rust target triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) to cross-compile your application for. Cross compilation takes place inside a Docker container running an image from the Rust [`cross`](https://github.com/cross-rs/cross) project. These images contain the correct toolchain components needed to compile for one of the [supported targets](https://github.com/cross-rs/cross#supported-targets). |
+| `cross_build_rules_path` | A relative path to a **YAML** file containing the `cross_build_rules` matrix. |
 | `package_build_rules` | A GitHub Actions **JSON** matrix definition that specifies which operating systems and versions packages should be created for. Currently only DEB and RPM packages can be created, using either x86_64 binaries compiled on-the-fly, or cross-compiled binaries compiled per the `cross_build_rules`. |
 | `package_build_rules_path` | A relative path to a **YAML** file containing the `package_build_rules` matrix. |
 | `package_test_rules` | A GitHub Actions **JSON** matrix definition that specifies which operating systems and versions provided test scripts should be run, and whether to run them post-install and/or post-upgrade. |
