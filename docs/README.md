@@ -40,12 +40,13 @@ For now the best way to understand these inputs is to look at the input descript
 
 - https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131
 
-And by looking at one of the places where the workflow is, or will soon be, used:
+And by looking at one of the places where the workflow is (or will soon be, used:
 
 - https://github.com/NLnetLabs/.github-testing/blob/main/.github/workflows/pkg.yml
-- https://github.com/NLnetLabs/rtrtr/blob/main/.github/workflows/pkg.yml
 - https://github.com/NLnetLabs/routinator/blob/main/.github/workflows/pkg.yml
-- https://github.com/NLnetLabs/krill/blob/main/.github/workflows/pkg.yml
+- https://github.com/NLnetLabs/rtrtr/blob/main/.github/workflows/pkg.yml
+- https://github.com/NLnetLabs/krill/blob/main/.github/workflows/pkg.yml **COMING SOON**
+- https://github.com/NLnetLabs/krill-sync/blob/main/.github/workflows/pkg.yml
 
 To understand more about the history and design of the workflow read the comments at the top of the workflow itself:
 
