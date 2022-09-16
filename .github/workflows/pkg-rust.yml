@@ -1164,8 +1164,12 @@ jobs:
             done
 
             # save the md5 checksums for later comparison
-            sg lxd -c "lxc exec testcon -- sh -c \"xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}\""
-            sg lxd -c "lxc exec testcon -- cat ${SAVED_MD5SUMS}"
+            if sg lxd -c "lxc exec testcon -- sh -c \"xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}\""; then
+              sg lxd -c "lxc exec testcon -- cat ${SAVED_MD5SUMS}"
+            else
+              echo "Conffile change preservation checking will be skipped because no conffiles were detected."
+              sg lxd -c "lxc exec testcon -- rm -f ${SAVED_MD5SUMS}"
+            fi
             ;;
           centos)
             echo '[nlnetlabs]' >$HOME/nlnetlabs.repo
@@ -1216,7 +1220,7 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
-            sg lxd -c "lxc exec testcon -- md5sum -c ${SAVED_MD5SUMS}"
+            sg lxd -c "lxc exec testcon -- sh -c '[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}'"
             ;;
           centos)
             ;;
