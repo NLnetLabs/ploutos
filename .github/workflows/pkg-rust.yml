@@ -1855,7 +1855,12 @@ jobs:
       - name: Publish multi-arch image manifest(s) to Docker Hub
         id: publish
         run: |
+          echo '### Docker' >> ${GITHUB_STEP_SUMMARY}
+          echo 'Docker images have been published and can be run as follows:' >> ${GITHUB_STEP_SUMMARY}
+          echo '```' >> ${GITHUB_STEP_SUMMARY}
           LOWER_DOCKER_ORG="${{ steps.decode.outputs.lower_docker_org }}"
           for REPO_AND_TAG in ${{ steps.decode.outputs.repo_and_tag_pairs }}; do
             docker manifest push ${LOWER_DOCKER_ORG}/${REPO_AND_TAG}
+            echo "docker run ${LOWER_DOCKER_ORG}/${REPO_AND_TAG}" >> ${GITHUB_STEP_SUMMARY}
           done
+          echo '```'
