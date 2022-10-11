@@ -528,7 +528,7 @@ jobs:
 
     - name: Checkout repository
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Cache cargo cross
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
@@ -588,7 +588,7 @@ jobs:
       CARGO_GENERATE_RPM_VER: 0.8.0
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Verify inputs
       run: |
@@ -1018,7 +1018,7 @@ jobs:
     steps:
     # Fetch the test scripts that we will run
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Verify inputs
       run: |
@@ -1279,7 +1279,7 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare.outputs.docker_build_rules) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Verify inputs
         run: |
@@ -1332,7 +1332,7 @@ jobs:
           rm dockerbin/${{ matrix.platform }}/bins.tar
 
       - name: Log into Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
@@ -1408,7 +1408,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
