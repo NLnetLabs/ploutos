@@ -1457,10 +1457,12 @@ jobs:
           done
 
       - name: Update README at Docker Hub
-        uses: peter-evans/dockerhub-description@v3
+        uses: christian-korneck/update-container-description-action@v1
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_HUB_ID }}
+          DOCKER_PASS: ${{ secrets.DOCKER_HUB_TOKEN }}
         with:
-          username: ${{ secrets.DOCKER_HUB_ID }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-          repository: ${{ steps.decode.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
-          short-description: ${{ github.event.repository.description }}
-          readme-filepath: ./README.md
+          destination_container: ${{ steps.decode.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
+          provider: dockerhub
+          short_description: ${{ github.event.repository.description }}
+          readme_file: 'README.md'
