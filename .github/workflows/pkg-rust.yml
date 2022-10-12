@@ -1095,7 +1095,7 @@ jobs:
       run: |
         # security.nesting=true is needed to avoid error "Failed to set up mount namespacing: Permission denied" in a
         # Debian 10 container.
-        sg lxd -c "lxc launch ${LXC_IMAGE} -c security.nesting=true testcon"
+        sg lxd -c "lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon"
 
     # Run package update and install man and sudo support (missing in some LXC/LXD O/S images) but first wait for
     # cloud-init to finish otherwise the network isn't yet ready. Don't use cloud-init status --wait as that isn't
@@ -1207,7 +1207,8 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}"
+            # See https://github.com/NLnetLabs/.github/issues/17 regarding --force-confXXX
+            sg lxd -c "lxc exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}"
             ;;
           centos)
             sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}"
