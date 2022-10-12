@@ -1459,8 +1459,8 @@ jobs:
       - name: Update README at Docker Hub
         uses: peter-evans/dockerhub-description@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          username: ${{ secrets.DOCKER_HUB_ID }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
           repository: ${{ needs.prepare.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
           short-description: ${{ github.event.repository.description }}
           readme-filepath: ./README.md
