@@ -1462,7 +1462,7 @@ jobs:
           DOCKER_USER: ${{ secrets.DOCKER_HUB_ID }}
           DOCKER_PASS: ${{ secrets.DOCKER_HUB_TOKEN }}
         with:
-          destination_container: ${{ steps.decode.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
+          destination_container_repo: ${{ steps.decode.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
           provider: dockerhub
           short_description: ${{ github.event.repository.description }}
           readme_file: 'README.md'
