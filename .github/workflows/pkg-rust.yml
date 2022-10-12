@@ -1461,6 +1461,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
-          repository: ${{ needs.prepare.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
+          repository: ${{ steps.decode.outputs.lower_docker_org }}/${{ inputs.docker_repo }}
           short-description: ${{ github.event.repository.description }}
           readme-filepath: ./README.md
