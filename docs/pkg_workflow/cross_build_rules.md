@@ -12,3 +12,6 @@ Can also be provided as the path to a **YAML** file containing the `cross_build_
 - 'arm-unknown-linux-gnueabihf'     # for DEB
 ```
 
+### Known limitations
+
+There is currently no way to customize the cross compilation process, e.g. to install libraries that should be linked against. The `cross` tool that we use supports such customization so it should be possible to expose such an ability in future if needed.
