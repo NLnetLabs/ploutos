@@ -12,16 +12,16 @@ The most complex inputs take GitHub workflow matrices as input. Internally GitHu
 
 As a more readable and easier alternative the worfklow also supports loading matrices from [YAML](https://yaml.org/) files, i.e. you can express the matrix just as you would [natively in a workflow YAML file](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) - specifically the YAML content in the file will be used as the value of the `matrix` workflow key.
 
-| Input | Notes |
-| --- | --- |
-| `cross_build_rules` | A **JSON** array of [Rust target triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) to cross-compile your application for. Cross compilation takes place inside a Docker container running an image from the Rust [`cross`](https://github.com/cross-rs/cross) project. These images contain the correct toolchain components needed to compile for one of the [supported targets](https://github.com/cross-rs/cross#supported-targets). |
-| `cross_build_rules_path` | A relative path to a **YAML** file containing the `cross_build_rules` matrix. |
-| `package_build_rules` | A GitHub Actions **JSON** matrix definition that specifies which operating systems and versions packages should be created for. Currently only DEB and RPM packages can be created, using either x86_64 binaries compiled on-the-fly, or cross-compiled binaries compiled per the `cross_build_rules`. |
-| `package_build_rules_path` | A relative path to a **YAML** file containing the `package_build_rules` matrix. |
-| `package_test_rules` | A GitHub Actions **JSON** matrix definition that specifies which operating systems and versions provided test scripts should be run, and whether to run them post-install and/or post-upgrade. |
-| `package_test_rules_path` | A relative path to a **YAML** file containing the `package_test_rules` matrix. |
-| `docker_build_rules` | A GitHub Actions **JSON** matrix definition that specifies which platforms Docker images should be built for and whether to build the application image inside a Docker container or to copy in a cross-compiled binary that was compiled per the `cross_build_rules`. |
-| `docker_build_rules_path` | A relative path to a **YAML** file containing the `docker_build_rules` matrix. |
+| Input | Notes | Docs |
+| --- | --- | --- |
+| `cross_build_rules` | A **JSON** array of [Rust target triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) to cross-compile your application for. Cross compilation takes place inside a Docker container running an image from the Rust [`cross`](https://github.com/cross-rs/cross) project. These images contain the correct toolchain components needed to compile for one of the [supported targets](https://github.com/cross-rs/cross#supported-targets). | [view](./cross_build_rules.md) |
+| `cross_build_rules_path` | A relative path to a **YAML** file containing the `cross_build_rules` matrix. | [view](./cross_build_rules.md) |
+| `package_build_rules` | A GitHub Actions **JSON** matrix definition that specifies which operating systems and versions packages should be created for. Currently only DEB and RPM packages can be created, using either x86_64 binaries compiled on-the-fly, or cross-compiled binaries compiled per the `cross_build_rules`. | |
+| `package_build_rules_path` | A relative path to a **YAML** file containing the `package_build_rules` matrix. | |
+| `package_test_rules` | A GitHub Actions **JSON** matrix definition that specifies which operating systems and versions provided test scripts should be run, and whether to run them post-install and/or post-upgrade. | |
+| `package_test_rules_path` | A relative path to a **YAML** file containing the `package_test_rules` matrix. | |
+| `docker_build_rules` | A GitHub Actions **JSON** matrix definition that specifies which platforms Docker images should be built for and whether to build the application image inside a Docker container or to copy in a cross-compiled binary that was compiled per the `cross_build_rules`. | |
+| `docker_build_rules_path` | A relative path to a **YAML** file containing the `docker_build_rules` matrix. | |
 
 For now the best way to understand these inputs is to look at the input descriptions in the workflow itself:
 
