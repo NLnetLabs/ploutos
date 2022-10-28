@@ -4,7 +4,7 @@ This repository contains a single [reusable workflow](https://docs.github.com/en
 
 ## The Rust Cargo Packaging **template** repository
 
-_**Tip:** If you just want to add invoke our reusable packaging workflow from your own repository see the notes about the **starter** workflow below._
+_**Tip:** If you just want to invoke our reusable packaging workflow from your own repository see the notes about the **starter** workflow below._
 
 If you want to create a new repository that builds a Rust application using our reusable packaging workflow, or want to learn how to fully configure your own repository to do so, see [our template repository](https://github.com/NLnetLabs/.github-testing/blob/main/README.md).
 
