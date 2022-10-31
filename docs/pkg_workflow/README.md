@@ -139,20 +139,16 @@ FROM alpine
 CMD ["echo", "Hello World!"]
 ```
 
-The resulting artifact is named: `tmp-docker-image-amd64`. We can test it like so:
+The resulting artifact is named: `tmp-docker-image-amd64`. We can download it using the [GitHub CLI](https://docs.github.com/en/github-cli/github-cli/about-github-cli) and test it like so: _(`gh` unzips the downloaded artifact file for us automatically)_
 
-1. Download the artifact to `tmp-docker-image-amd64.zip`.
-2. Unpack the zip file.
-3. `docker load -i docker-amd64-img.tar` which will output:
 ```
+$ cd path/to/your/repo/clone
+$ gh run download <workflow_run_id> --name tmp-docker-image-amd64
+$ docker load -i docker-amd64-img.tar
 Loaded image: my_org/my_image_name:test-amd64
-```
-4. `docker run --rm my_org/my_image_name:test-amd64` which will output:
-```
+$ docker run --rm my_org/my_image_name:test-amd64
 Hello World!
 ```
-
-
 
 ## How do I upgrade to the latest pkg workflow?
 
