@@ -15,7 +15,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [A simple example](#a-simple-example)
 - [A useful simple example](#a-useful-simple-example)
 - [How do I upgrade to the latest pkg workflow?](#how-do-i-upgrade-to-the-latest-pkg-workflow)
-- [Further reading](#further-reading)
+- [Creating specific package types](#creating-specific-package-types)
 
 ## Known issues
 
@@ -156,7 +156,7 @@ When fixes and improvements are made to the pkg workflow your workflow will bene
 
 If a backward incompatible change were to be released it would be released as `v2` and you would need to update the `uses` line in your workfow in order to benefit from the changes in the new breaking release.
 
-## Further reading
+## Creating specific package types
 
 To learn more about how to build a particular package type using the pkg workflow see:
 
