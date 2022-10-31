@@ -45,3 +45,12 @@ flowchart LR
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
 ```
+
+All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
+
+- `prepare` - checks if the given inputs look roughly okay.
+- `cross` - cross-compiles the Rust Cargo application per the provided rules (if any).
+- `pkg` - compiles (if not already cross-compiled) and packages the Rust Cargo application as a DEB or RPM package.
+- `pkg-test` - tests the produced DEB/RPM packages, both with some standard checks and optionally with application-specific checks provided by you.
+- `docker` - builds and publishes one or more Docker images.
+- `docker-manifest` - publishes a combined Docker Manifest that groups architecture specific variants of the same image under a single Docker tag.
