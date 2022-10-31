@@ -44,7 +44,7 @@ No, it is not intended to be used standalone. To use it you must call it from yo
 
 The pkg workflow is capable of producing Linux (DEB & RPM) packages and Docker images.
 
-Produced DEB and RPM packages will be attached as artifacts to the caller workflow run. Only GitHub users with `actions:read` permission will be able to download the artifacts.
+Produced DEB and RPM packages will be attached as artifacts to the caller workflow run. **Only GitHub users with `actions:read` permission** will be able to download the artifacts.
 
 > The pkg workflow does **NOT** publish DEB and/or RPM packages anywhere. If you want your users to be able to download the produced DEB and/or RPM either directly or from a package repository using a tool like `apt` (for DEB) or `yum` (for RPM) you will need to upload the packages to the appropriate location yourself.
 
