@@ -13,6 +13,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
 - [A simple example](#a-simple-example)
+- [A useful simple example](#a-useful-simple-example)
 - [How do I upgrade to the latest pkg workflow?](#how-do-i-upgrade-to-the-latest-pkg-workflow)
 - [How do I use matrix type inputs?](#how-do-i-use-matrix-type-inputs)
 
@@ -103,6 +104,55 @@ jobs:
 ```
 
 _**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provided the necessary supporting information!_
+
+## A useful simple example
+
+The workflow below configures the pkg workflow to:
+ - Build a Linux x86 64 architecture image from the `Dockerfile` located in the root of the callers repository.
+ - To tag the created Docker image as `my_org/my_image_name:test-amd64`.
+ - To attach the created Docker image as a GitHUb Actions artifact to the caller workflow run.
+ 
+ The artifact will be a zip file containing a tar file produced by the [`docker save`](https://docs.docker.com/engine/reference/commandline/save/) command).
+
+`.github/workflows/my_pkg_workflow.yml`:
+
+```yaml
+jobs:
+  my_pkg_job:
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    with:
+      docker_org: my_org
+      docker_repo: my_image_name
+      docker_build_rules_path: docker-build-rules.yml
+```
+
+`docker-build-rules.yml`:
+
+```yaml
+platform: linux/amd64
+shortname: amd64
+```
+
+`Dockerfile`:
+```Dockerfile
+FROM alpine
+CMD ["echo", "Hello World!"]
+```
+
+The resulting artifact is named: `tmp-docker-image-amd64`. We can test it like so:
+
+1. Download the artifact to `tmp-docker-image-amd64.zip`.
+2. Unpack the zip file.
+3. `docker load -i docker-amd64-img.tar` which will output:
+```
+Loaded image: my_org/my_image_name:test-amd64
+```
+4. `docker run --rm my_org/my_image_name:test-amd64` which will output:
+```
+Hello World!
+```
+
+
 
 ## How do I upgrade to the latest pkg workflow?
 
