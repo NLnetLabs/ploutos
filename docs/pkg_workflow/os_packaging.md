@@ -15,7 +15,7 @@ Binaries to be included in the package are either pre-compiled by the [`cross` j
 
 Packaging and, if needed, compilation, take place inside a Docker container. Packaging is handled by the [`cargo-deb` tool](https://crates.io/crates/cargo-deb), based on settings defined in your `Cargo.toml` file.
 
-Package testing takes place inside an [LXD container instances](https://linuxcontainers.org/lxd/docs/master/explanation/instances/) because, unlike Docker containers, they support systemd and other multi-process scenarios that you may wish to test.
+Package testing takes place inside [LXD container instances](https://linuxcontainers.org/lxd/docs/master/explanation/instances/) because, unlike Docker containers, they support systemd and other multi-process scenarios that you may wish to test.
 
 ### Inputs
 
