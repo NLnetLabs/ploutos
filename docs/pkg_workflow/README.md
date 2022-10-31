@@ -40,7 +40,8 @@ The pkg workflow is a GitHub Actions "reusable workflow" because it [defines](ht
 Once called the workflow runs one or more jobs like so:
 
 ```mermaid
-prepare --> cross
-cross --> pkg --> pkg-test
-cross --> docker --> docker-manifest
+flowchart LR
+  prepare --> cross
+  cross --> pkg --> pkg-test
+  cross --> docker --> docker-manifest
 ```
