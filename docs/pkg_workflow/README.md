@@ -6,11 +6,11 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 
 **Contents:**
 - [See also](./#see-also)
-- [Can I just run the pkg workflow?](./#can-i-just-run-the-pkg-workflow)
-- [What does the pkg workflow output?](./#what-does-the-pkg-workflow-output)
-- [How can I run the created packages?](./#how-can-i-run-the-created-packages)
-- [How does it work?](./#how-does-it-work)
-- [How can I use it?](./#how-can-i-use-it)
+- [Can I just run the pkg workflow?](#can-i-just-run-the-pkg-workflow)
+- [What does the pkg workflow output?](#what-does-the-pkg-workflow-output)
+- [How can I run the created packages?](#how-can-i-run-the-created-packages)
+- [How does it work?](#how-does-it-work)
+- [How can I use it?](#how-can-i-use-it)
 
 ## See also
 
