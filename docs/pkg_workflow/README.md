@@ -69,7 +69,7 @@ flowchart LR
   prepare --> cross
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
-  click cross href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/cross-compiling.md" "Cross-compilation"
+  click cross href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/cross_compiling.md" "Cross-compilation"
   click pkg href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/os_packaging.md" "O/S Packaging"
   click pkg-test href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/os_package_testing.md" "O/S Package Testing"
   click docker href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/docker_packaging.md" "Docker Packaging"
