@@ -83,11 +83,11 @@ All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job ru
 Only the packaging types that you request (via the workflow call parameters) will actually be run, i.e. you can build only DEB packages, or only RPM and Docker, and cross-compile or not as needed.
 
 - `prepare` - checks if the given inputs look roughly okay.
-- `cross` - cross-compiles the Rust Cargo application per the provided rules (if any).
-- `pkg` - compiles (if not already cross-compiled) and packages the Rust Cargo application as a DEB or RPM package.
-- `pkg-test` - tests the produced DEB/RPM packages, both with some standard checks and optionally with application-specific checks provided by you.
-- `docker` - builds and publishes one or more Docker images.
-- `docker-manifest` - publishes a combined Docker Manifest that groups architecture specific variants of the same image under a single Docker tag.
+- [`cross`](./cross_compiling.md) - cross-compiles the Rust Cargo application per the provided rules (if any).
+- [`pkg`](./os_packaging.md) - compiles (if not already cross-compiled) and packages the Rust Cargo application as a DEB or RPM package.
+- [`pkg-test`](./os_packaging.md) - tests the produced DEB/RPM packages, both with some standard checks and optionally with application-specific checks provided by you.
+- [`docker`](./docker_packaging.md) - builds and publishes one or more Docker images.
+- [`docker-manifest`](./docker_packaging.md) - publishes a combined Docker Manifest that groups architecture specific variants of the same image under a single Docker tag.
 
 ## How can I use it?
 
