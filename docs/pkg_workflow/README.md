@@ -15,7 +15,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [A simple example](#a-simple-example)
 - [A useful simple example](#a-useful-simple-example)
 - [How do I upgrade to the latest pkg workflow?](#how-do-i-upgrade-to-the-latest-pkg-workflow)
-- [How do I use matrix type inputs?](#how-do-i-use-matrix-type-inputs)
+- [Further reading](#further-reading)
 
 ## Known issues
 
@@ -156,11 +156,12 @@ When fixes and improvements are made to the pkg workflow your workflow will bene
 
 If a backward incompatible change were to be released it would be released as `v2` and you would need to update the `uses` line in your workfow in order to benefit from the changes in the new breaking release.
 
-## How do I use matrix type inputs?
+## Further reading
 
-The format of the matrix that must be supplied is dependent on the input in question:
+To learn more about how to build a particular package type using the pkg workflow see:
 
-- [`cross_build_rules`](./cross_build_rules.md)
-- [`package_build_rules`](./package_build_rules.md)
-- [`package_test_rules`](./package_test_rules.md)
-- [`docker_build_rules`](./docker_build_rules.md)
+- [Cross compiling](./cross_compiling.md)
+- [Creating DEB packages](./deb_packaging.md)
+- [Creating RPM packages](./rpm_packaging.md)
+- [Creating Docker images](./docker_packaging.md)
+
