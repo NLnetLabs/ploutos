@@ -8,7 +8,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [Known issues](#known-issues)
 - [See also](#see-also)
 - [Can I just run the pkg workflow?](#can-i-just-run-the-pkg-workflow)
-- [What does the pkg workflow output?](#what-does-the-pkg-workflow-output)
+- [What packages can the pkg workflow produce?](#what-packages-can-the-pkg-workflow-produce)
 - [How can I run the created packages?](#how-can-i-run-the-created-packages)
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
@@ -40,7 +40,7 @@ If you're looking for examples of how to invoke and configure the pkg workflow y
 
 No, it is not intended to be used standalone. To use it you must call it from your own GitHub Workflow. See the [official GitHub Actions documentation](https://docs.github.com/en/actions/using-workflows/reusing-workflows#calling-a-reusable-workflow) on calling reusable workflows for more information.
 
-## What does the pkg workflow output?
+## What packages can the pkg workflow produce?
 
 The pkg workflow is capable of producing Linux (DEB & RPM) packages and Docker images.
 
