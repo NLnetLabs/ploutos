@@ -69,11 +69,11 @@ flowchart LR
   prepare --> cross
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
-  click cross href "./cross-compiling.md" "Cross-compilation"
-  click pkg href "./os_packaging.md" "O/S Packaging"
-  click pkg-test href "./os_package_testing.md" "O/S Package Testing"
-  click docker href "./docker_packaging.md" "Docker Packaging"
-  click docker-manifest href "./docker_multi_arch.md" "Docker Multi-Arch Packaging"
+  click cross href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/cross-compiling.md" "Cross-compilation"
+  click pkg href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/os_packaging.md" "O/S Packaging"
+  click pkg-test href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/os_package_testing.md" "O/S Package Testing"
+  click docker href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/docker_packaging.md" "Docker Packaging"
+  click docker-manifest href "https://github.com/NLnetLabs/.github/edit/main/docs/pkg_workflow/docker_multi_arch.md" "Docker Multi-Arch Packaging"
 ```
 
 All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
