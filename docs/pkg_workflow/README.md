@@ -109,10 +109,10 @@ _**Note:** this will **NOT** actually build any packages as it doesn't indicate 
 
 The workflow below configures the pkg workflow to:
  - Build a Linux x86 64 architecture image from the `Dockerfile` located in the root of the callers repository.
- - To tag the created Docker image as `my_org/my_image_name:test-amd64`.
- - To attach the created Docker image as a GitHUb Actions artifact to the caller workflow run.
- 
- The artifact will be a zip file containing a tar file produced by the [`docker save`](https://docs.docker.com/engine/reference/commandline/save/) command).
+ - Tag the created Docker image as `my_org/my_image_name:test-amd64`.
+ - Attach the created Docker image as a GitHUb Actions artifact to the caller workflow run _(as a zip file containing a tar file produced by the [`docker save`](https://docs.docker.com/engine/reference/commandline/save/) command)_.
+
+For this example we will need to create 3 files in the callers GitHub repository:
 
 `.github/workflows/my_pkg_workflow.yml`:
 
