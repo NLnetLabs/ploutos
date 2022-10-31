@@ -62,11 +62,18 @@ The pkg workflow is a GitHub Actions "reusable workflow" because it [defines](ht
 
 Once called the workflow runs one or more jobs like so:
 
+_**Tip:** Click the nodes to jump to the relevant documentation._
+
 ```mermaid
 flowchart LR
   prepare --> cross
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
+  click cross href "./cross-compiling.md" "Cross-compilation"
+  click pkg href "./os_packaging.md" "O/S Packaging"
+  click pkg-test href "./os_package_testing.md" "O/S Package Testing"
+  click docker href "./docker_packaging.md" "Docker Packaging"
+  click docker-manifest href "./docker_multi_arch.md" "Docker Multi-Arch Packaging"
 ```
 
 All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
@@ -161,7 +168,6 @@ If a backward incompatible change were to be released it would be released as `v
 To learn more about how to build a particular package type using the pkg workflow see:
 
 - [Cross compiling](./cross_compiling.md)
-- [Creating DEB packages](./deb_packaging.md)
-- [Creating RPM packages](./rpm_packaging.md)
+- [Creating O/S packages](./os_packaging.md)
 - [Creating Docker images](./docker_packaging.md)
 
