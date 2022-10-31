@@ -5,12 +5,20 @@
 In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Packaging **reusable** workflow (hereafter the "pkg workflow") from your own repository and how to create the supporting files needed.
 
 **Contents:**
-- [See also](./#see-also)
+- [Known issues](#known-issues)
+- [See also](#see-also)
 - [Can I just run the pkg workflow?](#can-i-just-run-the-pkg-workflow)
 - [What does the pkg workflow output?](#what-does-the-pkg-workflow-output)
 - [How can I run the created packages?](#how-can-i-run-the-created-packages)
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
+- [A simple example](#a-simple-example)
+- [How do I upgrade to the latest pkg workflow?](#how-do-i-upgrade-to-the-latest-pkg-workflow)
+- [How do I use matrix type inputs?](#how-do-i-use-matrix-type-inputs)
+
+## Known issues
+
+The pkg workflow was originally written for use only by NLnet Labs. As such not all behaviours are yet (fully) configurable. With time, sufficient interest and resource permitting these limitations can in principle be removed. For a list of open issues and ideas for improvement and to submit your own see https://github.com/NLnetLabs/.github/issues/.
 
 ## See also
 
@@ -71,5 +79,42 @@ Only the packaging types that you request (via the workflow call parameters) wil
 - `docker` - builds and publishes one or more Docker images.
 - `docker-manifest` - publishes a combined Docker Manifest that groups architecture specific variants of the same image under a single Docker tag.
 
-### How can I use it?
+## How can I use it?
 
+1. Decide which package types you want to create.
+2. Determine which inputs you need to provide to the pkg workflow.
+3. Create the files in your repository that will be referenced by the inputs.
+4. Call the pkg workflow from your own workflow with the chosen inputs.
+5. Run your workflow.
+6. Use the created packages:
+   - DEB and RPM packages will be attached as artifacts to the workflow run.
+   - Docker images will have been published to Docker Hub.
+
+For the complete definition of the available inputs [consult the pkg workflow source code](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131).
+
+## A simple example
+
+A simple, but not very useful, invocation of the pkg workflow would be a file such as `.github/workflows/my_pkg_workflow.yml` in your GitHub repository with the following content:
+
+```yaml
+jobs:
+  my_pkg_job:
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+```
+
+_**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provided the necessary supporting information!_
+
+## How do I upgrade to the latest pkg workflow?
+
+When fixes and improvements are made to the pkg workflow your workflow will benefit from them automatically. This is because on release we update the `@v1` tag to  point to refer to the latest v1.x.y release.
+
+If a backward incompatible change were to be released it would be released as `v2` and you would need to update the `uses` line in your workfow in order to benefit from the changes in the new breaking release.
+
+## How do I use matrix type inputs?
+
+The format of the matrix that must be supplied is dependent on the input in question:
+
+- [`cross_build_rules`](./cross_build_rules.md)
+- [`package_build_rules`](./package_build_rules.md)
+- [`package_test_rules`](./package_test_rules.md)
+- [`docker_build_rules`](./docker_build_rules.md)
