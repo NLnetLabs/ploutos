@@ -129,8 +129,8 @@ jobs:
 `docker-build-rules.yml`:
 
 ```yaml
-platform: linux/amd64
-shortname: amd64
+platform: ["linux/amd64"]
+shortname: ["amd64"]
 ```
 
 `Dockerfile`:
