@@ -64,8 +64,6 @@ The pkg workflow is a GitHub Actions "reusable workflow" because it [defines](ht
 
 Once called the workflow runs one or more jobs like so:
 
-_**Tip:** Click the nodes to jump to the relevant documentation._
-
 ```mermaid
 flowchart LR
   prepare --> cross
