@@ -64,12 +64,8 @@ The Docker context will be the root of a clone of the callers GitHub repository.
 
 Your `Dockerfile` MUST define corresponding [`ARG <varname>[=<default value>]`](https://docs.docker.com/engine/reference/builder/#arg) instructions for these build arguments.
 
-- `MODE=(build|copy)`: When `MODE` is `build` (the default) the `Dockerfile` should build the application from sources available in the Docker context.
-
-  When `MODE` is `copy` the pre-compiled binaries will be made available to the build process in subdirectory `dockerbin/$TARGETPLATFORM/*` of the Docker build context, where [`$TARGETPLATFORM`](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope) is a variable made available to the `Dockerfile` build process by Docker, e.g. `linux/amd64`.
-
-  For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L99.
-
-- `CARGO_ARGS=...`: Should only be used when `MODE` is `build`. Expected to be passed to the Cargo build process, e.g. `cargo build ... ${CARGO_ARGS}` or `cargo install ... ${CARGO_ARGS}`.
-
-  For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L92.
+| Build Arg | Description |
+|---|---|
+| `MODE=build` | The `Dockerfile` should build the application from sources available in the Docker context. |
+| `MODE=copy` | The pre-compiled binaries will be made available to the build process in subdirectory `dockerbin/$TARGETPLATFORM/*` of the Docker build context, where [`$TARGETPLATFORM`](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope) is a variable made available to the `Dockerfile` build process by Docker, e.g. `linux/amd64`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L99. |
+| `CARGO_ARGS=...` | Only relevant when `MODE` is `build`. Expected to be passed to the Cargo build process, e.g. `cargo build ... ${CARGO_ARGS}` or `cargo install ... ${CARGO_ARGS}`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L92. |
