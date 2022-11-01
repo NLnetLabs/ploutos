@@ -14,4 +14,6 @@ The location of an image published to [Docker Hub](https://hub.docker.com/) is a
 
 Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml
 
-_**Known issue:** [ The Docker repository to publish to is not configurable](https://github.com/NLnetLabs/.github/issues/37)_
+_**Known issue:** [The Docker repository to publish to is not configurable](https://github.com/NLnetLabs/.github/issues/37)_
+
+_**Known issue:** [The Dockerfile to build is not configurable](https://github.com/NLnetLabs/.github/issues/36)_
