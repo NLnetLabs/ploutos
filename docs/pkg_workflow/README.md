@@ -98,6 +98,9 @@ For the complete definition of the available inputs [consult the pkg workflow so
 A simple, but not very useful, invocation of the pkg workflow would be a file such as `.github/workflows/my_pkg_workflow.yml` in your GitHub repository with the following content:
 
 ```yaml
+on:
+  push:
+
 jobs:
   my_pkg_job:
     uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
