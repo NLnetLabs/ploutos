@@ -13,8 +13,8 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
 - [A simple example](#a-simple-example)
-- [A useful simple example](#a-useful-simple-example)
-- [How do I upgrade to the latest pkg workflow?](#how-do-i-upgrade-to-the-latest-pkg-workflow)
+- [A useful example](#a-useful-example)
+- [Version numbers & upgrades](#version-numbers-and-upgrades)
 - [Creating specific package types](#creating-specific-package-types)
 
 ## Known issues
@@ -110,54 +110,13 @@ jobs:
     uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
 ```
 
-_**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provided the necessary supporting information!_
+_**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_
 
-## A useful simple example
+## A useful example
 
-The workflow below configures the pkg workflow to:
- - Build a Linux x86 64 architecture image from the `Dockerfile` located in the root of the callers repository.
- - Tag the created Docker image as `my_org/my_image_name:test-amd64`.
- - Attach the created Docker image as a GitHUb Actions artifact to the caller workflow run _(as a zip file containing a tar file produced by the [`docker save`](https://docs.docker.com/engine/reference/commandline/save/) command)_.
+For a minimal useful example complete with step-by-step explanation of all the pieces see [this page](./minimal_useful_example.md).
 
-For this example we will need to create 3 files in the callers GitHub repository:
-
-`.github/workflows/my_pkg_workflow.yml`:
-
-```yaml
-jobs:
-  my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
-    with:
-      docker_org: my_org
-      docker_repo: my_image_name
-      docker_build_rules_path: docker-build-rules.yml
-```
-
-`docker-build-rules.yml`:
-
-```yaml
-platform: ["linux/amd64"]
-shortname: ["amd64"]
-```
-
-`Dockerfile`:
-```Dockerfile
-FROM alpine
-CMD ["echo", "Hello World!"]
-```
-
-The resulting artifact is named: `tmp-docker-image-amd64`. We can download it using the [GitHub CLI](https://docs.github.com/en/github-cli/github-cli/about-github-cli) and test it like so: _(`gh` unzips the downloaded artifact file for us automatically)_
-
-```
-$ cd path/to/your/repo/clone
-$ gh run download <workflow_run_id> --name tmp-docker-image-amd64
-$ docker load -i docker-amd64-img.tar
-Loaded image: my_org/my_image_name:test-amd64
-$ docker run --rm my_org/my_image_name:test-amd64
-Hello World!
-```
-
-## How do I upgrade to the latest pkg workflow?
+## Version numbers and upgrades
 
 When fixes and improvements are made to the pkg workflow your workflow will benefit from them automatically. This is because on release we update the `@v1` tag to  point to refer to the latest v1.x.y release.
 
