@@ -71,7 +71,7 @@ The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions
 
 | Matrix Key | Description |
 |---|---|
-| `platform` | Set the [target platform for the build](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform). See [^1], [^2] and [^3]. |
+| `platform` | Set the [target platform for the build](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform), e.g. `linux/amd64`. See [^1], [^2] and [^3]. |
 | `shortname` | Suffixes the tag of the architecture specific "manifest" image with this value, e.g. `amd64`. |
 | `crosstarget` | (optional) Used to download the correct cross-compiled binary GitHub Actions artifact. Only used when 'mode' is 'copy'. |
 | `mode` | (optional) 'copy' (for cross-compiled targets) or 'build' (default). Passed through to the Dockerfile. |
