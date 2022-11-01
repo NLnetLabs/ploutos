@@ -73,10 +73,9 @@ The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions
 |---|---|
 | `platform` | Set the [target platform for the build](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform), e.g. `linux/amd64`. See [^1], [^2] and [^3]. |
 | `shortname` | Suffixes the tag of the architecture specific "manifest" image with this value, e.g. `amd64`. |
-| `crosstarget` | (optional) Used to download the correct cross-compiled binary GitHub Actions artifact. Only used when 'mode' is 'copy'. |
-| `mode` | (optional) 'copy' (for cross-compiled targets) or 'build' (default). Passed through to the Dockerfile. |
-| `cargo_args` | (optional) Can be used when testing, e.g. set to `--no-default-features` to speed up the application build. Passed through to the Dockerfile as build arg 'CARGO_ARGS'. |
-
+| `crosstarget` | (optional) Used to download the correct cross-compiled binary GitHub Actions artifact. Only used when `mode` is `copy`. |
+| `mode` | (optional) `copy` (for cross-compiled targets) or `build` (default). Passed through to the `Dockerfile` as build arg `MODE`. |
+| `cargo_args` | (optional) Can be used when testing, e.g. set to `--no-default-features` to speed up the application build. Passed through to the Dockerfile as build arg `CARGO_ARGS`. |
 
 [^1]: https://go.dev/doc/install/source#environment (from [^4])
 [^2]: https://github.com/containerd/containerd/blob/v1.4.3/platforms/database.go#L83
@@ -84,10 +83,58 @@ The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions
 [^4]: https://github.com/docker-library/official-images#architectures-other-than-amd64 (from [^5])
 [^5]: https://docs.docker.com/desktop/multi-arch/
 
+Example YAML file:
+
+```yaml
+include:
+  - platform: "linux/amd64"
+    shortname: "amd64"
+    mode: "build"
+
+  - platform: "linux/arm/v6"
+    shortname: "armv6"
+    crosstarget: "arm-unknown-linux-musleabihf"
+    mode: "copy"
+
+  - platform: "linux/arm/v7"
+    shortname: "armv7"
+    crosstarget: "armv7-unknown-linux-musleabihf"
+    mode: "copy"
+
+  - platform: "linux/arm64"
+    shortname: "arm64"
+    crosstarget: "aarch64-unknown-linux-musl"
+    mode: "copy"
+```
+
 
 ### Publication and Docker Hub secrets
 
-TODO
+The pkg workflow supports two Docker specific secrets which can be passed to the workflow like so:
+
+```yaml
+jobs:
+  full:
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    secrets:
+      DOCKER_HUB_ID: ${{ secrets.YOUR_DOCKER_HUB_ID }}
+      DOCKER_HUB_TOKEN: ${{ secrets.YOUR_DOCKER_HUB_TOKEN }}
+```
+
+Or, if you are willing to trust the packaging workflow with all of your secrets!!!
+
+```yaml
+jobs:
+  full:
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    secrets: inherit
+```
+
+If either of the `DOCKER_HUB_ID` and/or `DOCKER_HUB_TOKEN` secrets are defined, the workflow `prepare` job will attempt to login to Docker Hub using these credentials and will fail the pkg workflow if it is unable to login.
+
+Best practice is to use a separately created [Docker Hub access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token) for automation purposes that has minimal access rights. The pkg workflow needs write access but not delete access.
+
+_**Note:** If neither of the `DOCKER_HUB_ID` and `DOCKER_HUB_TOKEN` secrets are defined then the pkg workflow will **NOT** atttempt to publish images to Docker Hub._
 
 ### Dockerfile build arguments
 
