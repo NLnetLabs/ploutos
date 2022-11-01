@@ -7,7 +7,10 @@
 - [Outputs and publication](#outputs-and-publication)
 - [Terminology](#terminology)
 - [Docker stages, cross-compilation and build vs copy](#docker-stages-cross-compilation-and-build-vs-copy)
-- [Docker related pkg workfow inputs](#docker-related-pkg-workfow-inputs)
+- [Docker related pkg workflow inputs](#docker-related-pkg-workflow-inputs)
+- [Docker build rules matrix](#docker-build-rules-matrix)
+- [Publication and Docker Hub secrets](#publication-and-docker-hub-secrets)
+- [Dockerfile build arguments](#dockerfile-build-arguments)
 
 ### Known issues
 
