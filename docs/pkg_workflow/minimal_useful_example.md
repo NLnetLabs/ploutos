@@ -67,7 +67,7 @@ There are a few things to note here:
 
 2. With the ["uses"](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_iduses) key we tell GitHub Actions to invoke the NLnet Labs Rust Cargo Packaging reusable workflow located at the given URL.
 
-3. We also specify @vN denoting the version number of the pkg workflow to invoke. This corresponds to a tag in the [NLnetLabs/.github](https://github.com/NLnetLabs/.github/tags/) repository For more information about the version number see [version numbers and upgrades](./README.md#version-numbers-and-upgrades) below.
+3. We also specify @vN denoting the version number of the pkg workflow to invoke. This corresponds to a tag in the [NLnetLabs/.github](https://github.com/NLnetLabs/.github/tags/) repository For more information about the version number see [version numbers and upgrades](./README.md#version-numbers-and-upgrades).
 
 4. We provide three ["inputs"](https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-inputs-and-secrets-in-a-reusable-workflow) to the workflow as child key value pairs of the "with" key:
    - `docker_org`
