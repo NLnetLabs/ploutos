@@ -13,5 +13,5 @@ The NLnet Labs Rust Cargo Packaging reusable workflow automates the packaging of
   - [User guide](./pkg_workflow/README.md)
   - [Starter workflow](./pkg_workflow/starter_workflow.md)
   - [Template repository](./pkg_workflow/template_repository.md)
-  - [Contributing](./develop/README.md)
+  - [Contributing](./pkg_workflow/develop/README.md)
 
