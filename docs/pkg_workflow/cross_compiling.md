@@ -6,6 +6,8 @@ The `cross` cross-compiling job runs before the other jobs in the pkg workflow.
 
 Cross compilation takes place inside a Docker container running an image from the Rust [`cross`](https://github.com/cross-rs/cross) project. These images contain the correct toolchain components needed to compile for one of the [supported targets](https://github.com/cross-rs/cross#supported-targets).
 
+_**Note:** We deliberately do not use other mechanisms to do cross-compilation. Alternatives were explored but found lacking. Docker buildx QEmu based cross-compilation for example is far too slow ([due to the emulated execution](https://github.com/multiarch/qemu-user-static/issues/176#issuecomment-1191078533)) and doesn't parallelize across multiple GitHub hosted runners. Native Rust Cargo support for cross-compilation requires you to know more about the required toolchain, to install the required tools yourself including the appropriate strip tool, to add a `.cargo/config.toml` file to your project with the paths to the tools to use (which may vary by build environment!), and as a Rust project the fact that the `cross` tool was originally developed by the Rust Embedded Working Group Tools team makes it highly attractive for our use case._
+
 _**Known issue:** [Cross-compilation is not customisable](https://github.com/NLnetLabs/.github/issues/42)_
 
 ### Inputs

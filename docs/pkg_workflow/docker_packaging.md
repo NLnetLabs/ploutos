@@ -44,7 +44,32 @@ When using the [`cross` job](./cross_compiling.md) to cross-compile your applica
 
 You can direct the pkg workflow to use pre-cross-compiled binaries by setting the `mode` to `copy` instead of the default `build` in your `docker_build_rules(_path)` input matrix.
 
-You must also however in this case make sure that your `Dockerfile` supports this.
+You must however make sure that your `Dockerfile` supports the build arguments that the pkg workflow will pass to it (see below).
 
 ### Docker related pkg workfow inputs
 
+TODO
+
+- `docker_org`
+- `docker_repo`
+- `docker_build_rules`
+- `docker_build_rules_path`
+- `docker_sanity_check_command`
+
+### Dockerfile build arguments
+
+The pkg workflow will invoke `docker buildx` passing [`--build-arg <varname>=<value>`](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for the following custom build arguments.
+
+The Docker context will be the root of a clone of the callers GitHub repository.
+
+Your `Dockerfile` MUST define corresponding [`ARG <varname>[=<default value>]`](https://docs.docker.com/engine/reference/builder/#arg) instructions for these build arguments.
+
+- `MODE=(build|copy)`: When `MODE` is `build` (the default) the `Dockerfile` should build the application from sources available in the Docker context.
+
+  When `MODE` is `copy` the pre-compiled binaries will be made available to the build process in subdirectory `dockerbin/$TARGETPLATFORM/*` of the Docker build context, where [`$TARGETPLATFORM`](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope) is a variable made available to the `Dockerfile` build process by Docker, e.g. `linux/amd64`.
+
+  For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L99.
+
+- `CARGO_ARGS=...`: Should only be used when `MODE` is `build`. Expected to be passed to the Cargo build process, e.g. `cargo build ... ${CARGO_ARGS}` or `cargo install ... ${CARGO_ARGS}`.
+
+  For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L92.
