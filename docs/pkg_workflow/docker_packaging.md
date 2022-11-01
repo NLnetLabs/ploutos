@@ -6,6 +6,8 @@
 - [Known issues](#known-issues)
 - [Outputs and publication](#outputs-and-publication)
 - [Terminology](#terminology)
+- [Docker stages, cross-compilation and build vs copy](#docker-stages-cross-compilation-and-build-vs-copy)
+- [Docker related pkg workfow inputs](#docker-related-pkg-workfow-inputs)
 
 ### Known issues
 
@@ -35,3 +37,14 @@ Docker terminology regarding the location/identity of an image published to a re
 ```
 
 Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml
+
+### Docker stages, cross-compilation and build vs copy
+
+When using the [`cross` job](./cross_compiling.md) to cross-compile your application for different architectures you do not want to build the application again when building the Docker image from the `Dockerfile`.
+
+You can direct the pkg workflow to use pre-cross-compiled binaries by setting the `mode` to `copy` instead of the default `build` in your `docker_build_rules(_path)` input matrix.
+
+You must also however in this case make sure that your `Dockerfile` supports this.
+
+### Docker related pkg workfow inputs
+
