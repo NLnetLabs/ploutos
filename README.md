@@ -12,10 +12,4 @@ In particular it provides:
 
 At the time of writing this repository contains a reusable workflow for packaging Rust projects, and a starter workflow to simplify adding the Rust packaging workflow to new projects.
 
-
-              
-    
-
-            
-
 For more information about our workflows consult the [documentation](docs/README.md) stored in this repository.
