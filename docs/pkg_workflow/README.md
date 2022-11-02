@@ -28,7 +28,7 @@ The pkg workflow was originally written for use only by NLnet Labs. As such not 
 
 - **The testing & template repository:** The https://github.com/NLnetLabs/.github-testing/ repository contains test data and workflow invocations for testing the pkg workflow and is also a GitHub template repository from which you can create your own repository with sample input files and workflow invocation to get started with the pkg workflow.
 
-- **Examples of the workflow in use:** If you're looking for examples of how to invoke and configure the pkg workflow you might want to look at one or more of the following NLnet Labs projects that use the workflow: [krill](https://github.com/NLnetLabs/krill/blob/main/.github/workflows/pkg.yml), [krill-sync](https://github.com/NLnetLabs/krill-sync/blob/main/.github/workflows/pkg.yml), [routinator](https://github.com/NLnetLabs/routinator/blob/main/.github/workflows/pkg.yml) and [rtrtr](https://github.com/NLnetLabs/rtrtr/blob/main/.github/workflows/pkg.yml)
+- **Examples of the workflow in use:** If you're looking for examples of how to invoke and configure the pkg workflow take a look at the [projects that are already using the pkg workflow](https://github.com/NLnetLabs/.github/network/dependents).
 
 ## Can I just run the pkg workflow?
 
