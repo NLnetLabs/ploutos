@@ -1,6 +1,6 @@
 # Pluotos: Minimal useful example
 
-This page shows a minimal example of using the pkg workflow to package a very simple Docker image. In fact it doesn't even package a Rust application!
+This page shows a minimal example of using the Pluotos workflow to package a very simple Docker image. In fact it doesn't even package a Rust application!
 
 **Contents:**
 - [Your repository layout](#your-repository-layout)
@@ -12,7 +12,7 @@ This page shows a minimal example of using the pkg workflow to package a very si
 
 ## Workflow summary
 
-The workflow we define below will configure the pkg workflow to:
+The workflow we define below will configure the Pluotos workflow to:
 
 - Build a Linux x86 64 architecture image from the `Dockerfile` located in the root of the callers repository.
 - Tag the created Docker image as `my_org/my_image_name:test-amd64`.
@@ -35,7 +35,7 @@ For this example we will need to create 3 files in the callers GitHub repository
 
 Now let's look at the content of these files.
 
-_**Tip:** Read [Docker packaging with the pkg workflow](./docker_packaging.md) for a deeper dive into the meaning of the Docker specific terms, inputs & values used in the examples below._
+_**Tip:** Read [Docker packaging with the Pluotos workflow](./docker_packaging.md) for a deeper dive into the meaning of the Docker specific terms, inputs & values used in the examples below._
 
 ### `.github/workflows/my_pkg_workflow.yml`
 
@@ -65,18 +65,18 @@ There are a few things to note here:
 
 2. With the ["uses"](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_iduses) key we tell GitHub Actions to invoke the NLnet Labs Rust Cargo Packaging reusable workflow located at the given URL.
 
-3. We also specify @vN denoting the version number of the pkg workflow to invoke. This corresponds to a tag in the [NLnetLabs/.github](https://github.com/NLnetLabs/.github/tags/) repository For more information about the version number see [version numbers and upgrades](./README.md#pkg-workflow-version-numbers-and-upgrades).
+3. We also specify @vN denoting the version number of the Pluotos workflow to invoke. This corresponds to a tag in the [NLnetLabs/.github](https://github.com/NLnetLabs/.github/tags/) repository For more information about the version number see [version numbers and upgrades](./README.md#pkg-workflow-version-numbers-and-upgrades).
 
 4. We provide three ["inputs"](https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-inputs-and-secrets-in-a-reusable-workflow) to the workflow as child key value pairs of the "with" key:
    - `docker_org`
    - `docker_repo`
    - `docker_build_rules_path`
 
-   **Tip:** The full set of available inputs that the pkg workflow accepts is defined in the pkg workflow itself [here](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131).
+   **Tip:** The full set of available inputs that the Pluotos workflow accepts is defined in the Pluotos workflow itself [here](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131).
 
 ### `docker-build-rules.yml`
 
-In this example the contents of the file below configurs the pkg workflow to build a Docker image for the Linux x86 64 aka `linux/amd64` target architecture. There are more options that can be used here and you can target other architectures too but we won't cover that in this simple example.
+In this example the contents of the file below configurs the Pluotos workflow to build a Docker image for the Linux x86 64 aka `linux/amd64` target architecture. There are more options that can be used here and you can target other architectures too but we won't cover that in this simple example.
 
 ```yaml
 platform: ["linux/amd64"]
