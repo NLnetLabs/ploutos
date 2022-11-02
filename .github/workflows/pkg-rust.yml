@@ -261,7 +261,7 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     outputs:
-      has_docker_secrets: ${{ steps.verify_inputs.has_docker_secrets }}
+      has_docker_secrets: ${{ steps.verify_inputs.outputs.has_docker_secrets }}
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
