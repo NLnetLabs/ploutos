@@ -1,6 +1,4 @@
-# NLnet Labs Rust Cargo Packaging reusable workflow
-
-## Cross-compiling
+# Pluotos: Cross-compiling
 
 The `cross` cross-compiling job runs before the other jobs in the pkg workflow.
 
@@ -10,7 +8,7 @@ _**Note:** We deliberately do not use other mechanisms to do cross-compilation. 
 
 _**Known issue:** [Cross-compilation is not customisable](https://github.com/NLnetLabs/.github/issues/42)_
 
-### Inputs
+## Inputs
 
 The `cross` job uses a single pkg workflow input, _either_:
 
@@ -25,7 +23,7 @@ YAML file example:
 - 'arm-unknown-linux-gnueabihf'
 ```
 
-### Outputs
+## Outputs
 
 The result of cross-compilation is a temporary artifact uploaded to GitHub Actions that will be downloaded by later jobs in the pkg workflow. This is because, as the GitHub Actions ["Storing workflow data as artifacts" docs](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) say, _"Artifacts allow you to share data between jobs in a workflow_".
 

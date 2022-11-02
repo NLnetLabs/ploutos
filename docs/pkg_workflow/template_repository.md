@@ -1,4 +1,4 @@
-# NLnet Labs Rust Cargo Packaging **template** repository
+# Pluotos: Template repository
 
 _**Tip:** If you just want to invoke our reusable packaging workflow from your own repository see the [starter workflow](./starter_workflow.md)._
 

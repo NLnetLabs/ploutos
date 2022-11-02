@@ -1,6 +1,4 @@
-# NLnet Labs Rust Cargo Packaging **reusable** workflow
-
-## Docker packaging
+# Pluotos: Docker packaging
 
 **Contents:**
 - [Known issues](#known-issues)
@@ -12,11 +10,11 @@
 - [Publication and Docker Hub secrets](#publication-and-docker-hub-secrets)
 - [Dockerfile build arguments](#dockerfile-build-arguments)
 
-### Known issues
+## Known issues
 
 - [The Docker repository to publish to is not configurable](https://github.com/NLnetLabs/.github/issues/37)
 
-### Outputs and publication
+## Outputs and publication
 
 The pkg workflow is able to output built Docker images in three ways:
 
@@ -26,7 +24,7 @@ The pkg workflow is able to output built Docker images in three ways:
 
 3. **Publish [multi-arch Docker images](https://www.docker.com/blog/multi-arch-build-and-images-the-simple-way/) AND a [Docker manifest](https://docs.docker.com/engine/reference/commandline/manifest/) to Docker Hub:** This is useful when publishing the same image for multiple architectures to enable the end user to run the image without needing to specify the desired architecture.
 
-### Terminology
+## Terminology
 
 Docker terminology regarding the location/identity of an image published to a registry (let's assume [Docker Hub](https://hub.docker.com/)) is a bit confusing. Dockers' own [official documentation](https://docs.docker.com/engine/reference/commandline/tag/) conflates the terms "image" and "tag". When configuring the pkg workflow we therefore use the following terminology:
 
@@ -40,7 +38,7 @@ Docker terminology regarding the location/identity of an image published to a re
 
 Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml
 
-### Docker stages, cross-compilation and build vs copy
+## Docker stages, cross-compilation and build vs copy
 
 When using the [`cross` job](./cross_compiling.md) to cross-compile your application for different architectures you do not want to build the application again when building the Docker image from the `Dockerfile`.
 
@@ -48,7 +46,7 @@ You can direct the pkg workflow to use pre-cross-compiled binaries by setting th
 
 You must however make sure that your `Dockerfile` supports the build arguments that the pkg workflow will pass to it (see below).
 
-### Docker related pkg workfow inputs
+## Docker related pkg workfow inputs
 
 TODO
 
@@ -62,7 +60,7 @@ TODO
 
 **Note:** There is no input for specifying the Docker tag because the tag is automatically determined based on the current Git branch/tag and architecture "shortname" (taken from the `docker_build_rules(_path)` matrix).
 
-### Docker build rules matrix
+## Docker build rules matrix
 
 A rules matrix must be provided to guide the build process. It can be provided in one of two forms:
 
@@ -109,7 +107,7 @@ include:
     mode: "copy"
 ```
 
-### Publication and Docker Hub secrets
+## Publication and Docker Hub secrets
 
 The pkg workflow supports two Docker specific secrets which can be passed to the workflow like so:
 
@@ -137,7 +135,7 @@ Best practice is to use a separately created [Docker Hub access token](https://d
 
 _**Note:** If neither of the `DOCKER_HUB_ID` and `DOCKER_HUB_TOKEN` secrets are defined then the pkg workflow will **NOT** atttempt to publish images to Docker Hub._
 
-### Dockerfile build arguments
+## Dockerfile build arguments
 
 The pkg workflow will invoke `docker buildx` passing [`--build-arg <varname>=<value>`](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for the following custom build arguments.
 

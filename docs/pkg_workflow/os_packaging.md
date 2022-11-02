@@ -1,4 +1,4 @@
-# NLnet Labs Rust Cargo Packaging reusable workflow
+# Pluotos
 
 ## O/S packaging
 

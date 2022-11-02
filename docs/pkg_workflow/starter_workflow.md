@@ -1,4 +1,4 @@
-# NLnet Labs Rust Cargo Packaging **starter** workflow
+# Pluotos: Starter workflow
 
 <img src="https://raw.githubusercontent.com/NLnetLabs/.github/main/docs/images/starter-workflow-screenshot.png" width="25%">
 

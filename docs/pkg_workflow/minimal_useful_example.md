@@ -1,6 +1,4 @@
-# NLnet Labs Rust Cargo Packaging **reusable** workflow
-
-## Minimal useful example
+# Pluotos: Minimal useful example
 
 This page shows a minimal example of using the pkg workflow to package a very simple Docker image. In fact it doesn't even package a Rust application!
 
@@ -12,7 +10,7 @@ This page shows a minimal example of using the pkg workflow to package a very si
 - [Workflow summary](#workflow-summary)
 - [Workflow outputs](#workflow-outputs)
 
-### Workflow summary
+## Workflow summary
 
 The workflow we define below will configure the pkg workflow to:
 
@@ -20,7 +18,7 @@ The workflow we define below will configure the pkg workflow to:
 - Tag the created Docker image as `my_org/my_image_name:test-amd64`.
 - Attach the created Docker image as a GitHUb Actions artifact to the caller workflow run _(as a zip file containing a tar file produced by the [`docker save`](https://docs.docker.com/engine/reference/commandline/save/) command)_.
 
-### Your repository layout
+## Your repository layout
 
 For this example we will need to create 3 files in the callers GitHub repository with the following directory layout:
 
@@ -39,7 +37,7 @@ Now let's look at the content of these files.
 
 _**Tip:** Read [Docker packaging with the pkg workflow](./docker_packaging.md) for a deeper dive into the meaning of the Docker specific terms, inputs & values used in the examples below._
 
-#### `.github/workflows/my_pkg_workflow.yml`
+### `.github/workflows/my_pkg_workflow.yml`
 
 In this example the file contents below define a workflow that GitHub Actions will run whenever a Git `push` to your repository occurs or when the workflow is invoked by you manually via the GitHub web UI (so-called `workflow_dispatch`).
 
@@ -76,7 +74,7 @@ There are a few things to note here:
 
    **Tip:** The full set of available inputs that the pkg workflow accepts is defined in the pkg workflow itself [here](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131).
 
-#### `docker-build-rules.yml`
+### `docker-build-rules.yml`
 
 In this example the contents of the file below configurs the pkg workflow to build a Docker image for the Linux x86 64 aka `linux/amd64` target architecture. There are more options that can be used here and you can target other architectures too but we won't cover that in this simple example.
 
@@ -85,7 +83,7 @@ platform: ["linux/amd64"]
 shortname: ["amd64"]
 ```
 
-#### `Dockerfile`
+### `Dockerfile`
 
 Finally, a simple Docker [`Dockerfile`](https://docs.docker.com/engine/reference/builder/) which tells Docker what the content of the built image should be. In this case it's just a simple image which prints "Hello World!" to the terminal when the built image is run.
 
@@ -94,7 +92,7 @@ FROM alpine
 CMD ["echo", "Hello World!"]
 ```
 
-### Workflow outputs
+## Workflow outputs
 
 When run and successful the workflow will have a [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) attached to the workflow run.
 

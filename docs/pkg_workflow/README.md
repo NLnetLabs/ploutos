@@ -1,6 +1,4 @@
-# NLnet Labs Rust Cargo Packaging **reusable** workflow
-
-## User guide
+# Pluotos: User guide
 
 In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Packaging **reusable** workflow (hereafter the "pkg workflow") from your own repository and how to create the supporting files needed.
 
