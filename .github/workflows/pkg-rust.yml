@@ -43,7 +43,7 @@
 # migrate Docker packaging to GitHub Actions and which is now part of this workflow.
 #
 # Images use an Alpine base image for reduced image size and thus download time, and also for faster and simpler
-# installation of dependencies (apk add is way faster and simpler than apt install for example). However Alpine is
+# installation of dependencies (apk add is way faster and simpler than apt-get install for example). However Alpine is
 # MUSL based rather than GLIBC based, so cross-compiled binaries (see below) must target MUSL when intending to be
 # used within a Docker container.
 #
@@ -173,8 +173,18 @@ on:
         required: false
         type: string
         default: false
+      docker_context_path:
+        description: "Relative path to use as the Docker build context. Defaults to the root of the git clone, i.e. '.'."
+        required: false
+        type: string
+        default: '.'
+      docker_file_path:
+        description: "Relative path to the Dockerfile to build. Defaults to the Dockerfile in the root of the git clone, i.e. './Dockerfile'."
+        required: false
+        type: string
+        default: './Dockerfile'
       docker_build_rules:
-        description: "A GitHub Actions matrix in JSON format with platform, shortname, crosstarget (required if mode is copy), mode (optional: build or copy) and cargo_args (optional) fields."
+        description: "A GitHub Actions matrix in JSON format with platform, shortname, crosstarget (required if mode is copy), mode (optional: build (default) or copy) and cargo_args (optional) fields."
         required: false
         type: string
         default: '{}'
@@ -251,6 +261,7 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     outputs:
+      has_docker_secrets: ${{ steps.verify_inputs.has_docker_secrets }}
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
@@ -264,65 +275,57 @@ jobs:
 
       - name: Load cross build rules
         if: ${{ inputs.cross_build_rules_path != '' }}
-        uses: fabasoad/yaml-json-xml-converter-action@v1.0.14
         id: transform_cross_build_rules_file
-        with:
-          path: ${{ inputs.cross_build_rules_path }}
-          from: yaml
-          to: json
+        run: |
+          ONE_LINE_JSON="$(yq -P '${{ inputs.cross_build_rules_path }}' -p=yaml -o=json | jq -c)"
+          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
 
       - name: Load Docker build rules
         if: ${{ inputs.docker_build_rules_path != '' }}
-        uses: fabasoad/yaml-json-xml-converter-action@v1.0.14
         id: transform_docker_build_rules_file
-        with:
-          path: ${{ inputs.docker_build_rules_path }}
-          from: yaml
-          to: json
+        run: |
+          ONE_LINE_JSON="$(yq -P '${{ inputs.docker_build_rules_path }}' -p=yaml -o=json | jq -c)"
+          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
 
       - name: Load package build rules
         if: ${{ inputs.package_build_rules_path != '' }}
-        uses: fabasoad/yaml-json-xml-converter-action@v1.0.14
         id: transform_package_build_rules_file
-        with:
-          path: ${{ inputs.package_build_rules_path }}
-          from: yaml
-          to: json
+        run: |
+          ONE_LINE_JSON="$(yq -P '${{ inputs.package_build_rules_path }}' -p=yaml -o=json | jq -c)"
+          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
 
       - name: Load packages test rules
         if: ${{ inputs.package_test_rules_path != '' }}
-        uses: fabasoad/yaml-json-xml-converter-action@v1.0.14
         id: transform_package_test_rules_file
-        with:
-          path: ${{ inputs.package_test_rules_path }}
-          from: yaml
-          to: json
+        run: |
+          ONE_LINE_JSON="$(yq -P '${{ inputs.package_test_rules_path }}' -p=yaml -o=json | jq -c)"
+          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
 
       - name: Pre-process rules
         id: pre_process_rules
         run: |
           if [[ "${{ inputs.cross_build_rules_path }}" != "" ]]; then
-            echo '::set-output name=cross_build_rules::${{ steps.transform_cross_build_rules_file.outputs.data }}'
+            echo "cross_build_rules=$(echo ${{ steps.transform_cross_build_rules_file.outputs.output }} | jq -c)" >> $GITHUB_OUTPUT
           else
-            echo '::set-output name=cross_build_rules::${{ inputs.cross_build_rules }}'
+            echo "cross_build_rules=$(echo '${{ inputs.cross_build_rules }}' | jq -c)" >> $GITHUB_OUTPUT
           fi
 
           if [[ "${{ inputs.docker_build_rules_path }}" != "" ]]; then
-            echo '::set-output name=docker_build_rules::${{ steps.transform_docker_build_rules_file.outputs.data }}'
+            echo "docker_build_rules=$(echo ${{ steps.transform_docker_build_rules_file.outputs.output }} | jq -c)" >> $GITHUB_OUTPUT
           else
-            echo '::set-output name=docker_build_rules::${{ inputs.docker_build_rules }}'
+            echo "docker_build_rules=$(echo '${{ inputs.docker_build_rules }}' | jq -c)" >> $GITHUB_OUTPUT
           fi
 
           if [[ "${{ inputs.package_build_rules_path }}" != "" ]]; then
-            echo '::set-output name=package_build_rules::${{ steps.transform_package_build_rules_file.outputs.data }}'
+            echo "package_build_rules=$(echo ${{ steps.transform_package_build_rules_file.outputs.output }} | jq -c)" >> $GITHUB_OUTPUT
           else
-            echo '::set-output name=package_build_rules::${{ inputs.package_build_rules }}'
+            echo "package_build_rules=$(echo '${{ inputs.package_build_rules }}' | jq -c)" >> $GITHUB_OUTPUT
           fi
 
           if [[ "${{ inputs.package_test_rules_path }}" != "" ]]; then
-            JSON='${{ steps.transform_package_test_rules_file.outputs.data }}'
+            JSON=$(echo ${{ steps.transform_package_test_rules_file.outputs.output }} | jq -c)
           else
-            JSON='${{ inputs.package_test_rules }}'
+            JSON=$(echo ${{ inputs.package_test_rules }} | jq -c)
           fi
 
           # Exclude debian:stretch because the LXC image is no longer available
@@ -334,7 +337,7 @@ jobs:
               JSON="${MODIFIED_JSON}"
             fi
           fi
-          echo "::set-output name=package_test_rules::${JSON}"
+          echo "package_test_rules=${JSON}" >> $GITHUB_OUTPUT
 
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
@@ -415,9 +418,15 @@ jobs:
               exit 1
             fi
           fi
+          
+          if [[ "${{ secrets.DOCKER_HUB_ID }}" != '' || "${{ secrets.DOCKER_HUB_TOKEN }}" != '' ]]; then
+            echo "has_docker_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_docker_secrets=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Verify Docker credentials
-        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' }}
+        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && steps.verify_inputs.outputs.has_docker_secrets }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
@@ -490,13 +499,13 @@ jobs:
         id: encode
         run: |
           ENCODED_ALL_REPO_AND_TAG_PAIRS=$(echo "${{ steps.meta.outputs.tags }}" | base64)
-          echo "::set-output name=all_repo_and_tag_pairs::${ENCODED_ALL_REPO_AND_TAG_PAIRS}"
+          echo "all_repo_and_tag_pairs=${ENCODED_ALL_REPO_AND_TAG_PAIRS}" >> $GITHUB_OUTPUT
 
           ENCODED_FIRST_REPO_AND_TAG_PAIR=$(echo "${{ fromJSON(steps.meta.outputs.json).tags[0] }}" | base64)
-          echo "::set-output name=first_repo_and_tag_pair::${ENCODED_FIRST_REPO_AND_TAG_PAIR}"
+          echo "first_repo_and_tag_pair=${ENCODED_FIRST_REPO_AND_TAG_PAIR}" >> $GITHUB_OUTPUT
 
           ENCODED_LOWER_DOCKER_ORG=$(echo "${{ inputs.docker_org }}" | tr '[:upper:]' '[:lower:]' | base64)
-          echo "::set-output name=lower_docker_org::${ENCODED_LOWER_DOCKER_ORG}"
+          echo "lower_docker_org=${ENCODED_LOWER_DOCKER_ORG}" >> $GITHUB_OUTPUT
 
 
   # -------------------------------------------------------------------------------------------------------------------
@@ -521,16 +530,17 @@ jobs:
       id: verify
       run: |
         if [[ "${{ matrix.target }}" == "no-cross" ]]; then
-          echo "::set-output name=no-cross::true"
+          echo "no-cross=true" >> $GITHUB_OUTPUT
         else
-          echo "::set-output name=no-cross::false"
+          echo "no-cross=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Checkout repository
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/checkout@v3
 
-    - name: Cache cargo cross
+    - name: Cache cargo cross if available
+      id: cache-cargo-cross
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/cache@v3
       with:
@@ -539,13 +549,15 @@ jobs:
           /home/runner/.cargo/bin/cross-util
         key: ${{ matrix.target }}-cargo-cross
 
+    - name: Install Cargo Cross if needed
+      if: ${{ steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
+      run: |
+        cargo install cross
+
     - name: Cross compile
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
-      uses: actions-rs/cargo@v1
-      with:
-        use-cross: true
-        command: build
-        args: --locked --release --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
+      run: |
+        cross build --locked --release --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
@@ -761,7 +773,6 @@ jobs:
     - name: Create the package
       env:
         MATRIX_PKG: ${{ matrix.pkg }}
-        MATRIX_IMAGE: ${{ matrix.image }}
         EXTRA_BUILD_ARGS: ${{ matrix.extra_build_args }}
         CROSS_TARGET: ${{ matrix.target }}
       run: |
@@ -876,30 +887,6 @@ jobs:
             rm -f target/debian/*.deb
 
             cargo deb --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
-
-            # https://github.com/NLnetLabs/routinator/issues/783
-            # Patch the generated DEB to have ./ paths compatible with `unattended-upgrade`:
-            pushd target/debian
-            DEB_FILE_NAME=$(ls -1 *.deb | head -n 1)
-            DATA_ARCHIVE=$(ar t ${DEB_FILE_NAME} | grep -E '^data\.tar')
-            ar x ${DEB_FILE_NAME} ${DATA_ARCHIVE}
-            tar tf ${DATA_ARCHIVE}
-            EXTRA_TAR_ARGS=
-            if [[ "${DATA_ARCHIVE}" == *.xz ]]; then
-              # Install XZ support that will be needed by TAR
-              apt install -y xz-utils
-              EXTRA_TAR_ARGS=J
-            fi
-            mkdir tar-hack
-            tar -C tar-hack -xf ${DATA_ARCHIVE}
-            pushd tar-hack
-            tar c${EXTRA_TAR_ARGS}f ../${DATA_ARCHIVE} ./*
-            popd
-            tar tf ${DATA_ARCHIVE}
-            ar r ${DEB_FILE_NAME} ${DATA_ARCHIVE}
-            popd
-
-            ls -la target/debian/
             ;;
 
           centos)
@@ -932,9 +919,20 @@ jobs:
             # [package.metadata.generate-rpm.assets] setting with only one entry changed. We don't need this with
             # cargo-deb because it handles systemd service file selection automatically based on factors like the
             # current variant in use.
-            if [ -e "${{ matrix.systemd_service_unit_file }}" ]; then
+
+            # Support the older matrix variable name for backward compatibility.
+            if [[ "${{ matrix.rpm_systemd_service_unit_file }}" != "" ]]; then
+                SYSTEMD_SERVICE_UNIT_FILE="${{ matrix.rpm_systemd_service_unit_file }}"
+            else
+                SYSTEMD_SERVICE_UNIT_FILE="${{ matrix.systemd_service_unit_file }}"
+            fi
+
+            if [ -e "${SYSTEMD_SERVICE_UNIT_FILE}" ]; then
                 mkdir -p target/rpm/
-                cp ${{ matrix.systemd_service_unit_file }} target/rpm/${MATRIX_PKG}.service
+                cp ${SYSTEMD_SERVICE_UNIT_FILE} target/rpm/${MATRIX_PKG}.service
+            elif [[ "${SYSTEMD_SERVICE_UNIT_FILE}" == *"*" ]]; then
+                mkdir -p target/rpm/
+                cp ${SYSTEMD_SERVICE_UNIT_FILE} target/rpm
             fi
 
             # Ugly hack to use an alternate base Cargo Generate RPM configuration so that the selected variant overrides
@@ -952,7 +950,21 @@ jobs:
             # uninstall script in the TOML settings using the cargo-generate-rpm --set-metadata (aka -s)
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
-              SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path  }}'
+              # Download the RPM systemd macros shell functions file fragment
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/.github/v1.0.9/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
+              curl --proto '=https' --tlsv1.2 --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
+
+              # Replace any reference to #SYSTEMD_RPM_MACROS# in the scriptlet file with the downloaded RPM systemd macros
+              # shell fragment.
+              SCRIPTLET_FILE="${{ inputs.rpm_scriptlets_path }}"
+              mv "${SCRIPTLET_FILE}" "${SCRIPTLET_FILE}.org"
+              templ=$(<${SCRIPTLET_FILE}.org)
+              value=$(<$SYSTEMD_RPM_MACROS_FILE)
+              echo "${templ//#RPM_SYSTEMD_MACROS#/$value}" > "$SCRIPTLET_FILE"
+
+              # Configure ourselves to use the updated scriptlets file as input to cargo generate-rpm.
+              SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
             fi
 
             # This shouldn't be necessary...
@@ -962,8 +974,88 @@ jobs:
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
                 ${SCRIPTLETS} \
                 ${EXTRA_CARGO_GENERATE_RPM_ARGS}
+            ;;
+        esac
 
+    - name: Post-process the package
+      run: |
+        case ${OS_NAME} in
+          debian|ubuntu)
+            # https://github.com/NLnetLabs/routinator/issues/783
+            # Patch the generated DEB to have ./ paths compatible with `unattended-upgrade`:
+            ls -la target/debian/
+
+            pushd target/debian
+            DEB_FILE_NAME=$(ls -1 *.deb | head -n 1)
+            DATA_ARCHIVE=$(ar t ${DEB_FILE_NAME} | grep -E '^data\.tar')
+            ar x ${DEB_FILE_NAME} ${DATA_ARCHIVE}
+            tar tf ${DATA_ARCHIVE}
+            EXTRA_TAR_ARGS=
+            if [[ "${DATA_ARCHIVE}" == *.xz ]]; then
+              # Install XZ support that will be needed by TAR
+              apt-get -y install -y xz-utils
+              EXTRA_TAR_ARGS=J
+            fi
+            mkdir tar-hack
+            tar -C tar-hack -xf ${DATA_ARCHIVE}
+            pushd tar-hack
+            tar c${EXTRA_TAR_ARGS}f ../${DATA_ARCHIVE} ./*
+            popd
+            tar tf ${DATA_ARCHIVE}
+            ar r ${DEB_FILE_NAME} ${DATA_ARCHIVE}
+            popd
+
+            ls -la target/debian/
+
+            pushd target/debian
+            dpkg -e ${DEB_FILE_NAME} control_files
+            dpkg -x ${DEB_FILE_NAME} data_files
+
+            for D in control_files data_files; do
+              pushd $D
+
+              echo Listing package $D and sizes
+              find . -type f -exec du -sh {} \;
+
+              echo
+              echo Printing non-binary files contained within $D
+
+              # Use grep to exclude find only non-binary files that we can print
+              find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
+
+              popd
+              rm -R $D
+            done
+            popd
+            ;;
+
+          centos)
             ls -la target/generate-rpm/
+
+            pushd target/generate-rpm
+            for F in *.rpm; do
+              echo $F
+              mkdir t
+              pushd t
+              rpm2cpio ../$F | cpio -idmv || true
+
+              echo Listing package files and sizes
+              find . -type f -exec du -sh {} \;
+
+              echo
+              echo Printing non-binary files contained within the package
+
+              # Use grep to exclude find only non-binary files that we can print
+              find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
+
+              popd
+              rm -R t
+
+              echo Printing package scriptlets
+              rpm -qp --scripts $F
+            done
+
+            popd
             ;;
         esac
 
@@ -1150,8 +1242,8 @@ jobs:
             sg lxd -c "lxc file push $HOME/nlnetlabs.list testcon/etc/apt/sources.list.d/"
             sg lxd -c "lxc exec testcon -- wget -q https://packages.nlnetlabs.nl/aptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-key add ./aptkey.asc"
-            sg lxd -c "lxc exec testcon -- apt update"
-            sg lxd -c "lxc exec testcon -- apt install -y ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- apt-get -y update"
+            sg lxd -c "lxc exec testcon -- apt-get install -y ${{ matrix.pkg }}"
 
             # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
             # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
@@ -1190,7 +1282,9 @@ jobs:
             sg lxd -c "lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}"
             ;;
           centos)
-            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}"
+            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee install.log
+            # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
+            ! grep -qE '(err|warn|fail)' install.log
             ;;
         esac
 
@@ -1211,7 +1305,9 @@ jobs:
             sg lxd -c "lxc exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}"
             ;;
           centos)
-            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}"
+            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee upgrade.log
+            # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
+            ! grep -qE '(err|warn|fail)' upgrade.log
             ;;
         esac
 
@@ -1283,16 +1379,16 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Verify inputs
+        id: verify
         run: |
-          case ${{ matrix.mode }} in
-            copy)
-              if [[ "${{ matrix.platform }}" == "" ]]; then
-                echo "::error::Matrix variable 'platform' in docker_build_rules(_path) must be a supported buildx platform. See: https://github.com/moby/buildkit#building-multi-platform-images"
-                exit 1
-              fi
+          MODE="${{ matrix.mode }}"
+
+          case ${MODE} in
+            "")
+              MODE="build"
               ;;
 
-            build)
+            build|copy)
               ;;
 
             *)
@@ -1301,22 +1397,31 @@ jobs:
               ;;
           esac
 
+          if [[ "${MODE}" == "copy" ]]; then
+            if [[ "${{ matrix.platform }}" == "" ]]; then
+              echo "::error::Matrix variable 'platform' in docker_build_rules(_path) must be a supported buildx platform. See: https://github.com/moby/buildkit#building-multi-platform-images"
+              exit 1
+            fi
+          fi
+
           if [[ "${{ matrix.shortname }}" == "" ]]; then
             echo "::error::Matrix variable 'shortname' in docker_build_rules(_path) must set and non-empty."
             exit 1
           fi
 
+          echo "mode=${MODE}" >> $GITHUB_OUTPUT
+
       - uses: docker/setup-qemu-action@v2
         # Don't use QEmu for compiling, it's way too slow on GitHub Actions.
         # Only use it for making images that will contain prebuilt binaries.
-        if: ${{ matrix.mode == 'copy' }}
+        if: ${{ steps.verify.outputs.mode == 'copy' }}
         with:
           platforms: ${{ matrix.platform }}
 
       - uses: docker/setup-buildx-action@v2
 
       - name: Download cross compiled binaries
-        if: ${{ matrix.mode == 'copy' }}
+        if: ${{ steps.verify.outputs.mode == 'copy' }}
         uses: actions/download-artifact@v3
         with:
           name: tmp-cross-binaries-${{ matrix.crosstarget }}
@@ -1326,17 +1431,11 @@ jobs:
           path: dockerbin/${{ matrix.platform }}
 
       - name: Untar the set of downloaded binaries
-        if: ${{ matrix.mode == 'copy' }}
+        if: ${{ steps.verify.outputs.mode == 'copy' }}
         run: |
           tar vpxf dockerbin/${{ matrix.platform }}/bins.tar --transform='s/.*\///' -C dockerbin/${{ matrix.platform }}/
           find dockerbin/${{ matrix.platform }}/ -type d -empty -delete
           rm dockerbin/${{ matrix.platform }}/bins.tar
-
-      - name: Log into Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_ID }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Generate architecture specific Docker image name
         id: gen
@@ -1347,7 +1446,7 @@ jobs:
           # set of architecture specific images as the version specific multi-arch manifest we will publish.
           DOCKER_REPO_AND_TAG=$(echo "${{ needs.prepare.outputs.first_repo_and_tag_pair }}" | base64 -d)
           LOWER_DOCKER_ORG=$(echo "${{ needs.prepare.outputs.lower_docker_org }}" | base64 -d)
-          echo "::set-output name=image_name::${LOWER_DOCKER_ORG}/${DOCKER_REPO_AND_TAG}-${{ matrix.shortname }}"
+          echo "image_name=${LOWER_DOCKER_ORG}/${DOCKER_REPO_AND_TAG}-${{ matrix.shortname }}" >> $GITHUB_OUTPUT
 
       # Build a single architecture specific Docker image with an explicit architecture extension in the Docker
       # tag value. We have to push it to Docker Hub otherwise we can't make the multi-arch manifest below. If the
@@ -1358,11 +1457,12 @@ jobs:
       - name: Build Docker image ${{ steps.gen.outputs.image_name }}
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ${{ inputs.docker_context_path }}
+          file: ${{ inputs.docker_file_path }}
           platforms: ${{ matrix.platform }}
           tags: ${{ steps.gen.outputs.image_name }}
           build-args: |
-            MODE=${{ matrix.mode }}
+            MODE=${{ steps.verify.outputs.mode }}
             CARGO_ARGS=${{ matrix.cargo_args }}
           load: true
 
@@ -1377,6 +1477,13 @@ jobs:
         run: |
           docker run --rm ${{ steps.gen.outputs.image_name }} ${{ inputs.docker_sanity_check_command }}
 
+      - name: Log into Docker Hub
+        if: ${{ needs.prepare.outputs.has_docker_secrets }}
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_ID }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
       # Upload the Docker image as a GitHub Actions artifact, handy when not publishing or investigating a problem
       - name: Upload built image to GitHub Actions
         uses: actions/upload-artifact@v3
@@ -1385,14 +1492,15 @@ jobs:
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
 
       - name: Publish image to Docker Hub
-        if: ${{ contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
+        if: ${{ needs.prepare.outputs.has_docker_secrets && contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v3
         with:
-          context: .
+          context: ${{ inputs.docker_context_path }}
+          file: ${{ inputs.docker_file_path }}
           platforms: ${{ matrix.platform }}
           tags: ${{ steps.gen.outputs.image_name }}
           build-args: |
-            MODE=${{ matrix.mode }}
+            MODE=${{ steps.verify.outputs.mode }}
             CARGO_ARGS=${{ matrix.cargo_args }}
           push: true
 
@@ -1405,7 +1513,7 @@ jobs:
   # Logs in to Docker Hub using secrets configured in this GitHub repository.
   docker-manifest:
     needs: [prepare, docker]
-    if: ${{ contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' && needs.prepare.outputs.docker_build_rules != '{}' }}
+    if: ${{ needs.prepare.outputs.has_docker_secrets && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
@@ -1424,8 +1532,8 @@ jobs:
           # This can then easily be used with a shell for loop in the steps below.
           REPO_AND_TAG_PAIRS=$(echo ${REPO_AND_TAG_PAIRS} | tr "\n" " " | tr -d "\n")
 
-          echo "::set-output name=repo_and_tag_pairs::${REPO_AND_TAG_PAIRS}"
-          echo "::set-output name=lower_docker_org::${LOWER_DOCKER_ORG}"
+          echo "repo_and_tag_pairs=${REPO_AND_TAG_PAIRS}" >> $GITHUB_OUTPUT
+          echo "lower_docker_org=${LOWER_DOCKER_ORG}" >> $GITHUB_OUTPUT
 
       - name: Create multi-arch manifest(s)
         run: |
