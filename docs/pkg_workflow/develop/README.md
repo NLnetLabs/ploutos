@@ -21,7 +21,7 @@ Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST 
 - [ ] 2. Create a PR in the RELEASE repo for the RELEASE branch.
 - [ ] 3. Create a matching branch in the TEST repo, let's call this the TEST branch.
 - [ ] 4. Make the desired changes to the RELEASE branch.
-- [ ] 5. In the TEST branch modify `.github/workflows/pkg.yml` so that instead of referring to `pkg-rust.yml@v1` it refers to `pkg-rust.yml@<Git ref of HEAD commit on the TEST branch>` or `pkg-rust.yml@<test branch name>`.
+- [ ] 5. In the TEST branch modify `.github/workflows/pkg.yml` so that instead of referring to `pkg-rust.yml@v2` it refers to `pkg-rust.yml@<Git ref of HEAD commit on the TEST branch>` or `pkg-rust.yml@<test branch name>`.
 - [ ] 6. Create a PR in the `.gihub-testing` repository from the TEST branch to `main`, let's call this the TEST PR.
 - [ ] 7. Repeat steps 4 and 5 until the the `Packaging` workflow run in the TEST PR passes and behaves as desired.
 - [ ] 8. Merge the TEST PR to the `main` branch.
@@ -31,7 +31,7 @@ Let's call the https://github.com/NLnetLabs/.gihub-testing/ repostiory the TEST 
 - [ ] 12. Merge the RELEASE PR to the `main` branch.
 - [ ] 13. Create the new release vX.Y.Z tag in the RELEASE repo.
 - [ ] 14. Update the v1 tag in the RELEASE repo to point to the new vX.Y.Z tag.
-- [ ] 15. Edit `.github/workflows/pkg.yml` in the `main` branch of the TEST repo to refer again to `@v1`.
+- [ ] 15. Edit `.github/workflows/pkg.yml` in the `main` branch of the TEST repo to refer again to `@v2`.
 - [ ] 16. Verify that the `Packaging` action in the TEST repo against the `main` branch passes and works as desired.
 - [ ] 17. (optional) If the MAJOR version was changed, update affected repositories that use the reusable workflow to use the new MAJOR version, including adjusting to any breaking changes introduced by the MAJOR version change.
 

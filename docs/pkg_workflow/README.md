@@ -102,7 +102,7 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
 ```
 
 _**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_
@@ -113,9 +113,9 @@ For a minimal useful example complete with step-by-step explanation of all the p
 
 ## Ploutos workflow version numbers and upgrades
 
-When fixes and improvements are made to the Ploutos workflow your workflow will benefit from them automatically. This is because on release we update the `@v1` tag to  point to refer to the latest v1.x.y release.
+When fixes and improvements are made to the Ploutos workflow your workflow will benefit from them automatically. This is because on release we update the `@vN` tags to point to the latest vN.x.y release in that major version.
 
-If a backward incompatible change were to be released it would be released as `v2` and you would need to update the `uses` line in your workfow in order to benefit from the changes in the new breaking release.
+If a backward incompatible is made in a new release the major version number will be increased, e.g. from `v2` to `v3`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
 
 ## Your application version number
 

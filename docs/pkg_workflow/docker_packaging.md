@@ -114,7 +114,7 @@ The Ploutos workflow supports two Docker specific secrets which can be passed to
 ```yaml
 jobs:
   full:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
     secrets:
       DOCKER_HUB_ID: ${{ secrets.YOUR_DOCKER_HUB_ID }}
       DOCKER_HUB_TOKEN: ${{ secrets.YOUR_DOCKER_HUB_TOKEN }}
@@ -125,7 +125,7 @@ Or, if you are willing to trust the packaging workflow with all of your secrets!
 ```yaml
 jobs:
   full:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
     secrets: inherit
 ```
 

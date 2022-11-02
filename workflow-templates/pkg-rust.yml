@@ -18,7 +18,7 @@ jobs:
     # Set @vN to the latest released version.
     # For more information see: https://github.com/NLnetLabs/.github/tree/main/docs
     #
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
 
     #
     # Docker related 'secrets' and 'with' settings are optional unless you set 'docker_build_rules' or 'docker_build_rules_path'.

@@ -52,7 +52,7 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v1
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
     with:
       docker_org: my_org
       docker_repo: my_image_name
