@@ -15,7 +15,6 @@
 ### Known issues
 
 - [The Docker repository to publish to is not configurable](https://github.com/NLnetLabs/.github/issues/37)
-- [The Dockerfile to build is not configurable](https://github.com/NLnetLabs/.github/issues/36)
 
 ### Outputs and publication
 
@@ -109,7 +108,6 @@ include:
     crosstarget: "aarch64-unknown-linux-musl"
     mode: "copy"
 ```
-
 
 ### Publication and Docker Hub secrets
 
