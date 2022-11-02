@@ -250,6 +250,11 @@ on:
       DOCKER_HUB_TOKEN:
         required: false
 
+    outputs:
+      docker_published:
+        description: "Whether publishing of Docker images was done or not."
+        value: ${{ jobs.docker.outputs.published }}
+
 defaults:
   run:
     # see: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#using-a-specific-shell
@@ -1384,6 +1389,8 @@ jobs:
   # in the docker-manifest job below.
   docker:
     if: ${{ needs.prepare.outputs.docker_build_rules != '{}' }}
+    outputs:
+      published: ${{ steps.publish.conclusion == 'success' }}
     needs: [cross, prepare]
     runs-on: ubuntu-20.04
     strategy:
@@ -1507,6 +1514,7 @@ jobs:
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
 
       - name: Publish image to Docker Hub
+        id: publish
         if: ${{ needs.prepare.outputs.has_docker_secrets && contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v3
         with:
