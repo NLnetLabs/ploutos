@@ -10,4 +10,4 @@ In particular it provides:
 | [Reusable workflows](.github/workflows/) | [GitHub Docs](https://docs.github.com/en/actions/using-workflows/reusing-workflows) |
 | [Starter workflows](workflow-templates/) | [GitHub Docs](https://docs.github.com/en/actions/using-workflows/using-starter-workflows) |
 
-At the time of writing this repository contains the [Pluotos](docs/README.md) reusable workflow for packaging Rust projects, and a starter workflow to make it easier to add Pluotos to existing GitHub projects.
+At the time of writing this repository contains the [Ploutos](docs/README.md) reusable workflow for packaging Rust projects, and a starter workflow to make it easier to add Ploutos to existing GitHub projects.

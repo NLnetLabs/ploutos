@@ -1,4 +1,4 @@
-# Pluotos: Docker packaging
+# Ploutos: Docker packaging
 
 **Contents:**
 - [Known issues](#known-issues)
@@ -16,7 +16,7 @@
 
 ## Outputs and publication
 
-The Pluotos workflow is able to output built Docker images in three ways:
+The Ploutos workflow is able to output built Docker images in three ways:
 
 1. **Output Docker images as [GitHub Actions artifacts](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) attached to the workflow run** This can be useful for testing or manual distribution or if you don't (yet) have a Docker Hub login and/or access token.
 
@@ -26,7 +26,7 @@ The Pluotos workflow is able to output built Docker images in three ways:
 
 ## Terminology
 
-Docker terminology regarding the location/identity of an image published to a registry (let's assume [Docker Hub](https://hub.docker.com/)) is a bit confusing. Dockers' own [official documentation](https://docs.docker.com/engine/reference/commandline/tag/) conflates the terms "image" and "tag". When configuring the Pluotos workflow we therefore use the following terminology:
+Docker terminology regarding the location/identity of an image published to a registry (let's assume [Docker Hub](https://hub.docker.com/)) is a bit confusing. Dockers' own [official documentation](https://docs.docker.com/engine/reference/commandline/tag/) conflates the terms "image" and "tag". When configuring the Ploutos workflow we therefore use the following terminology:
 
 ```
 # Using Docker Hub terminology, for a Docker image named nlnetlabs/krill:v0.1.2-arm64:
@@ -42,9 +42,9 @@ Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rus
 
 When using the [`cross` job](./cross_compiling.md) to cross-compile your application for different architectures you do not want to build the application again when building the Docker image from the `Dockerfile`.
 
-You can direct the Pluotos workflow to use pre-cross-compiled binaries by setting the `mode` to `copy` instead of the default `build` in your `docker_build_rules(_path)` input matrix.
+You can direct the Ploutos workflow to use pre-cross-compiled binaries by setting the `mode` to `copy` instead of the default `build` in your `docker_build_rules(_path)` input matrix.
 
-You must however make sure that your `Dockerfile` supports the build arguments that the Pluotos workflow will pass to it (see below).
+You must however make sure that your `Dockerfile` supports the build arguments that the Ploutos workflow will pass to it (see below).
 
 ## Docker related workfow inputs
 
@@ -67,7 +67,7 @@ A rules matrix must be provided to guide the build process. It can be provided i
 - `docker_build_rules` - A **JSON** object in string form, _or_
 - `docker_build_rules_path` - A path to a **YAML** file equivalent of the `cross_build_rules` JSON object.
 
-The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) in which the following Pluotos workflow specific keys may be provided:
+The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) in which the following Ploutos workflow specific keys may be provided:
 
 | Matrix Key | Description |
 |---|---|
@@ -109,7 +109,7 @@ include:
 
 ## Publication and Docker Hub secrets
 
-The Pluotos workflow supports two Docker specific secrets which can be passed to the workflow like so:
+The Ploutos workflow supports two Docker specific secrets which can be passed to the workflow like so:
 
 ```yaml
 jobs:
@@ -129,15 +129,15 @@ jobs:
     secrets: inherit
 ```
 
-If either of the `DOCKER_HUB_ID` and/or `DOCKER_HUB_TOKEN` secrets are defined, the workflow `prepare` job will attempt to login to Docker Hub using these credentials and will fail the Pluotos workflow if it is unable to login.
+If either of the `DOCKER_HUB_ID` and/or `DOCKER_HUB_TOKEN` secrets are defined, the workflow `prepare` job will attempt to login to Docker Hub using these credentials and will fail the Ploutos workflow if it is unable to login.
 
-Best practice is to use a separately created [Docker Hub access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token) for automation purposes that has minimal access rights. The Pluotos workflow needs write access but not delete access.
+Best practice is to use a separately created [Docker Hub access token](https://docs.docker.com/docker-hub/access-tokens/#create-an-access-token) for automation purposes that has minimal access rights. The Ploutos workflow needs write access but not delete access.
 
-_**Note:** If neither of the `DOCKER_HUB_ID` and `DOCKER_HUB_TOKEN` secrets are defined then the Pluotos workflow will **NOT** atttempt to publish images to Docker Hub._
+_**Note:** If neither of the `DOCKER_HUB_ID` and `DOCKER_HUB_TOKEN` secrets are defined then the Ploutos workflow will **NOT** atttempt to publish images to Docker Hub._
 
 ## Dockerfile build arguments
 
-The Pluotos workflow will invoke `docker buildx` passing [`--build-arg <varname>=<value>`](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for the following custom build arguments.
+The Ploutos workflow will invoke `docker buildx` passing [`--build-arg <varname>=<value>`](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for the following custom build arguments.
 
 The Docker context will be the root of a clone of the callers GitHub repository.
 

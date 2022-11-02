@@ -1,4 +1,4 @@
-# Pluotos: Contributor guide
+# Ploutos: Contributor guide
 
 This page is intended for people diagnosing, improving or fixing the reusable workflow itself. It is NOT intended for users of the workfow. Users should consult the [user guide](../README.md).
 

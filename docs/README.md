@@ -4,9 +4,9 @@ This repository contains [GitHub reusable workflows](https://docs.github.com/en/
 
 GitHub Actions workflows are so-called [reusable workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) if they contain a `workflow_call` trigger. This trigger enables the workflow to be called from another workflow, i.e. to be re-used.
 
-Currently this repository contains a single reusable workflow called Pluotos, and associated content.
+Currently this repository contains a single reusable workflow called Ploutos, and associated content.
 
-## Pluotos
+## Ploutos
 
 Plutos is a GitHub reusable workflow used by NLnet Labs for packaging Rust Cargo projects as DEB & RPM packages and Docker images.
 
