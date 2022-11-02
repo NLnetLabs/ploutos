@@ -238,11 +238,6 @@ on:
         required: false
         type: string
         default: ''
-      package_tests_ignore_upgrade_failure:
-        description: "Whether to ignore package upgrade failure or not. If the previous release causes errors on upgrade, set this to true."
-        required: false
-        type: boolean
-        default: false
 
     secrets:
       DOCKER_HUB_ID:
@@ -1325,7 +1320,7 @@ jobs:
         esac
 
     - name: Require successful upgrade
-      if: ${{ steps.upgrade_package.outcome == 'failure' && !inputs.package_tests_ignore_upgrade_failure }}
+      if: ${{ steps.upgrade_package.outcome == 'failure' && !matrix.ignore_upgrade_failure }}
       uses: actions/github-script@v6
       with:
         script: |
