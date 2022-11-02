@@ -387,6 +387,7 @@ jobs:
           fi
 
       - name: Verify inputs
+        id: verify_inputs
         run: |
           if [[ '${{ inputs.next_ver_label }}' == '' ]]; then
             echo "::error::Workflow input 'next_ver_label' must be non-empty if set."
