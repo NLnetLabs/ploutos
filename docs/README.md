@@ -12,8 +12,8 @@ Plutos is a GitHub reusable workflow used by NLnet Labs for packaging Rust Cargo
 
 Further reading:
 
-  - [User guide](./pkg_workflow/README.md)
-  - [Starter workflow](./pkg_workflow/starter_workflow.md)
-  - [Template repository](./pkg_workflow/template_repository.md)
-  - [Contributing](./pkg_workflow/develop/README.md)
+  - [User guide](./ploutos/README.md)
+  - [Starter workflow](./ploutos/starter_workflow.md)
+  - [Template repository](./ploutos/template_repository.md)
+  - [Contributing](./ploutos/develop/README.md)
 

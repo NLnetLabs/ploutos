@@ -4,7 +4,7 @@ This page shows a minimal example of using the Ploutos workflow to package a ver
 
 **Contents:**
 - [Your repository layout](#your-repository-layout)
-  - [`.github/workflows/my_pkg_workflow.yml`](#github-workflows-my-pkg-workflow-yml)
+  - [`.github/workflows/my_ploutos.yml`](#github-workflows-my-pkg-workflow-yml)
   - [`docker-build-rules.yml`](#docker-build-rules-yml)
   - [`Dockerfile`](#dockerfile)
 - [Workflow summary](#workflow-summary)
@@ -26,7 +26,7 @@ For this example we will need to create 3 files in the callers GitHub repository
 <your repo>/
     .github/
         workflows/
-            my_pkg_workflow.yml          <-- your workflow
+            my_ploutos.yml          <-- your workflow
     pkg/
         rules/
             docker-build-rules.yml       <-- rules for building the Docker image
@@ -37,7 +37,7 @@ Now let's look at the content of these files.
 
 _**Tip:** Read [Docker packaging with the Ploutos workflow](./docker_packaging.md) for a deeper dive into the meaning of the Docker specific terms, inputs & values used in the examples below._
 
-### `.github/workflows/my_pkg_workflow.yml`
+### `.github/workflows/my_ploutos.yml`
 
 In this example the file contents below define a workflow that GitHub Actions will run whenever a Git `push` to your repository occurs or when the workflow is invoked by you manually via the GitHub web UI (so-called `workflow_dispatch`).
 

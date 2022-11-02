@@ -61,11 +61,11 @@ flowchart LR
   prepare --> cross
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
-  click cross href "https://github.com/NLnetLabs/.github/blob/main/docs/pkg_workflow/cross_compiling.md" "Cross-compilation"
-  click pkg href "https://github.com/NLnetLabs/.github/blob/main/docs/pkg_workflow/os_packaging.md" "O/S Packaging"
-  click pkg-test href "https://github.com/NLnetLabs/.github/blob/main/docs/pkg_workflow/os_package_testing.md" "O/S Package Testing"
-  click docker href "https://github.com/NLnetLabs/.github/blob/main/docs/pkg_workflow/docker_packaging.md" "Docker Packaging"
-  click docker-manifest href "https://github.com/NLnetLabs/.github/blobmain/docs/pkg_workflow/docker_multi_arch.md" "Docker Multi-Arch Packaging"
+  click cross href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/cross_compiling.md" "Cross-compilation"
+  click pkg href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/os_packaging.md" "O/S Packaging"
+  click pkg-test href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/os_package_testing.md" "O/S Package Testing"
+  click docker href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/docker_packaging.md" "Docker Packaging"
+  click docker-manifest href "https://github.com/NLnetLabs/.github/blobmain/docs/ploutos/docker_multi_arch.md" "Docker Multi-Arch Packaging"
 ```
 
 All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
@@ -94,7 +94,7 @@ For the complete definition of the available inputs [consult the Ploutos workflo
 
 ## A simple example
 
-A simple, but not very useful, invocation of the Ploutos workflow would be a file such as `.github/workflows/my_pkg_workflow.yml` in your GitHub repository with the following content:
+A simple, but not very useful, invocation of the Ploutos workflow would be a file such as `.github/workflows/my_ploutos.yml` in your GitHub repository with the following content:
 
 ```yaml
 on:
