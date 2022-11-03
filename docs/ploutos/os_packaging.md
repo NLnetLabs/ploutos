@@ -2,6 +2,7 @@
 
 **Contents:**
 - [O/S Packaging](#os-packaging)
+- [Cargo.toml inputs](#cargotoml-inputs)
 - [Workflow inputs](#workflow-inputs)
 
 ## O/S packaging
@@ -22,6 +23,10 @@ Packaging and, if needed, compilation, take place inside a Docker container. DEB
 Package testing takes place inside [LXD container instances](https://linuxcontainers.org/lxd/docs/master/explanation/instances/) because, unlike Docker containers, they support systemd and other multi-process scenarios that you may wish to test.
 
 _**Note:** DEB and RPM packages support many different metadata fields and the native DEB and RPM tooling has many capabilities. We support only the limited subset of capabilities that we have thus far needed. If you need something that it is not yet supported please request it by creating an issue at https://github.com/NLnetLabs/.github/issues/, PRs are also welcome!_
+
+### Cargo.toml inputs
+
+Many of the settings that affect DEB and RPM packaging are taken from your `Cargo.toml` file by the [`cargo-deb`](https://github.com/kornelski/cargo-deb) and [`cargo-generate-rpm`](https://github.com/cat-in-136/cargo-generate-rpm) tools respectively. For more information read their respective documentation.
 
 ### Workflow inputs
 
