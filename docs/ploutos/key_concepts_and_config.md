@@ -4,6 +4,7 @@
 
 - [Stability promises and the Ploutos version](#stability-promises-and-the-ploutos-version)
 - [Release types and your application version](#release-types-and-your-application-version)
+- [Next dev version](#next-dev-version)
 - [Matrix rules](#matrix-rules)
 
 ## Stability promises and the Ploutos version
@@ -41,6 +42,24 @@ These are just a couple of examples of special behaviour relating to version num
 _**Known issue:** [Inconsistent determination version number determination](https://github.com/NLnetLabs/.github/issues/43)_
 
 _**Known issue:** [Version number 'v' prefixed should not be required](https://github.com/NLnetLabs/.github/issues/44)_
+
+## Next dev version
+
+The Ploutos workflow accepts an input parameter called `next_ver_label`:
+
+```yaml
+next_ver_label:
+  description: "A tag suffix that denotes an in-development rather than release version, e.g. `dev``."
+  required: false
+  type: string
+  default: dev
+```
+
+As you can see it defaults to `dev`. This relates to the notion of a "development" version of your application referred to in the previous section.
+
+When building packages or providing your source code to others to build, it is helpful to know e.g. when a bug report is submitted, which version of the application does the issue relate to? If you release version v1.2.3 of your application and then commit some more changes to version control, perhaps even build packaged versions of that "development" version, it shouldn't also report itself as v1.2.3 as that was the version that was "released" and may differ  in code and behaviour to the "development" version. But it also shouldn't report itself as v1.2.4 or v1.3.0, we don't know yet what the next version will be or what kinds of major, minor or patch differences it will contain as we haven't crafted a release yet. So instead, we update the version in `main` immediately after release to be `vX.Y.Z-dev` signifying that this is a new in-development version, not the last released version and not the next release version. And, as mentioned in the section above, this also has a necessary impact on the version inside the built DEB and RPM packages, notably the use of tilda instead of dash!
+
+If `dev` isn't the suffix you use, you can change that with the `next_ver_label` input. We don't however support at this time other schemes for signifying a dev version via the version number, only suffixing. 
 
 ## Matrix rules
 
