@@ -75,3 +75,15 @@ For steps of the packaging process that take a long time (e.g Cargo install of s
 After successful caching, subsequent invocations of the packaging workflow will proceed much faster through such steps. If the stored items expire from the cache they will of course need to be rebuilt causing the next run to be slower again.
 
 While this doesn't help much for infrequent releases, it makes a big difference when iterating your packaging settings until the resulting packages match your expectations.
+
+## Rust version
+
+The Rust version used to compile your application is not expliclity controlled anywhere in the packaging process at present.
+
+- For cross-compilation this is currently 1.64.0 from the [Ubuntu 20.04 GitHub hosted runner pre-installed software](https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2004-Readme.md).
+
+- For O/S packaging it installs latest Rust via rustup.
+
+- For Docker images it depends on how your `Dockerfile` performs the compilation.
+
+_**Known issue:** [Inconsistent Rust compiler version](https://github.com/NLnetLabs/.github/issues/52)_
