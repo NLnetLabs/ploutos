@@ -7,6 +7,7 @@
 - [Docker stages, cross-compilation and build vs copy](#docker-stages-cross-compilation-and-build-vs-copy)
 - [Workflow inputs](#docker-related-workflow-inputs)
 - [Docker build rules matrix](#docker-build-rules-matrix)
+- [Workflow outputs](#workflow-outputs)
 - [Publication and Docker Hub secrets](#publication-and-docker-hub-secrets)
 - [Dockerfile build arguments](#dockerfile-build-arguments)
 
@@ -109,6 +110,10 @@ include:
     crosstarget: "aarch64-unknown-linux-musl"
     mode: "copy"
 ```
+
+## Workflow outputs
+
+A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `tmp-docker-image-<shortname>`. The artifact will be a `zip` file, inside which will be a `tar` file called `docker-<shortname>-img.tar`. The `tar` file is the output of the [`docker save` command](https://docs.docker.com/engine/reference/commandline/save/) and can be loaded into a local Docker daemon using the [`docker load` command](https://docs.docker.com/engine/reference/commandline/load/).
 
 ## Publication and Docker Hub secrets
 
