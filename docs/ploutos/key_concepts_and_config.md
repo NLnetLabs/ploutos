@@ -70,6 +70,8 @@ GitHub will attempt to maximize the number of jobs running in parallel, and for 
 
 ## Caching and performance
 
-For steps of the packaging process that take a long time (e.g Cargo install of supporting tools such as cargo-deb, cargo-generate-rpm, cross, etc.) we use the GitHub Actions caching support to store the resulting binaries and pull them very quickly from cache on subsequent builds will proceed much faster through such steps. If they expire from the cache they will need to be rebuilt.
+For steps of the packaging process that take a long time (e.g Cargo install of supporting tools such as cargo-deb, cargo-generate-rpm, cross, etc.) we use the GitHub Actions caching support to store the resulting binaries.
+
+After successful caching, subsequent invocations of the packaging workflow will proceed much faster through such steps. If the stored items expire from the cache they will of course need to be rebuilt causing the next run to be slower again.
 
 While this doesn't help much for infrequent releases, it makes a big difference when iterating your packaging settings until the resulting packages match your expectations.
