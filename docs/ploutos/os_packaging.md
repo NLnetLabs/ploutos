@@ -64,6 +64,19 @@ The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions
 | `extra_build_args` | No | A space separated set of additional command line arguments to pass to `cargo-deb`/`cargo build`.
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to use. Only needed when there are more than one file to avoid having to specify multiple almost duplicate `cargo-generate-rpm` `asset` tables in `Cargo.toml` just to select a different (set of) systemd service files. A single file will be copied to `target/rpm/<pkg>.service`. Multiple files will be copied to `target/rpm/` with their names unchanged. The `cargo-generate-rpm` `assets` table in `Cargo.toml` should reference the correct `target/rpm/` path(s). Note that there is no DEB equivalent as `cargo-deb` handles systemd file selection automatically based on factors like the "variant" to use. |
 
+### Pre-installed packages
+
+Some limited base development tools are installed prior to Rust compilation to support cases where a native library must be built for a dependency.
+
+| `os_name` | Packages installed |
+|---|---|
+| `debian` or `ubuntu` | `binutils`, `build-essential` and `pkg-config` |
+| `centos` | `Development Tools` |
+
+### Special cases
+
+- **Centos 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work.
+
 ### Workflow Outputs
 
 A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `<pkg>_<os_name>_<os_rel>_<target>`. The artifact will be a `zip` file, inside which will either be `generate-rpm/*.rpm` or `debian/*.deb`.
