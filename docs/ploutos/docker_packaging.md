@@ -57,8 +57,8 @@ You must however make sure that your `Dockerfile` supports the build arguments t
 |---|---|---|---|
 | `docker_org` | string | Yes | E.g. `nlnetlabs`. |
 | `docker_repo` | string | Yes | E.g. `krill`. |
-| `docker_build_rules` | string | No | See below. If not provided, `docker_build_rules_path` must be provided. |
-| `docker_build_rules_path` | string | No | See below. If not provided, `docker_build_rules` must be provided. |
+| `docker_build_rules` | string | No* | See below. If not provided, `docker_build_rules_path` must be provided. |
+| `docker_build_rules_path` | string | No* | See below. If not provided, `docker_build_rules` must be provided. |
 | `docker_sanity_check_command` | string | No | A command to pass to `docker run`. If it returns a non-zero exit code it will cause the packaging workflow to fail. The command is intended to be a simple sanity check of the built image and should return quickly. It will only be run against images built for the x86_64 architecture as in order for `docker run` to work the image CPU architecture must match the host runner CPU architecture. As such when building images for non-x86_64 architectures it does **NOT** verify that ALL built images are sane. |
 | `docker_file_path` | string | No | The path relative to the Git checkout to the `Dockerfile`. Defaults to `./Dockerfile.` |
 | `docker_context_path` | string | No | The path relative to the Git checkout to use as the Docker context. Defaults to `.`. |
@@ -74,13 +74,13 @@ A rules matrix must be provided to guide the build process. It can be provided i
 
 The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) in which the following Ploutos workflow specific keys may be provided:
 
-| Matrix Key | Description |
-|---|---|
-| `platform` | Set the [target platform for the build](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform), e.g. `linux/amd64`. See [^1], [^2] and [^3]. |
-| `shortname` | Suffixes the tag of the architecture specific "manifest" image with this value, e.g. `amd64`. |
-| `crosstarget` | (optional) Used to download the correct cross-compiled binary GitHub Actions artifact. Only used when `mode` is `copy`. |
-| `mode` | (optional) `copy` (for cross-compiled targets) or `build` (default). Passed through to the `Dockerfile` as build arg `MODE`. |
-| `cargo_args` | (optional) Can be used when testing, e.g. set to `--no-default-features` to speed up the application build. Passed through to the Dockerfile as build arg `CARGO_ARGS`. |
+| Matrix Key | Required | Description |
+|---|---|---|
+| `platform` | Yes | Set the [target platform for the build](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform), e.g. `linux/amd64`. See [^1], [^2] and [^3]. |
+| `shortname` | Yes | Suffixes the tag of the architecture specific "manifest" image with this value, e.g. `amd64`. |
+| `crosstarget` | No | Used to determine the correct cross-compiled binary GitHub Actions artifact to download. Only used when `mode` is `copy`. |
+| `mode` | No | `copy` (for cross-compiled targets) or `build` (default). Passed through to the `Dockerfile` as build arg `MODE`. |
+| `cargo_args` | No | Can be used when testing, e.g. set to `--no-default-features` to speed up the application build. Passed through to the Dockerfile as build arg `CARGO_ARGS`. |
 
 [^1]: https://go.dev/doc/install/source#environment (from [^4])
 [^2]: https://github.com/containerd/containerd/blob/v1.4.3/platforms/database.go#L83

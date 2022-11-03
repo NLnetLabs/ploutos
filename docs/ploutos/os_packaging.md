@@ -4,6 +4,8 @@
 - [O/S Packaging](#os-packaging)
 - [Cargo.toml inputs](#cargotoml-inputs)
 - [Workflow inputs](#workflow-inputs)
+- [Package build rules](#package-build-rules)
+- [Workflow outputs](#workflow-outputs)
 
 ## O/S packaging
 
@@ -32,18 +34,36 @@ Many of the settings that affect DEB and RPM packaging are taken from your `Carg
 
 Note: The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
 
-| Input | Type | Package Type | Description |
+| Input | Type | Required | Description |
 |---|---|---|---|
-| `package_build_rules` | string | All | See below. |
-| `package_build_rules_path` | string | All | See below. |
-| `package_test_rules` | string | All | See below. |
-| `package_test_rules_path` | string | All | See below. |
-| `package_test_scripts_path` | string | All | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
-| `deb_extra_build_packages` | string | DEB | A space separated set of additional Debian packages to install when (not cross) compiling. |
-| `deb_maintainer` | string | DEB | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. |
-| `rpm_extra_build_packages` | string | RPM | A space separated set of additional RPM packages to install when (not cross) compiling. |
-| `rpm_scriptlets_path` | string | RPM | The path to a TOML file defining one or more of pre_install_script, post_install_script and/or post_uninstall_script. |
+| `package_build_rules` | string | No* | See below. If not provided, `package_build_rules_path` must be provided. |
+| `package_build_rules_path` | string | No* | See below. If not provided, `package_build_rules` must be provided. |
+| `package_test_rules` | string | No* | See below. If not provided, `package_test_rules_path` must be provided. |
+| `package_test_rules_path` | string | No* | See below. If not provided, `package_test_rules` must be provided. |
+| `package_test_scripts_path` | string | No | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
+| `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install when (not cross) compiling. |
+| `deb_maintainer` | string | No | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. |
+| `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install when (not cross) compiling. |
+| `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of pre_install_script, post_install_script and/or post_uninstall_script. |
 
-### Outputs
+### Package build rules
 
-TODO
+A rules matrix must be provided to guide the packaging process. It can be provided in one of two forms:
+
+  - `package_build_rules` - A JSON object in string form, or
+  - `package_build_rules_path` - A path to a YAML file equivalent of the `package_build_rules` JSON object.
+
+The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) in which the following Ploutos workflow specific keys may be provided:
+
+| Matrix Key | Required | Description |
+|---|---|---|
+| `pkg` | Yes | Used in various places. See below. |
+| `image` | Yes | Specifies the Docker image used by GitHub Actions to run the job in which your application will be built (when not cross-compiled) and packaged. Has the form `<os_name>:<os_rel>` (e.g. `ubuntu:jammy`, `debian:buster`, `centos:7`, etc). Also see `os` below. |
+| `target` | Yes | Should be `x86_64` If `x86_64` the Rust application will be compiled using `cargo-deb` (for DEB) or `cargo build` (for RPM) and stripped. Otherwise it will be used to determine the correct cross-compiled binary GitHub Actions artifact to download. |
+| `os` | No | Overrides the value of `image` when determining `os_name` and `os_rel`.
+| `extra_build_args` | No | A space separated set of additional command line arguments to pass to `cargo-deb`/`cargo build`.
+| `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to use. Only needed when there are more than one file to avoid having to specify multiple almost duplicate `cargo-generate-rpm` `asset` tables in `Cargo.toml` just to select a different (set of) systemd service files. A single file will be copied to `target/rpm/<pkg>.service`. Multiple files will be copied to `target/rpm/` with their names unchanged. The `cargo-generate-rpm` `assets` table in `Cargo.toml` should reference the correct `target/rpm/` path(s). Note that there is no DEB equivalent as `cargo-deb` handles systemd file selection automatically based on factors like the "variant" to use. |
+
+### Workflow Outputs
+
+A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `<pkg>_<os_name>_<os_rel>_<target>`. The artifact will be a `zip` file, inside which will either be `generate-rpm/*.rpm` or `debian/*.deb`.
