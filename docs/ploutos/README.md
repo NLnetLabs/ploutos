@@ -88,10 +88,10 @@ The core parts of the workflow are not specific to GitHub but instead just invok
 1. Decide which package types you want to create.
 2. Determine which [inputs](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131) you need to provide to the Ploutos workflow.
 3. Create the files in your repository that will be referenced by the inputs.
-4. Call the Ploutos workflow from your own workflow with the chosen inputs.
-5. Run your workflow.
+4. Call the Ploutos workflow from your own workflow with the chosen inputs _(by hand, via the [starter workflow](/.starter_workflow.md), or by cloning the [template repository](https://github.com/NLnetLabs/.github-testing/))_.
+5. Run your workflow _(e.g. triggered by a push, or use the GitHUb [`workflow_dispatch` manual trigger](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow))_.
 6. Use the created packages:
-   - DEB and RPM packages will be attached as artifacts to the workflow run.
+   - DEB and RPM packages will be attached as artifacts to the workflow run that you can [download](https://docs.github.com/en/actions/managing-workflow-runs/downloading-workflow-artifacts).
    - Docker images will have been published to Docker Hub.
 7. (optional) Publish your DEB and RPM packages to a repository somewhere.
 
