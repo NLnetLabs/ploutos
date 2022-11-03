@@ -72,6 +72,14 @@ flowchart LR
 
 All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
 
+Note that Git checkout is **NOT** done by the caller. Instead Ploutos checks out the source code at multiple different points in the workflow:
+
+- In `prepare` to be able to load rule files from the checked out files.
+- In `cross` to have the application files to build available on the GH runner.
+- In `pkg` to have the application files to build available in the container.
+- In `pkg-test` to have the test script to run available for copying into the LXC container.
+- In `docker` to have the `Dockerfile` and Docker context files available for building.
+
 Only the packaging types that you request (via the workflow call parameters) will actually be run, i.e. you can build only DEB packages, or only RPM and Docker, and cross-compile or not as needed.
 
 - `prepare` - checks if the given inputs look roughly okay.
