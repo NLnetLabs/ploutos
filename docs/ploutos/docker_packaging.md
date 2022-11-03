@@ -147,3 +147,14 @@ Your `Dockerfile` MUST define corresponding [`ARG <varname>[=<default value>]`](
 | `MODE=build` | The `Dockerfile` should build the application from sources available in the Docker context. |
 | `MODE=copy` | The pre-compiled binaries will be made available to the build process in subdirectory `dockerbin/$TARGETPLATFORM/*` of the Docker build context, where [`$TARGETPLATFORM`](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope) is a variable made available to the `Dockerfile` build process by Docker, e.g. `linux/amd64`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L99. |
 | `CARGO_ARGS=...` | Only relevant when `MODE` is `build`. Expected to be passed to the Cargo build process, e.g. `cargo build ... ${CARGO_ARGS}` or `cargo install ... ${CARGO_ARGS}`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L92. |
+
+## Generated tags
+
+As stated above there is no way to manually control the tag given to the created Docker images. The images need to have distinct tags per architecture and per version/release type. For these reasons the workflow determines the tag itself. Possible tags that the workflow can generate are:
+
+| Image Name | Archtecture Specific Tag | Multi-Arch Tag | Conditions |
+|---|---|---|---|
+| `<docker_org>/<docker_repo>` | `:vX.Y.Z-<shortname>` | `:vX.Y.Z` | No dash `-` in git ref |
+| `<docker_org>/<docker_repo>` | `:unstable-<shortname>` | `:unstable` | Branch is `main` |
+| `<docker_org>/<docker_repo>` | `:latest-<shortname>` | `:latest` | No dash `-` in git ref and not `main` [^1] |
+| `<docker_org>/<docker_repo>` | `:test-<shortname>` | `:test` | Neither `main` nor `vX.Y.Z` tag |
