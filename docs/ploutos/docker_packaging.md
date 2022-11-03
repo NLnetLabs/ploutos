@@ -7,9 +7,10 @@
 - [Docker stages, cross-compilation and build vs copy](#docker-stages-cross-compilation-and-build-vs-copy)
 - [Workflow inputs](#docker-related-workflow-inputs)
 - [Docker build rules matrix](#docker-build-rules-matrix)
+- [Dockerfile build arguments](#dockerfile-build-arguments)
+- [Generated image names](#generated-image-names)
 - [Workflow outputs](#workflow-outputs)
 - [Publication and Docker Hub secrets](#publication-and-docker-hub-secrets)
-- [Dockerfile build arguments](#dockerfile-build-arguments)
 
 ## Known issues
 
@@ -111,9 +112,36 @@ include:
     mode: "copy"
 ```
 
+## Dockerfile build arguments
+
+The Ploutos workflow will invoke `docker buildx` passing [`--build-arg <varname>=<value>`](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for the following custom build arguments.
+
+The Docker context will be the root of a clone of the callers GitHub repository.
+
+Your `Dockerfile` MUST define corresponding [`ARG <varname>[=<default value>]`](https://docs.docker.com/engine/reference/builder/#arg) instructions for these build arguments.
+
+| Build Arg | Description |
+|---|---|
+| `MODE=build` | The `Dockerfile` should build the application from sources available in the Docker context. |
+| `MODE=copy` | The pre-compiled binaries will be made available to the build process in subdirectory `dockerbin/$TARGETPLATFORM/*` of the Docker build context, where [`$TARGETPLATFORM`](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope) is a variable made available to the `Dockerfile` build process by Docker, e.g. `linux/amd64`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L99. |
+| `CARGO_ARGS=...` | Only relevant when `MODE` is `build`. Expected to be passed to the Cargo build process, e.g. `cargo build ... ${CARGO_ARGS}` or `cargo install ... ${CARGO_ARGS}`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L92. |
+
+## Generated image names
+
+As stated above there is no way to manually control the tag given to the created Docker images. The images need to have distinct tags per architecture and per version/release type. For these reasons the workflow determines the tag itself. Possible tags that the workflow can generate are:
+
+| Image Name | Archtecture Specific Tag | Multi-Arch Tag | Conditions |
+|---|---|---|---|
+| `<docker_org>/<docker_repo>` | `:vX.Y.Z-<shortname>` | `:vX.Y.Z` | No dash `-` in git ref |
+| `<docker_org>/<docker_repo>` | `:unstable-<shortname>` | `:unstable` | Branch is `main` |
+| `<docker_org>/<docker_repo>` | `:latest-<shortname>` | `:latest` | No dash `-` in git ref and not `main` |
+| `<docker_org>/<docker_repo>` | `:test-<shortname>` | `:test` | Neither `main` nor `vX.Y.Z` tag |
+
 ## Workflow outputs
 
 A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `tmp-docker-image-<shortname>`. The artifact will be a `zip` file, inside which will be a `tar` file called `docker-<shortname>-img.tar`. The `tar` file is the output of the [`docker save` command](https://docs.docker.com/engine/reference/commandline/save/) and can be loaded into a local Docker daemon using the [`docker load` command](https://docs.docker.com/engine/reference/commandline/load/).
+
+If the required secrets are defined (see below), and the git ref is either the `main` branch or a `v*` tag, then the Docker image will be published to Docker Hub with the generated image name (see above).
 
 ## Publication and Docker Hub secrets
 
@@ -143,27 +171,3 @@ Best practice is to use a separately created [Docker Hub access token](https://d
 
 _**Note:** If neither of the `DOCKER_HUB_ID` and `DOCKER_HUB_TOKEN` secrets are defined then the Ploutos workflow will **NOT** atttempt to publish images to Docker Hub._
 
-## Dockerfile build arguments
-
-The Ploutos workflow will invoke `docker buildx` passing [`--build-arg <varname>=<value>`](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for the following custom build arguments.
-
-The Docker context will be the root of a clone of the callers GitHub repository.
-
-Your `Dockerfile` MUST define corresponding [`ARG <varname>[=<default value>]`](https://docs.docker.com/engine/reference/builder/#arg) instructions for these build arguments.
-
-| Build Arg | Description |
-|---|---|
-| `MODE=build` | The `Dockerfile` should build the application from sources available in the Docker context. |
-| `MODE=copy` | The pre-compiled binaries will be made available to the build process in subdirectory `dockerbin/$TARGETPLATFORM/*` of the Docker build context, where [`$TARGETPLATFORM`](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope) is a variable made available to the `Dockerfile` build process by Docker, e.g. `linux/amd64`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L99. |
-| `CARGO_ARGS=...` | Only relevant when `MODE` is `build`. Expected to be passed to the Cargo build process, e.g. `cargo build ... ${CARGO_ARGS}` or `cargo install ... ${CARGO_ARGS}`. For an example see https://github.com/NLnetLabs/routinator/blob/v0.11.3/Dockerfile#L92. |
-
-## Generated tags
-
-As stated above there is no way to manually control the tag given to the created Docker images. The images need to have distinct tags per architecture and per version/release type. For these reasons the workflow determines the tag itself. Possible tags that the workflow can generate are:
-
-| Image Name | Archtecture Specific Tag | Multi-Arch Tag | Conditions |
-|---|---|---|---|
-| `<docker_org>/<docker_repo>` | `:vX.Y.Z-<shortname>` | `:vX.Y.Z` | No dash `-` in git ref |
-| `<docker_org>/<docker_repo>` | `:unstable-<shortname>` | `:unstable` | Branch is `main` |
-| `<docker_org>/<docker_repo>` | `:latest-<shortname>` | `:latest` | No dash `-` in git ref and not `main` |
-| `<docker_org>/<docker_repo>` | `:test-<shortname>` | `:test` | Neither `main` nor `vX.Y.Z` tag |
