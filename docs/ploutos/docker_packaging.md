@@ -48,8 +48,6 @@ You must however make sure that your `Dockerfile` supports the build arguments t
 
 ## Docker related workfow inputs
 
-TODO
-
 | Input | Type | Description |
 |---|---|---|
 | `docker_org` | string | E.g. `nlnetlabs`. |
