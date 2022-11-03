@@ -83,6 +83,8 @@ Only the packaging types that you request (via the workflow call parameters) wil
 - [`docker`](./docker_packaging.md) - builds and publishes one or more Docker images.
 - [`docker-manifest`](./docker_packaging.md) - publishes a combined Docker Manifest that groups architecture specific variants of the same image under a single Docker tag.
 
+The core parts of the workflow are not specific to GitHub but instead just invoke Rust ecosystem tools like [`cargo`](https://doc.rust-lang.org/cargo/), [`cross`](https://github.com/cross-rs/cross), [`cargo-deb`](https://github.com/kornelski/cargo-deb#readme) and [`cargo-generate-rpm`](https://github.com/cat-in-136/cargo-generate-rpm), and setup the correct conditions for invoking those tools, and the testing part invokes tools such as [`lxd` & `lxc`](https://linuxcontainers.org/), `apt` and `yum` which are also not GitHub specific. And of course there are the parts that invoke the `docker` command. The GitHub specific part is the pipeline that ties all these steps together and runs pieces in parallel and passes inputs in and outputs out.
+
 ## How can I use it?
 
 1. Decide which package types you want to create.
