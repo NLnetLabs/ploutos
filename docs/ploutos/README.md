@@ -12,9 +12,6 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
 - [A simple example](#a-simple-example)
-- [A useful example](#a-useful-example)
-- [Ploutos workflow version numbers and upgrades](#ploutos-workflow-version-numbers-and-upgrades)
-- [Your application version number](#your-application-version-number)
 - [Creating specific package types](#creating-specific-package-types)
 
 ## Why use Ploutos?
@@ -113,29 +110,11 @@ jobs:
 
 _**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_
 
-## A useful example
+For a more useful example complete with step-by-step explanation of all the pieces see [this page](./minimal_useful_example.md).
 
-For a minimal useful example complete with step-by-step explanation of all the pieces see [this page](./minimal_useful_example.md).
+## General configuration
 
-## Ploutos workflow version numbers and upgrades
-
-When fixes and improvements are made to the Ploutos workflow your workflow will benefit from them automatically. This is because on release we update the `@vN` tags to point to the latest vN.x.y release in that major version.
-
-If a backward incompatible is made in a new release the major version number will be increased, e.g. from `v2` to `v3`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
-
-## Your application version number
-
-The Ploutos workflow differentiates between "release", "pre-release", "unstable" and "development" versions of your application.
-
-For example, an `XXX-rc1` (a "pre-release" or "release candidate") version defined in `Cargo.toml` requires special treatment for O/S packages as it should be considered older than `XXX` but won't be unless the dash `-` is replaced by a tilda `~`. Contrary to that, version `XXX-dev` (a "development" version) should be considered NEWER than `XXX` so SHOULD have a dash rather than a tilda. Also, `Cargo.toml` cannot contain tilda characters in the version number string so we have to handle this ourselves.
-
-Further, when publishing to Docker Hub one wouldn't necessarily want the latest and greatest `main` branch code to be published as the Docker tag `latest` as users will automatically be upgraded to that if they don't provide a version number and do `docker run` (on a machine that has no version of the image yet locally) or do `docker pull` (to fetch the latest). There can still be value in letting users run the bleeding edge version for testing purposes and doing the Docker packaging for them, so we publish Docker images built from a `main` branch as tag `unstable`.
-
-These are just a couple of examples of special behaviour relating to version numbers.
-
-_**Known issue:** [Inconsistent determination version number determination](https://github.com/NLnetLabs/.github/issues/43)_
-
-_**Known issue:** [Version number 'v' prefixed should not be required](https://github.com/NLnetLabs/.github/issues/44)_
+Read [this page](./key_concepts_and_config.md) more about key concepts and general configuration not specific to any single packaging type.
 
 ## Creating specific package types
 
@@ -144,4 +123,3 @@ To learn more about how to build a particular package type using the Ploutos wor
 - [Cross compiling](./cross_compiling.md)
 - [Creating O/S packages](./os_packaging.md)
 - [Creating Docker images](./docker_packaging.md)
-
