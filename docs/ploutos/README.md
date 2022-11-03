@@ -3,6 +3,7 @@
 In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Packaging **reusable** workflow (hereafter the "Ploutos workflow") from your own repository and how to create the supporting files needed.
 
 **Contents:**
+- [Why use Ploutos?](#why-use-ploutos)
 - [Known issues](#known-issues)
 - [See also](#see-also)
 - [Can I just run the Ploutos workflow?](#can-i-just-run-the-pkg-workflow)
@@ -15,6 +16,9 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [Ploutos workflow version numbers and upgrades](#ploutos-workflow-version-numbers-and-upgrades)
 - [Your application version number](#your-application-version-number)
 - [Creating specific package types](#creating-specific-package-types)
+
+## Why use Ploutos?
+Ploutos simplifies the creation of Debian, RPM and Docker packages for your Rust projects. You can call it in your project's workflow, by using [Github's reusable workflow feature](https://docs.github.com/en/actions/using-workflows/reusing-workflows). By reusing Ploutus, you can focus on the packaging specifics that matter for your project, instead of duplicating the foundation in every project.
 
 ## Known issues
 
