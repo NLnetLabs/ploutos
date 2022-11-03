@@ -12,6 +12,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
 - [A simple example](#a-simple-example)
+- [Key concepts and general configuration](#key-concepts-and-general-configuration)
 - [Creating specific package types](#creating-specific-package-types)
 
 ## Why use Ploutos?
@@ -112,7 +113,7 @@ _**Note:** this will **NOT** actually build any packages as it doesn't indicate 
 
 For a more useful example complete with step-by-step explanation of all the pieces see [this page](./minimal_useful_example.md).
 
-## General configuration
+## Key concepts and general configuration
 
 Read [this page](./key_concepts_and_config.md) more about key concepts and general configuration not specific to any single packaging type.
 
