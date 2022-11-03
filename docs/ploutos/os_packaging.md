@@ -70,6 +70,8 @@ The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions
 
 Some limited base development tools are installed prior to Rust compilation to support cases where a native library must be built for a dependency.
 
+Add more packages using the `deb_extra_build_packages` and `rpm_extra_build_packages` workflow inputs.
+
 | `os_name` | Packages installed |
 |---|---|
 | `debian` or `ubuntu` | `binutils`, `build-essential` and `pkg-config` |
