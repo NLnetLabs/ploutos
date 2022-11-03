@@ -21,6 +21,8 @@ Packaging and, if needed, compilation, take place inside a Docker container. DEB
 
 Package testing takes place inside [LXD container instances](https://linuxcontainers.org/lxd/docs/master/explanation/instances/) because, unlike Docker containers, they support systemd and other multi-process scenarios that you may wish to test.
 
+_**Note:** DEB and RPM packages support many different metadata fields and the native DEB and RPM tooling has many capabilities. We support only the limited subset of capabilities that we have thus far needed. If you need something that it is not yet supported please request it by creating an issue at https://github.com/NLnetLabs/.github/issues/, PRs are also welcome!_
+
 ### Workflow inputs
 
 Note: The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
