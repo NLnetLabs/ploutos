@@ -93,6 +93,7 @@ The core parts of the workflow are not specific to GitHub but instead just invok
 6. Use the created packages:
    - DEB and RPM packages will be attached as artifacts to the workflow run.
    - Docker images will have been published to Docker Hub.
+7. (optional) Publish your DEB and RPM packages to a repository somewhere.
 
 For the complete definition of the available inputs [consult the Ploutos workflow source code](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131).
 
