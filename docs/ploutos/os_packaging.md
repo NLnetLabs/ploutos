@@ -1,5 +1,9 @@
 # Ploutos
 
+**Contents:**
+- [O/S Packaging](#os-packaging)
+- [Workflow inputs](#workflow-inputs)
+
 ## O/S packaging
 
 The Ploutos workflow can package your Rust Cargo application as one or both of the following common Linux O/S package formats:
@@ -17,19 +21,21 @@ Packaging and, if needed, compilation, take place inside a Docker container. DEB
 
 Package testing takes place inside [LXD container instances](https://linuxcontainers.org/lxd/docs/master/explanation/instances/) because, unlike Docker containers, they support systemd and other multi-process scenarios that you may wish to test.
 
-### Inputs
+### Workflow inputs
 
-Inputs to the Ploutos workflow common to all package types are:
+Note: The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
 
-TODO
-
-Inputs to the Ploutos workflow specific to DEB packaging are:
-
-TODO
-
-Inputs to the Ploutos workflow specific to RPM packaging are:
-
-TODO
+| Input | Type | Package Type | Description |
+|---|---|---|---|
+| `package_build_rules` | string | All | See below. |
+| `package_build_rules_path` | string | All | See below. |
+| `package_test_rules` | string | All | See below. |
+| `package_test_rules_path` | string | All | See below. |
+| `package_test_scripts_path` | string | All | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
+| `deb_extra_build_packages` | string | DEB | A space separated set of additional Debian packages to install when (not cross) compiling. |
+| `deb_maintainer` | string | DEB | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. |
+| `rpm_extra_build_packages` | string | RPM | A space separated set of additional RPM packages to install when (not cross) compiling. |
+| `rpm_scriptlets_path` | string | RPM | The path to a TOML file defining one or more of pre_install_script, post_install_script and/or post_uninstall_script. |
 
 ### Outputs
 
