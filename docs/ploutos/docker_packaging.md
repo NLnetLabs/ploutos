@@ -156,5 +156,5 @@ As stated above there is no way to manually control the tag given to the created
 |---|---|---|---|
 | `<docker_org>/<docker_repo>` | `:vX.Y.Z-<shortname>` | `:vX.Y.Z` | No dash `-` in git ref |
 | `<docker_org>/<docker_repo>` | `:unstable-<shortname>` | `:unstable` | Branch is `main` |
-| `<docker_org>/<docker_repo>` | `:latest-<shortname>` | `:latest` | No dash `-` in git ref and not `main` [^1] |
+| `<docker_org>/<docker_repo>` | `:latest-<shortname>` | `:latest` | No dash `-` in git ref and not `main` |
 | `<docker_org>/<docker_repo>` | `:test-<shortname>` | `:test` | Neither `main` nor `vX.Y.Z` tag |
