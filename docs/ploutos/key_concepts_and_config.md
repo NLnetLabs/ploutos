@@ -6,6 +6,7 @@
 - [Release types and your application version](#release-types-and-your-application-version)
 - [Next dev version](#next-dev-version)
 - [Matrix rules](#matrix-rules)
+- [Caching and performance](#caching-and-performance)
 
 ## Stability promises and the Ploutos version
 
@@ -66,3 +67,9 @@ If `dev` isn't the suffix you use, you can change that with the `next_ver_label`
 Several of the inputs to the Ploutus workflow are of "matrix" type. These matrices are used with [GitHub matrix strategies](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) to parallelize the packaging process.
 
 GitHub will attempt to maximize the number of jobs running in parallel, and for each permutation of the matrix given to a particular job it will launch another parallel instance of the same workflow job to process that particular input permutation.
+
+## Caching and performance
+
+For steps of the packaging process that take a long time (e.g Cargo install of supporting tools such as cargo-deb, cargo-generate-rpm, cross, etc.) we use the GitHub Actions caching support to store the resulting binaries and pull them very quickly from cache on subsequent builds will proceed much faster through such steps. If they expire from the cache they will need to be rebuilt.
+
+While this doesn't help much for infrequent releases, it makes a big difference when iterating your packaging settings until the resulting packages match your expectations.
