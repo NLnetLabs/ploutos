@@ -563,7 +563,7 @@ jobs:
     - name: Cross compile
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
       run: |
-        cross build --locked --release --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
+        cross build --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
       if: ${{ steps.verify.outputs.no-cross == 'false' }}
