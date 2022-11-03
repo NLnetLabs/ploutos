@@ -5,6 +5,8 @@
 - [Cargo.toml inputs](#cargotoml-inputs)
 - [Workflow inputs](#workflow-inputs)
 - [Package build rules](#package-build-rules)
+- [Pre-installed package](#pre-installed-packages)
+- [Special cases](#special-cases)
 - [Workflow outputs](#workflow-outputs)
 
 ## O/S packaging
