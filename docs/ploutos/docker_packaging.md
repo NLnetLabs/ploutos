@@ -5,7 +5,7 @@
 - [Outputs and publication](#outputs-and-publication)
 - [Terminology](#terminology)
 - [Docker stages, cross-compilation and build vs copy](#docker-stages-cross-compilation-and-build-vs-copy)
-- [Docker related workflow inputs](#docker-related-workflow-inputs)
+- [Workflow inputs](#docker-related-workflow-inputs)
 - [Docker build rules matrix](#docker-build-rules-matrix)
 - [Publication and Docker Hub secrets](#publication-and-docker-hub-secrets)
 - [Dockerfile build arguments](#dockerfile-build-arguments)
@@ -47,15 +47,19 @@ You can direct the Ploutos workflow to use pre-cross-compiled binaries by settin
 
 You must however make sure that your `Dockerfile` supports the build arguments that the Ploutos workflow will pass to it (see below).
 
-## Docker related workfow inputs
+## Workfow inputs
 
-| Input | Type | Description |
-|---|---|---|
-| `docker_org` | string | E.g. `nlnetlabs`. |
-| `docker_repo` | string | E.g. `krill`. |
-| `docker_build_rules` | string | See below. |
-| `docker_build_rules_path` | string | See below. |
-| `docker_sanity_check_command` | string | A command to pass to `docker run`. If it returns a non-zero exit code it will cause the packaging workflow to fail. The command is intended to be a simple sanity check of the built image and should return quickly. It will only be run against images built for the x86_64 architecture as in order for `docker run` to work the image CPU architecture must match the host runner CPU architecture. As such when building images for non-x86_64 architectures it does **NOT** verify that ALL built images are sane. |
+**Note:** The `docker` workflow job will do a Git checkout of the repository that hosts the caller workflow.
+
+| Input | Type | Required | Description |
+|---|---|---|---|
+| `docker_org` | string | Yes | E.g. `nlnetlabs`. |
+| `docker_repo` | string | Yes | E.g. `krill`. |
+| `docker_build_rules` | string | No | See below. If not provided, `docker_build_rules_path` must be provided. |
+| `docker_build_rules_path` | string | No | See below. If not provided, `docker_build_rules` must be provided. |
+| `docker_sanity_check_command` | string | No | A command to pass to `docker run`. If it returns a non-zero exit code it will cause the packaging workflow to fail. The command is intended to be a simple sanity check of the built image and should return quickly. It will only be run against images built for the x86_64 architecture as in order for `docker run` to work the image CPU architecture must match the host runner CPU architecture. As such when building images for non-x86_64 architectures it does **NOT** verify that ALL built images are sane. |
+| `docker_file_path` | string | No | The path relative to the Git checkout to the `Dockerfile`. Defaults to `./Dockerfile.` |
+| `docker_context_path` | string | No | The path relative to the Git checkout to use as the Docker context. Defaults to `.`. |
 
 **Note:** There is no input for specifying the Docker tag because the tag is automatically determined based on the current Git branch/tag and architecture "shortname" (taken from the `docker_build_rules(_path)` matrix).
 
