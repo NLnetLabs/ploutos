@@ -130,35 +130,21 @@ on:
   workflow_call:
     inputs:
       cross_build_rules:
-        description: "A JSON array of cross-compilation targets, e.g. [ 'arm-unknown-linux-musleabihf', 'armv7-unknown-linux-musleabihf' ]"
+        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with field cross-compilation 'target's, e.g. arm-unknown-linux-musleabihf."
         required: false
         type: string
-        default: '["no-cross"]'
-      cross_build_rules_path:
-        description: "A relative path within the repository clone to a file containing a `cross_rules` array in YAML format. Each item in the array must be one of: https://github.com/cross-rs/cross#supported-targets"
-        required: false
-        type: string
-        default: ''
+        default: |
+          target: ['no-cross']
       package_build_rules:
-        description: "A GitHub Actions matrix in JSON format with pkg (your app name), image (Docker image <os>:<rel>), target (x86_64, or a Rust target triple), extra_build_args (optional), os (optional) fields and (optional) include list. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
+        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
         type: string
         default: '{}'
-      package_build_rules_path:
-        description: "A relative path within the repository clone to a file containing a `package_build_rules` matrix in YAML format."
-        required: false
-        type: string
-        default: ''
       package_test_rules:
-        description: "A GitHub Actions matrix in JSON format with pkg (from package_build_rules), LXC image (<dist>:<rel>), target (from package_build_rules) and mode (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
+        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (from package_build_rules), LXC 'image' (<dist>:<rel>), 'target' (from package_build_rules) and 'mode' (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
         required: false
         type: string
         default: '{}'
-      package_test_rules_path:
-        description: "A relative path within the repository clone to a file containing a `package_test_rules` matrix in YAML format."
-        required: false
-        type: string
-        default: ''
 
       # Using Docker Hub terminology, for a Docker image named nlnetlabs/krill:v0.1.2-arm64:
       #   - The Organization would be 'nlnetlabs'.
@@ -184,15 +170,10 @@ on:
         type: string
         default: './Dockerfile'
       docker_build_rules:
-        description: "A GitHub Actions matrix in JSON format with platform, shortname, crosstarget (required if mode is copy), mode (optional: build (default) or copy) and cargo_args (optional) fields."
+        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with platform, shortname, crosstarget (required if mode is copy), mode (optional: build (default) or copy) and cargo_args (optional) fields."
         required: false
         type: string
         default: '{}'
-      docker_build_rules_path:
-        description: "A relative path within the repository clone to a file containing a `docker_build_rules` matrix in YAML format."
-        required: false
-        type: string
-        default: ''
       docker_sanity_check_command:
         description: "A command to run inside the Docker container to sanity check that it is working as expected."
         required: false
@@ -278,59 +259,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Load cross build rules
-        if: ${{ inputs.cross_build_rules_path != '' }}
-        id: transform_cross_build_rules_file
-        run: |
-          ONE_LINE_JSON="$(yq -P '${{ inputs.cross_build_rules_path }}' -p=yaml -o=json | jq -c)"
-          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
-
-      - name: Load Docker build rules
-        if: ${{ inputs.docker_build_rules_path != '' }}
-        id: transform_docker_build_rules_file
-        run: |
-          ONE_LINE_JSON="$(yq -P '${{ inputs.docker_build_rules_path }}' -p=yaml -o=json | jq -c)"
-          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
-
-      - name: Load package build rules
-        if: ${{ inputs.package_build_rules_path != '' }}
-        id: transform_package_build_rules_file
-        run: |
-          ONE_LINE_JSON="$(yq -P '${{ inputs.package_build_rules_path }}' -p=yaml -o=json | jq -c)"
-          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
-
-      - name: Load packages test rules
-        if: ${{ inputs.package_test_rules_path != '' }}
-        id: transform_package_test_rules_file
-        run: |
-          ONE_LINE_JSON="$(yq -P '${{ inputs.package_test_rules_path }}' -p=yaml -o=json | jq -c)"
-          echo "output='${ONE_LINE_JSON}'" >> $GITHUB_OUTPUT
-
       - name: Pre-process rules
         id: pre_process_rules
         run: |
-          if [[ "${{ inputs.cross_build_rules_path }}" != "" ]]; then
-            echo "cross_build_rules=$(echo ${{ steps.transform_cross_build_rules_file.outputs.output }} | jq -c)" >> $GITHUB_OUTPUT
+          echo "cross_build_rules<<END_OF_CROSS_BUILD_RULES" >> $GITHUB_OUTPUT
+          if [[ -f '${{ inputs.cross_build_rules }}' ]]; then
+            yq '${{ inputs.cross_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
           else
-            echo "cross_build_rules=$(echo '${{ inputs.cross_build_rules }}' | jq -c)" >> $GITHUB_OUTPUT
+            echo '${{ inputs.cross_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
           fi
+          echo 'END_OF_CROSS_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          if [[ "${{ inputs.docker_build_rules_path }}" != "" ]]; then
-            echo "docker_build_rules=$(echo ${{ steps.transform_docker_build_rules_file.outputs.output }} | jq -c)" >> $GITHUB_OUTPUT
+          echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
+          if [[ -f '${{ inputs.docker_build_rules }}' ]]; then
+            yq '${{ inputs.docker_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
           else
-            echo "docker_build_rules=$(echo '${{ inputs.docker_build_rules }}' | jq -c)" >> $GITHUB_OUTPUT
+            echo '${{ inputs.docker_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
           fi
+          echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          if [[ "${{ inputs.package_build_rules_path }}" != "" ]]; then
-            echo "package_build_rules=$(echo ${{ steps.transform_package_build_rules_file.outputs.output }} | jq -c)" >> $GITHUB_OUTPUT
+          echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
+          if [[ -f '${{ inputs.package_build_rules }}' ]]; then
+            yq '${{ inputs.package_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
           else
-            echo "package_build_rules=$(echo '${{ inputs.package_build_rules }}' | jq -c)" >> $GITHUB_OUTPUT
+            echo '${{ inputs.package_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
           fi
+          echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          if [[ "${{ inputs.package_test_rules_path }}" != "" ]]; then
-            JSON=$(echo ${{ steps.transform_package_test_rules_file.outputs.output }} | jq -c)
+          echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
+          if [[ -f '${{ inputs.package_test_rules }}' ]]; then
+            JSON=$(yq '${{ inputs.package_test_rules }}' -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo ${{ inputs.package_test_rules }} | jq -c)
+            JSON=$(echo '${{ inputs.package_test_rules }}' | yq -I=0 -p=yaml -o=json)
           fi
 
           # Exclude debian:stretch because the LXC image is no longer available
@@ -342,7 +302,8 @@ jobs:
               JSON="${MODIFIED_JSON}"
             fi
           fi
-          echo "package_test_rules=${JSON}" >> $GITHUB_OUTPUT
+          echo ${JSON} | jq >> $GITHUB_OUTPUT
+          echo 'END_OF_PACKAGE_TEST_RULES' >> $GITHUB_OUTPUT
 
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
@@ -351,9 +312,9 @@ jobs:
           echo "============================================================================="
           echo "Cross build rules:"
           echo "============================================================================="
-          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.cross_build_rules)) }}'
-          if [[ "${JSON}" != "[]" && "${JSON}" != '["no-cross"]' ]]; then
-            echo ${JSON} | jq
+          JSON='${{ steps.pre_process_rules.outputs.cross_build_rules }}'
+          if [[ "${JSON}" != "{}" ]]; then
+            echo '${{ steps.pre_process_rules.outputs.cross_build_rules }}'
           else
             echo None
           fi
@@ -362,9 +323,9 @@ jobs:
           echo "============================================================================="
           echo "Docker build rules:"
           echo "============================================================================="
-          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.docker_build_rules)) }}'
+          JSON='${{ steps.pre_process_rules.outputs.docker_build_rules }}'
           if [[ "${JSON}" != "{}" ]]; then
-            echo ${JSON} | jq
+            echo '${{ steps.pre_process_rules.outputs.docker_build_rules }}'
           else
             echo None
           fi
@@ -373,9 +334,9 @@ jobs:
           echo "============================================================================="
           echo "Package build rules:"
           echo "============================================================================="
-          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.package_build_rules)) }}'
+          JSON='${{ steps.pre_process_rules.outputs.package_build_rules }}'
           if [[ "${JSON}" != "{}" ]]; then
-            echo ${JSON} | jq
+            echo '${{ steps.pre_process_rules.outputs.package_build_rules }}'
           else
             echo None
           fi
@@ -384,9 +345,9 @@ jobs:
           echo "============================================================================="
           echo "Packages test rules:"
           echo "============================================================================="
-          JSON='${{ toJSON(fromJSON(steps.pre_process_rules.outputs.package_test_rules)) }}'
+          JSON='${{ steps.pre_process_rules.outputs.package_test_rules }}'
           if [[ "${JSON}" != "{}" ]]; then
-            echo ${JSON} | jq
+            echo '${{ steps.pre_process_rules.outputs.package_test_rules }}'
           else
             echo None
           fi
@@ -529,8 +490,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-20.04
     strategy:
-      matrix:
-        target: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
+      matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
     - name: Verify inputs
       id: verify
@@ -616,17 +576,17 @@ jobs:
         fi
 
         if [[ '${{ matrix.image }}' == '' ]]; then
-          echo "::error::Required matrix variable 'image' is not defined in package_build_rules(_path)."
+          echo "::error::Required matrix variable 'image' is not defined in package_build_rules."
           exit 1
         fi
 
         if [[ '${{ matrix.target }}' == '' ]]; then
-          echo "::error::Required matrix variable 'target' is not defined in package_build_rules(_path)."
+          echo "::error::Required matrix variable 'target' is not defined in package_build_rules."
           exit 1
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "::error::Required matrix variable 'pkg' is not defined in package_build_rules(_path)."
+          echo "::error::Required matrix variable 'pkg' is not defined in package_build_rules."
           exit 1
         fi
 
@@ -645,7 +605,7 @@ jobs:
         fi
 
         if [[ "${IMAGE}" == "" ]]; then
-          echo "::error::Matrix variable 'os' must be non-empty if set in package_build_rules(_path)."
+          echo "::error::Matrix variable 'os' must be non-empty if set in package_build_rules."
           exit 1
         fi
 
@@ -653,7 +613,7 @@ jobs:
         OS_REL=${IMAGE#*:}
 
         if [[ "${OS_NAME}" == '' || "${OS_REL}" == '' ]]; then
-          echo "::error::Matrix variable 'image' and/or 'os' must be of the form '<os name>:<os release>' in package_build_rules(_path)"
+          echo "::error::Matrix variable 'image' and/or 'os' must be of the form '<os name>:<os release>' in package_build_rules"
           exit 1
         fi
 
@@ -818,7 +778,7 @@ jobs:
         # higher and tilda is treated as lower.
 
         if [[ '${{ matrix.image }}' == '' ]]; then
-          echo "::error::Required matrix variable 'image' is not defined in package_build_rules(_path)."
+          echo "::error::Required matrix variable 'image' is not defined in package_build_rules."
           exit 1
         fi
 
@@ -957,7 +917,7 @@ jobs:
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/.github/v2/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/.github/v2.0.2/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
@@ -1121,17 +1081,17 @@ jobs:
     - name: Verify inputs
       run: |
         if [[ '${{ matrix.image }}' == '' ]]; then
-          echo "::error::Required matrix variable 'image' is not defined in package_test_rules(_path)."
+          echo "::error::Required matrix variable 'image' is not defined in package_test_rules."
           exit 1
         fi
 
         if [[ '${{ matrix.target }}' == '' ]]; then
-          echo "::error::Required matrix variable 'target' is not defined in package_test_rules(_path)."
+          echo "::error::Required matrix variable 'target' is not defined in package_test_rules."
           exit 1
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "::error::Required matrix variable 'pkg' is not defined in package_test_rules(_path)."
+          echo "::error::Required matrix variable 'pkg' is not defined in package_test_rules."
           exit 1
         fi
 
@@ -1149,7 +1109,7 @@ jobs:
         OS_REL=${MATRIX_IMAGE#*:}
 
         if [[ "${OS_NAME}" == '' || "${OS_REL}" == '' ]]; then
-          echo "::error::Matrix variable 'image' must be of the form '<os name>:<os release>' in package_test_rules(_path)"
+          echo "::error::Matrix variable 'image' must be of the form '<os name>:<os release>' in package_test_rules"
           exit 1
         fi
 
@@ -1409,20 +1369,20 @@ jobs:
               ;;
 
             *)
-              echo "::error::Required matrix variable 'mode' in docker_build_rules(_path) must be one of 'copy' or 'build' (default)."
+              echo "::error::Required matrix variable 'mode' in docker_build_rules must be one of 'copy' or 'build' (default)."
               exit 1
               ;;
           esac
 
           if [[ "${MODE}" == "copy" ]]; then
             if [[ "${{ matrix.platform }}" == "" ]]; then
-              echo "::error::Matrix variable 'platform' in docker_build_rules(_path) must be a supported buildx platform. See: https://github.com/moby/buildkit#building-multi-platform-images"
+              echo "::error::Matrix variable 'platform' in docker_build_rules must be a supported buildx platform. See: https://github.com/moby/buildkit#building-multi-platform-images"
               exit 1
             fi
           fi
 
           if [[ "${{ matrix.shortname }}" == "" ]]; then
-            echo "::error::Matrix variable 'shortname' in docker_build_rules(_path) must set and non-empty."
+            echo "::error::Matrix variable 'shortname' in docker_build_rules must set and non-empty."
             exit 1
           fi
 
