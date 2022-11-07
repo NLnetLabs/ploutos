@@ -41,8 +41,8 @@ Many of the settings that affect DEB and RPM packaging are taken from your `Carg
 
 | Input | Type | Required | Description |
 |---|---|---|---|
-| `package_build_rules` | [matrix](./key_concepts_and_config.md#matrices) | Yes | See below.  |
-| `package_test_rules` | [matrix](./key_concepts_and_config.md#matrices) | No | See below.  |
+| `package_build_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | Yes | See below.  |
+| `package_test_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | No | See below.  |
 | `package_test_scripts_path` | string | No | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install when (not cross) compiling. |
 | `deb_maintainer` | string | No | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. |
@@ -51,7 +51,7 @@ Many of the settings that affect DEB and RPM packaging are taken from your `Carg
 
 ### Package build rules
 
-A rules [matrix](./key_concepts_and_config.md#matrices) with the following keys must be provided to guide the build process:
+A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the build process:
 
 | Matrix Key | Required | Description |
 |---|---|---|

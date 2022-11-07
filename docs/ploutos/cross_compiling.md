@@ -19,11 +19,11 @@
 
 | Input | Type | Required | Description |
 |---|---|---|---|
-| `cross_build_rules` | [matrix](./key_concepts_and_config.md#matrices) | Yes | See below.  |
+| `cross_build_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | Yes | See below.  |
 
 ### Cross build rules
 
-A rules [matrix](./key_concepts_and_config.md#matrices) with the following keys must be provided to guide the build process:
+A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the build process:
 
 | Matrix Key | Required | Description |
 |---|---|---|

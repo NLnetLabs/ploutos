@@ -41,7 +41,7 @@ Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rus
 |---|---|---|---|
 | `docker_org` | string | Yes | E.g. `nlnetlabs`. |
 | `docker_repo` | string | Yes | E.g. `krill`. |
-| `docker_build_rules` | [matrix](./key_concepts_and_config.md#matrices) | Yes | See below.  |
+| `docker_build_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | Yes | See below.  |
 | `docker_sanity_check_command` | string | No | A command to pass to `docker run`. If it returns a non-zero exit code it will cause the packaging workflow to fail. The command is intended to be a simple sanity check of the built image and should return quickly. It will only be run against images built for the x86_64 architecture as in order for `docker run` to work the image CPU architecture must match the host runner CPU architecture. As such when building images for non-x86_64 architectures it does **NOT** verify that ALL built images are sane. |
 | `docker_file_path` | string | No | The path relative to the Git checkout to the `Dockerfile`. Defaults to `./Dockerfile.` |
 | `docker_context_path` | string | No | The path relative to the Git checkout to use as the Docker context. Defaults to `.`. |
@@ -50,7 +50,7 @@ Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rus
 
 ### Docker build rules
 
-A rules [matrix](./key_concepts_and_config.md#matrices) with the following keys must be provided to guide the build process:
+A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the build process:
 
 | Matrix Key | Required | Description |
 |---|---|---|
