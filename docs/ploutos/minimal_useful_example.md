@@ -5,7 +5,6 @@ This page shows a minimal example of using the Ploutos workflow to package a ver
 **Contents:**
 - [Your repository layout](#your-repository-layout)
   - [`.github/workflows/my_ploutos.yml`](#github-workflows-my-pkg-workflow-yml)
-  - [`docker-build-rules.yml`](#docker-build-rules-yml)
   - [`Dockerfile`](#dockerfile)
 - [Workflow summary](#workflow-summary)
 - [Workflow outputs](#workflow-outputs)
