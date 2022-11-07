@@ -516,7 +516,7 @@ jobs:
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Install Cargo Cross if needed
-      if: ${{ steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
+      if: ${{ steps.verify.outputs.no-cross == 'false' && steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
       run: |
         cargo install cross
 
