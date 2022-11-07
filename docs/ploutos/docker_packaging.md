@@ -101,7 +101,7 @@ Your `Dockerfile` MUST define corresponding [`ARG <varname>[=<default value>]`](
 
 ## Docker Hub secrets
 
-The Ploutos workflow supports two Docker specific secrets which can be passed to the workflow like so:
+The Ploutos workflow requires two Docker specific secrets which can be passed to the workflow like so:
 
 ```yaml
 jobs:
