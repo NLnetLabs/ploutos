@@ -2,13 +2,13 @@
 
 **Contents:**
 
-- [Stability promises and the Ploutos version](#stability-promises-and-the-ploutos-version)
-- [Release types and your application version](#release-types-and-your-application-version)
+- [Stability promise](#stability-promise)
+- [Application versions](#application-versions)
 - [Next dev version](#next-dev-version)
 - [Matrix rules](#matrix-rules)
 - [Caching and performance](#caching-and-performance)
 
-## Stability promises and the Ploutos version
+## Stability promise
 
 When you refer to the Ploutos workflow you are also indicating which version of the workflow that you want to use, e.g.:
 
@@ -26,7 +26,7 @@ The version number consists of MAJOR.MINOR.PATCH components. Any change in minor
 
 If a backward incompatible change is made however then the the major version number will be increased, e.g. from `v3` to `v4`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
 
-## Release types and your application version
+## Application versions
 
 The Ploutos workflow differentiates between "release", "pre-release", "unstable" and "development" types of release/application version.
 
