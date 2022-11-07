@@ -11,10 +11,6 @@
 #                          https://github.com/systemd/systemd/blob/v239/src/core/triggers.systemd.in
 #   CentOS 7 systemd v219: https://github.com/systemd/systemd/blob/v219/src/core/macros.systemd.in
 #
-# TODO: Allow the author of this file to add a line #SYSTEMD_RPM_MACROS# that will be replaced
-# automatically by the helper functions that emulate systemd RPM macros behaviour for various
-# known/supported versions of systemd.
-#
 # Note: These functions have only been tested with Bash.
 
 systemd_update_helper_v239() {
