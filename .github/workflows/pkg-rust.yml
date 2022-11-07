@@ -819,23 +819,30 @@ jobs:
                      -e "s/^\[package\.metadata\.deb_alt_base_${MATRIX_PKG}\]/[package.metadata.deb]/" Cargo.toml
             fi
 
-            if [[ "${CROSS_TARGET}" == "x86_64" ]]; then
-              EXTRA_CARGO_DEB_ARGS=
-              if grep -qF '[package.metadata.deb.variants.minimal]' Cargo.toml; then
-                 case ${OS_REL} in
-                   xenial|bionic|stretch) VARIANT="minimal" ;;
-                   *)                     VARIANT="" ;;
-                 esac
-              else
-                VARIANT="${OS_NAME}-${OS_REL}"
-              fi
-            else
+            EXTRA_CARGO_DEB_ARGS=
+            VARIANT="${OS_NAME}-${OS_REL}"
+
+            # Older O/S releases come with an older version of systemd which understands far fewer keys in the systemd
+            # unit file. As such if we detect that we are installing to an older O/S we will use a "minimal" cargo-deb
+            # profile, if one is defined in `Cargo.toml`.
+            MINIMAL_VARIANT="minimal"
+
+            # When cross-compiling we don't use cargo-deb to do compilation, only packaging, which means that cargo-deb is
+            # not able to automatically determine install-time package dependencies for us (which happens if `depends` in
+            # `Cargo.toml` is either empty or contains '$auto'). Instead the set of dependent packages must be specified
+            # manually. The project being packaged can either define a cross-target specific `cargo-deb` profile, or a 
+            # "minimal" profile suitable for cross-compiled targets.
+            if [[ "${CROSS_TARGET}" != "x86_64" ]]; then
               EXTRA_CARGO_DEB_ARGS="--no-build --no-strip --target ${CROSS_TARGET} --output target/debian"
-              if grep -qF '[package.metadata.deb.variants.minimal-cross]' Cargo.toml; then
-                VARIANT=""
-              else
-                VARIANT="${OS_NAME}-${OS_REL}-${CROSS_TARGET}"
-              fi
+              MINIMAL_VARIANT="minimal-cross"
+              VARIANT="${OS_NAME}-${OS_REL}-${CROSS_TARGET}"
+            fi
+
+            # Prefer the "minimal" cargo-deb profile, if one exists in `Cargo.toml`:
+            if grep -qF "[package.metadata.deb.variants.${MINIMAL_VARIANT}]" Cargo.toml; then
+                case ${OS_REL} in
+                  xenial|bionic|stretch) VARIANT="${MINIMAL_VARIANT}" ;;
+                esac
             fi
 
             OPT_VARIANT_ARG=""
