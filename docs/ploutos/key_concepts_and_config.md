@@ -15,16 +15,16 @@ When you refer to the Ploutos workflow you are also indicating which version of 
 ```yaml
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
 ```
 
-Here we see that the v2 version of the workflow will be used.
+Here we see that the v3 version of the workflow will be used.
 
-What may not be obvious is that this will work for v2.0.0, v2.0.1, v2.3.4 and so on. This is because Ploutos follows the principles of [Semantic Versioning](https://semver.org/).
+What may not be obvious is that this will work for v3.0.0, v3.0.1, v3.3.4 and so on. This is because Ploutos follows the principles of [Semantic Versioning](https://semver.org/).
 
 The version number consists of MAJOR.MINOR.PATCH components. Any change in minor and patch versions should be backward compatible and thus safe to use automatically.
 
-If a backward incompatible change is made however then the the major version number will be increased, e.g. from `v2` to `v3`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
+If a backward incompatible change is made however then the the major version number will be increased, e.g. from `v3` to `v4`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
 
 ## Release types and your application version
 
@@ -67,6 +67,41 @@ If `dev` isn't the suffix you use, you can change that with the `next_ver_label`
 Several of the inputs to the Ploutus workflow are of "matrix" type. These matrices are used with [GitHub matrix strategies](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) to parallelize the packaging process.
 
 GitHub will attempt to maximize the number of jobs running in parallel, and for each permutation of the matrix given to a particular job it will launch another parallel instance of the same workflow job to process that particular input permutation.
+
+A matrix is an ordered sequence of `key: value` pairs. In the examples below there is a single key called `target` whose value is a list of strings.
+
+An input of "matrix" type can be specified in one of two ways:
+
+- As an inline YAML string matrix, e.g.: _(note the YAML | multi-line ["literal block style indicator"](https://yaml.org/spec/1.0/#id2490752) which is required to preserve the line breaks in the matrix definition)_
+
+  ```yaml
+  jobs:
+    my_pkg_job:
+      uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
+      with:
+        cross_build_rules: |
+          target:
+            - arm-unknown-linux-musleabihf
+            - arm-unknown-linux-gnueabihf
+  ```
+
+- As the relative path to a YAML file containing the string matrix, e.g.:
+
+  ```yaml
+  jobs:
+    my_pkg_job:
+      uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
+      with:
+        cross_build_rules: pkg/rules/cross_build_rules.yml
+  ```
+
+  Where `pkg/rules/cross_build_rules.yml` looks like this:
+
+  ```yaml
+  target:
+    - 'arm-unknown-linux-musleabihf'
+    - 'arm-unknown-linux-gnueabihf'
+  ```
 
 ## Caching and performance
 

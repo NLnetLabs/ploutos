@@ -1,15 +1,18 @@
 # Ploutos
 
 **Contents:**
-- [O/S Packaging](#os-packaging)
-- [Cargo.toml inputs](#cargotoml-inputs)
-- [Workflow inputs](#workflow-inputs)
-- [Package build rules](#package-build-rules)
-- [Pre-installed package](#pre-installed-packages)
-- [Special cases](#special-cases)
-- [Workflow outputs](#workflow-outputs)
+- [Introduction](#introduction)
+- [Inputs](#inputs)
+  - [Cargo.toml](#cargotoml)
+  - [Workflow inputs](#workflow-inputs)
+  - [Package build rules](#package-build-rules)
+  - [Package test rules](#package-test-rules)
+- [Outputs](#outputs)
+- [How it works](#how-it-works)
+  - [Pre-installed package](#pre-installed-packages)
+  - [Special cases](#special-cases)
 
-## O/S packaging
+## Introduction
 
 The Ploutos workflow can package your Rust Cargo application as one or both of the following common Linux O/S package formats:
 
@@ -28,20 +31,18 @@ Package testing takes place inside [LXD container instances](https://linuxcontai
 
 _**Note:** DEB and RPM packages support many different metadata fields and the native DEB and RPM tooling has many capabilities. We support only the limited subset of capabilities that we have thus far needed. If you need something that it is not yet supported please request it by creating an issue at https://github.com/NLnetLabs/.github/issues/, PRs are also welcome!_
 
-### Cargo.toml inputs
+## Inputs
+
+### Cargo.toml
 
 Many of the settings that affect DEB and RPM packaging are taken from your `Cargo.toml` file by the [`cargo-deb`](https://github.com/kornelski/cargo-deb) and [`cargo-generate-rpm`](https://github.com/cat-in-136/cargo-generate-rpm) tools respectively. For more information read their respective documentation.
 
 ### Workflow inputs
 
-Note: The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
-
 | Input | Type | Required | Description |
 |---|---|---|---|
-| `package_build_rules` | string | No* | See below. If not provided, `package_build_rules_path` must be provided. |
-| `package_build_rules_path` | string | No* | See below. If not provided, `package_build_rules` must be provided. |
-| `package_test_rules` | string | No* | See below. If not provided, `package_test_rules_path` must be provided. |
-| `package_test_rules_path` | string | No* | See below. If not provided, `package_test_rules` must be provided. |
+| `package_build_rules` | [matrix](./key_concepts_and_config.md#matrices) | Yes | See below.  |
+| `package_test_rules` | [matrix](./key_concepts_and_config.md#matrices) | No | See below.  |
 | `package_test_scripts_path` | string | No | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install when (not cross) compiling. |
 | `deb_maintainer` | string | No | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. |
@@ -50,12 +51,7 @@ Note: The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repos
 
 ### Package build rules
 
-A rules matrix must be provided to guide the packaging process. It can be provided in one of two forms:
-
-  - `package_build_rules` - A JSON object in string form, or
-  - `package_build_rules_path` - A path to a YAML file equivalent of the `package_build_rules` JSON object.
-
-The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs) in which the following Ploutos workflow specific keys may be provided:
+A rules [matrix](./key_concepts_and_config.md#matrices) with the following keys must be provided to guide the build process:
 
 | Matrix Key | Required | Description |
 |---|---|---|
@@ -65,6 +61,18 @@ The object is a [GitHub Actions build matrix](https://docs.github.com/en/actions
 | `os` | No | Overrides the value of `image` when determining `os_name` and `os_rel`.
 | `extra_build_args` | No | A space separated set of additional command line arguments to pass to `cargo-deb`/`cargo build`.
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to use. Only needed when there are more than one file to avoid having to specify multiple almost duplicate `cargo-generate-rpm` `asset` tables in `Cargo.toml` just to select a different (set of) systemd service files. A single file will be copied to `target/rpm/<pkg>.service`. Multiple files will be copied to `target/rpm/` with their names unchanged. The `cargo-generate-rpm` `assets` table in `Cargo.toml` should reference the correct `target/rpm/` path(s). Note that there is no DEB equivalent as `cargo-deb` handles systemd file selection automatically based on factors like the "variant" to use. |
+
+### Package test rules
+
+TO DO
+
+## Outputs
+
+A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `<pkg>_<os_name>_<os_rel>_<target>`. The artifact will be a `zip` file, inside which will either be `generate-rpm/*.rpm` or `debian/*.deb`.
+
+## How it works
+
+The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
 
 ### Pre-installed packages
 
@@ -80,7 +88,3 @@ Add more packages using the `deb_extra_build_packages` and `rpm_extra_build_pack
 ### Special cases
 
 - **Centos 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work.
-
-### Workflow Outputs
-
-A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `<pkg>_<os_name>_<os_rel>_<target>`. The artifact will be a `zip` file, inside which will either be `generate-rpm/*.rpm` or `debian/*.deb`.

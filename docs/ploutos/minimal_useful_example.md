@@ -52,11 +52,14 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v2
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
     with:
       docker_org: my_org
       docker_repo: my_image_name
-      docker_build_rules_path: pkg/rules/docker-build-rules.yml
+      docker_build_rules: |
+        include:
+          - platform: "linux/amd64"
+            shortname: "amd64"
 ```
 
 There are a few things to note here:
@@ -70,18 +73,13 @@ There are a few things to note here:
 4. We provide three ["inputs"](https://docs.github.com/en/actions/using-workflows/reusing-workflows#using-inputs-and-secrets-in-a-reusable-workflow) to the workflow as child key value pairs of the "with" key:
    - `docker_org`
    - `docker_repo`
-   - `docker_build_rules_path`
+   - `docker_build_rules`
 
    **Tip:** The full set of available inputs that the Ploutos workflow accepts is defined in the Ploutos workflow itself [here](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131).
 
-### `docker-build-rules.yml`
+### `docker_build_rules`
 
-In this example the contents of the file below configurs the Ploutos workflow to build a Docker image for the Linux x86 64 aka `linux/amd64` target architecture. There are more options that can be used here and you can target other architectures too but we won't cover that in this simple example.
-
-```yaml
-platform: ["linux/amd64"]
-shortname: ["amd64"]
-```
+In this example we configure the Ploutos workflow to build a Docker image for the Linux x86 64 aka `linux/amd64` target architecture. There are more options that can be used here and you can target other architectures too but we won't cover that in this simple example.
 
 ### `Dockerfile`
 
