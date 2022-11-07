@@ -27,10 +27,7 @@ For this example we will need to create 3 files in the callers GitHub repository
     .github/
         workflows/
             my_ploutos.yml          <-- your workflow
-    pkg/
-        rules/
-            docker-build-rules.yml       <-- rules for building the Docker image
-    Dockerfile                           <-- the Dockerfile to build an image from
+    Dockerfile                      <-- the Dockerfile to build an image from
 ```
 
 Now let's look at the content of these files.
