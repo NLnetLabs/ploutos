@@ -131,7 +131,7 @@ _**Note:** If neither of the `DOCKER_HUB_ID` and `DOCKER_HUB_TOKEN` secrets are 
 
 A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) will be attached to the workflow run with the name `tmp-docker-image-<shortname>`. The artifact will be a `zip` file, inside which will be a `tar` file called `docker-<shortname>-img.tar`. The `tar` file is the output of the [`docker save` command](https://docs.docker.com/engine/reference/commandline/save/) and can be loaded into a local Docker daemon using the [`docker load` command](https://docs.docker.com/engine/reference/commandline/load/).
 
-If the required secrets are defined (see below), and the git ref is either the `main` branch or a `v*` tag, then the Docker image will be published to Docker Hub with the generated image name (see above).
+If the required secrets are defined (see above), and the git ref is either the `main` branch or a `v*` tag, then the Docker image will be published to Docker Hub with the generated image name (see above).
 
 ## How it works
 
@@ -143,7 +143,7 @@ When using the [`cross` job](./cross_compiling.md) to cross-compile your applica
 
 You can direct the Ploutos workflow to use pre-cross-compiled binaries by setting the `mode` to `copy` instead of the default `build` in your `docker_build_rules(_path)` input matrix.
 
-You must however make sure that your `Dockerfile` supports the build arguments that the Ploutos workflow will pass to it (see below).
+You must however make sure that your `Dockerfile` supports the build arguments that the Ploutos workflow will pass to it (see above).
 
 ### Publication
 
