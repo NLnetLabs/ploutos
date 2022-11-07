@@ -64,7 +64,7 @@ systemd_update_helper() {
     #   systemd 239 (239-58.el8_6.8)
     SYSTEMD_VER=$(systemctl --version | head -1 | awk '{ print $2}')
 
-    if [ ${SYSTEMD_VER} -le 219 ]; then
+    if [ "${SYSTEMD_VER}" -le 219 ]; then
         systemd_update_helper_v219 "$@"
     else
         systemd_update_helper_v239 "$@"
