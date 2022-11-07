@@ -3,13 +3,11 @@
 This page shows a minimal example of using the Ploutos workflow to package a very simple Docker image. In fact it doesn't even package a Rust application!
 
 **Contents:**
-- [Your repository layout](#your-repository-layout)
-  - [`.github/workflows/my_ploutos.yml`](#github-workflows-my-pkg-workflow-yml)
-  - [`Dockerfile`](#dockerfile)
-- [Workflow summary](#workflow-summary)
-- [Workflow outputs](#workflow-outputs)
+- [Introduction](#introduction)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
 
-## Workflow summary
+## Introduction
 
 The workflow we define below will configure the Ploutos workflow to:
 
@@ -17,7 +15,10 @@ The workflow we define below will configure the Ploutos workflow to:
 - Tag the created Docker image as `my_org/my_image_name:test-amd64`.
 - Attach the created Docker image as a GitHUb Actions artifact to the caller workflow run _(as a zip file containing a tar file produced by the [`docker save`](https://docs.docker.com/engine/reference/commandline/save/) command)_.
 
-## Your repository layout
+
+## Inputs
+
+### Repository layout
 
 For this example we will need to create 3 files in the callers GitHub repository with the following directory layout:
 
@@ -86,7 +87,7 @@ FROM alpine
 CMD ["echo", "Hello World!"]
 ```
 
-## Workflow outputs
+## Outputs
 
 When run and successful the workflow will have a [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts) attached to the workflow run.
 
