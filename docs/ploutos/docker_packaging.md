@@ -37,8 +37,6 @@ Source: https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rus
 
 ### Workflow inputs
 
-**Note:** The `docker` workflow job will do a Git checkout of the repository that hosts the caller workflow.
-
 | Input | Type | Required | Description |
 |---|---|---|---|
 | `docker_org` | string | Yes | E.g. `nlnetlabs`. |
@@ -136,6 +134,8 @@ A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/s
 If the required secrets are defined (see below), and the git ref is either the `main` branch or a `v*` tag, then the Docker image will be published to Docker Hub with the generated image name (see above).
 
 ## How it works
+
+The `docker` workflow job will do a Git checkout of the repository that hosts the caller workflow.
 
 ### Building
 
