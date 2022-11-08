@@ -24,11 +24,11 @@ The Ploutos workflow was originally written for use only by NLnet Labs. As such 
 
 ## See also
 
-- **The starter workflow:** If you already know how to use this workflow but just want to quickly add it to a new project you might find the [starter workflow](../starter_workflow.md) helpful.
+- **The starter workflow:** If you already know how to use this workflow but just want to quickly add it to a new project you might find the [starter workflow](../starter_workflow.md) helpful _(**only** visible to NLnet Labs GitHub organization members unfortunately)_.
 
 - **The testing & template repository:** The https://github.com/NLnetLabs/.github-testing/ repository contains test data and workflow invocations for testing the Ploutos workflow and is also a GitHub template repository from which you can create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
 
-- **Examples of the workflow in use:** If you're looking for examples of how to invoke and configure the Ploutos workflow take a look at the [projects that are already using the Ploutos workflow](https://github.com/NLnetLabs/.github/network/dependents).
+- **Examples of the workflow in use:** This documentation contains some limited examples but if you're looking for real world examples of how to invoke and configure the Ploutos workflow take a look at the [projects that are already using the Ploutos workflow](https://github.com/NLnetLabs/.github/network/dependents).
 
 ## Can I just run the Ploutos workflow?
 
