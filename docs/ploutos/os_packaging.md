@@ -74,6 +74,8 @@ A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/s
 
 The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
 
+
+
 ### Build host pre-installed packages
 
 Rust is installed from [rustup](https://rustup.rs/) using the [minimal profile](https://rust-lang.github.io/rustup/concepts/profiles.html).
@@ -90,7 +92,11 @@ If needed you can cause more packages to be installed in the build host using th
 
 Ploutos is aware of certain cases that must be handled specially, for example:
 
-- **Centos 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work.
+- **CentOS 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work.
+
+- **LZMA and older O/S releases:** DEB and RPM packages created for Ubuntu Xenial and CentOS 7 respectively must not be compressed with LZMA otherwise the packaging tools fail with errors such as  _"malformed-deb-archive newer compressed control.tar.xz"_ (on Ubuntu, see [cargo-deb issue #12](https://github.com/kornelski/cargo-deb/issues/12) and _"cpio: Bad magic"_ (on CentOS, see [cargo-generate-rpm issue #30](https://github.com/cat-in-136/cargo-generate-rpm/issues/30)).
+
+- **`unattended-upgrade` compatible DEB archives**: Ploutos works around [cargo-deb issue #47](https://github.com/kornelski/cargo-deb/issues/47) by unpacking and repacking the created DEB archive to ensure that data paths are `./` prefixed.
 
 - **DEB changelog:** Debian archives are required to have a [`changelog`](https://www.debian.org/doc/manuals/maint-guide/dreq.en.html#changelog) in a very specific format. We generate a minimal file on the fly of the form:
 
@@ -101,14 +107,26 @@ Ploutos is aware of certain cases that must be handled specially, for example:
   ```
 
   Where:
-  - `${MATRIX_PKG}` is the value of the `pkg` matrix key for the current permutation of the package build rules matrix being built.
+  - `${MATRIX_PKG}` is the value of the `<pkg>` matrix key for the current permutation of the package build rules matrix being built.
   - `${PKG_APP_VER}` is the version of the application being built based on `version` in `Cargo.toml` but post-processed to handle things like [pre-releases](#./key_concepts_and_config#application-versions) or [next development versions](#./key_concepts_and_config#next-dev-version).
   - `${APP_NEW_VER}` is the literal value of the `version` field from `Cargo.toml`.
   - `${RFC5322_TS}` is set to the time now while building, 
 
-- **Cargo.toml advanced re-use:** Via "variants" `cargo-deb` supports a single base set of properties in `Cargo.toml` which can be overriden by properties defined for a specified "variant". However, `cargo-deb` does not support multiple alternate base property sets. If we find that there exists a TOML table called `[package.metadata.deb_alt_base_${MATRIX_PKG}]` in `Cargo.toml` we replace the default `cargo-deb` property table `[package.metedata.deb]` TOML table with the alternate one we found.
+- **Support for "old" O/S releases:** For some "old" O/S releases it is known that the version of systemd that they support understands far fewer systemd unit file keys than more modern versions. In such cases (Ubuntu Xenial & Bionic, and Debian Stretch) the `cargo-deb` "variant" to use will be set to `minimal` if there exists a `[package.metadata.deb.variants.minimal]` TOML table in `Cargo.toml`. When cross-compiling the `minimal-cross` variant is looked for instead.
 
-- **Support for "old" systemd targets:** For some "old" O/S releases it is known that the version of systemd that they support understands far fewer systemd unit file keys than more modern versions. In such cases (Ubuntu Xenial & Bionic, and Debian Stretch) if there exists a `[package.metadata.deb.variants.minimal]` TOML table in `Cargo.toml` the `cargo-deb` "variant" to use will be set to `minimal`.
+### Install-time package dependencies
+
+Both DEB and RPM packages support the concept of other packages that should be installed in order to use our package. Both `cargo-deb` (via `$auto`) and `cargo-generate-rpm` (via `auto-req`) are able to determine needed shared libraries and the package that provides them and automagically adds such dependendencies to the created package. For cross-compiled binaries and/or for additional tools known to be needed (either by your application and/or its pre/post install scripts) you must specify such dependencies manually in `Cargo.toml`.
+
+### Extensions to `cargo-deb` and `cargo-generate-rpm` handling of `Cargo.toml`
+
+Ploutos has some special behaviours regarding selection of the right `Cargo.toml` TOML table settings to use with `cargo-deb` and `cargo-generate-rpm`.
+
+While both `cargo-deb` and `cargo-generate-rpm` take their core configuration from a combination of `Cargo.toml` `[package.metadata.XXX]` settings and command line arguments, and both support the notion of "variants" as a way to override and/or extend the settings defined in the `[package.metadata.XXX]` TOML table, "variant" support in `cargo-generate-rpm` is relatively new and not yet fully adoptd by Ploutos and neither tool supports defining packaging settings for more than one application in a single `Cargo.toml` file.
+
+For DEB packaging, Ploutos will look for and instruct `cargo-deb` to use a variant named `<os_name>-<os_rel>` (or `<os_name>-<os_rel>-<target>` when cross-compiling) if it exists, and assuming that the `minimal` or `minimal-cross` profiles don't also exist and have not been chosen (see 'Support for "old" O/S releases' above).
+
+For both DEB and RPM packaging, Ploutos has some limited support for defining packaging settings for more than one package in a single `Cargo.toml` file. If a `[package.metadata.deb_alt_base_<pkg>]` (for DEBs), or `[package.metadata.generate-rpm-alt-base-<pkg>]` (for RPMs), TOML table exists in `Cargo.toml` Ploutos will replace the proper `[package.metadata.deb]` or `[package.metadata.generate-rpm]` TOML table with the "alternate" table that was found.
 
 ### Systemd units
 
