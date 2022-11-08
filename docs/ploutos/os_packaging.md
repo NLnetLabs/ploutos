@@ -99,7 +99,7 @@ Name                              Size
 mytest_ubuntu_jammy_x86_64        121 KB
 ```
 
-The artifactis a zip file that you can download and unzip, and inside is the DEB artifact that you can install, e.g.:
+The artifact is a zip file that you can download and unzip, and inside is the DEB artifact that you can install, e.g.:
 
 ```shell
 $ unzip mytest_ubuntu_jammy_x86_64.zip 
