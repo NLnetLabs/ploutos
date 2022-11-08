@@ -1,4 +1,4 @@
-# Ploutos
+# Ploutos: O/S packaging
 
 **Contents:**
 - [Introduction](#introduction)
