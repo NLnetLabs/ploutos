@@ -11,6 +11,10 @@
 - [How it works](#how-it-works)
   - [Build host pre-installed packages](#build-host-pre-installed-packages)
   - [Special cases](#special-cases)
+  - [Install-time package dependencies](#install-time-package-dependencies)
+  - [Custom handling of `Cargo.toml`](#custom-handling-of-cargotoml)
+  - [Systemd units](#systemd-units)
+    - [Target dependent unit files](#target-dependent-unit-files)
 
 ## Introduction
 
@@ -118,7 +122,7 @@ Ploutos is aware of certain cases that must be handled specially, for example:
 
 Both DEB and RPM packages support the concept of other packages that should be installed in order to use our package. Both `cargo-deb` (via `$auto`) and `cargo-generate-rpm` (via `auto-req`) are able to determine needed shared libraries and the package that provides them and automagically adds such dependendencies to the created package. For cross-compiled binaries and/or for additional tools known to be needed (either by your application and/or its pre/post install scripts) you must specify such dependencies manually in `Cargo.toml`.
 
-### Extensions to `cargo-deb` and `cargo-generate-rpm` handling of `Cargo.toml`
+### Custom handling of `Cargo.toml`
 
 Ploutos has some special behaviours regarding selection of the right `Cargo.toml` TOML table settings to use with `cargo-deb` and `cargo-generate-rpm`.
 
