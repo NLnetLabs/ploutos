@@ -226,7 +226,7 @@ If needed you can cause more packages to be installed in the build host using th
 
 Ploutos is aware of certain cases that must be handled specially, for example:
 
-- **CentOS 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus, when building the package, if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work. When testing the package if the image is `centos:8` it will be replaced by `rockylinux:8` because the CentOS 8 image no longer exists in the LXC image repository. |
+- **CentOS 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus, when building the package, if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work. When testing the package if the image is `centos:8` it will be replaced by `rockylinux:8` because the CentOS 8 image no longer exists in the LXC image repository.
 
 - **LZMA and older O/S releases:** DEB and RPM packages created for Ubuntu Xenial and CentOS 7 respectively must not be compressed with LZMA otherwise the packaging tools fail with errors such as  _"malformed-deb-archive newer compressed control.tar.xz"_ (on Ubuntu, see [cargo-deb issue #12](https://github.com/kornelski/cargo-deb/issues/12) and _"cpio: Bad magic"_ (on CentOS, see [cargo-generate-rpm issue #30](https://github.com/cat-in-136/cargo-generate-rpm/issues/30)).
 
