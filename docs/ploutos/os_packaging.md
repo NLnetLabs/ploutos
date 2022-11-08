@@ -194,7 +194,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | Matrix Key | Required | Description |
 |---|---|---|
 | `pkg` | Yes | The package to test. Must match the value used with `package_build_rules`.|
-| `image` | Yes | Specifies the LXC `images:<os_name>/<os_rel>/cloud` image used for installing and testing the built package. |
+| `image` | Yes | Specifies the LXC `images:<os_name>/<os_rel>/cloud` image used for installing and testing the built package. See: https://images.linuxcontainers.org/. |
 | `target` | Yes | The target the package was built for. Must match the value used with `package_build_rules`. |
 | `mode` | Yes | One of: `fresh-install` or `upgrade-from-published` _(assumes a previous version is available in the default package repositories)_. |
 
