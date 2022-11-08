@@ -113,10 +113,11 @@ Ploutos is aware of certain cases that must be handled specially, for example:
   ```
 
   Where:
+  - `${APP_NEW_VER}` is the value of the `version` key in `Cargo.toml`.
+  - `${MAINTAINER}` is the value of the `<deb_maintainer>` workflow input.
   - `${MATRIX_PKG}` is the value of the `<pkg>` matrix key for the current permutation of the package build rules matrix being built.
   - `${PKG_APP_VER}` is the version of the application being built based on `version` in `Cargo.toml` but post-processed to handle things like [pre-releases](#./key_concepts_and_config#application-versions) or [next development versions](#./key_concepts_and_config#next-dev-version).
-  - `${APP_NEW_VER}` is the literal value of the `version` field from `Cargo.toml`.
-  - `${RFC5322_TS}` is set to the time now while building, 
+  - `${RFC5322_TS}` is set to the time now while building.
 
 - **Support for "old" O/S releases:** For some "old" O/S releases it is known that the version of systemd that they support understands far fewer systemd unit file keys than more modern versions. In such cases (Ubuntu Xenial & Bionic, and Debian Stretch) the `cargo-deb` "variant" to use will be set to `minimal` if there exists a `[package.metadata.deb.variants.minimal]` TOML table in `Cargo.toml`. When cross-compiling the `minimal-cross` variant is looked for instead.
 
