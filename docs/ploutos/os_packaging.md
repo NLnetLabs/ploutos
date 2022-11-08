@@ -78,7 +78,9 @@ A [GitHub Actions artifact](https://docs.github.com/en/actions/using-workflows/s
 
 The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository that hosts the caller workflow.
 
+The `cargo-deb` and/or `cargo-generate-rpm` tools will be invoked to package (and if not cross-compiled, will also compile) your Rust application.
 
+Post package creation `Lintian` (for DEBs) and `rpmlint` for (RPMs) will be invoked to report on any issues with the created archives. (note: Ploutos may continue even if errors are reported as these tools can be extremely strict and you may not need or want to resolve all issues they report).
 
 ### Build host pre-installed packages
 
