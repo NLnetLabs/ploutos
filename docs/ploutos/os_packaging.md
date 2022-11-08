@@ -265,13 +265,4 @@ For both DEB and RPM packaging, Ploutos has some limited support for defining pa
 
 ### Systemd units
 
-#### Target dependent unit files
-
-When you need the unit file to include to depend on the target being packaged for, you need a way to specify which file to use.
-
-For DEB packaging `cargo-deb` handles this automatically via its "variant" capability.
-
-For RPM packaging no such equivalent functionality exists so you have to specify multiple separate "asset" tables in `Cargo.toml`, each almost a complete copy of the others with only the unit file being different. To avoid this duplication Ploutos can copy a chosen unit file or files to a "well-known" location which you can then reference in a single copy of the "assets" table.
-
-A single file will be copied to `target/rpm/<pkg>.service`. Multiple files will be copied to `target/rpm/` with their names unchanged. The `cargo-generate-rpm` `assets` table in `Cargo.toml` should reference the correct `target/rpm/` path(s). This process is guided by the value of the `rpm_systemd_service_unit_file` matrix key.
-
+TO DO
