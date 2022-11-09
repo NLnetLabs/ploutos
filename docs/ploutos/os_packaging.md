@@ -197,6 +197,17 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `image` | Yes | Specifies the LXC `images:<os_name>/<os_rel>/cloud` image used for installing and testing the built package. See: https://images.linuxcontainers.org/. |
 | `target` | Yes | The target the package was built for. Must match the value used with `package_build_rules`. |
 | `mode` | Yes | One of: `fresh-install` or `upgrade-from-published` _(assumes a previous version is available in the default package repositories)_. |
+| `ignore_upgrade_failure` | No | If package upgrade fails should this be ignored? (default: false). Ignoring an upgrade can be necessary when a prior release has a bug in the scripts that are run when the package is upgraded, otherwise the `pkg-test` job will fail. |
+
+### Package test scripts
+
+In addition to verifying the built package and installing it to test that the package works, you may also supply an application specific test script.
+
+The script should be provided as the relative path to an executable file that is part of your application git repository, i.e. available when the repository branch being tested is checked out.
+
+The script can optionally check different things after initial installation vs after upgrade from a previous installation, by checking the value of the first command line argument provided to the script. This will either be `post-install` or `post-upgrade`.
+
+If the script exits with a non-zero exit code then the `pkg-test` job will fail.
 
 ## Outputs
 
@@ -248,6 +259,8 @@ Ploutos is aware of certain cases that must be handled specially, for example:
   - `${RFC5322_TS}` is set to the time now while building.
 
 - **Support for "old" O/S releases:** For some "old" O/S releases it is known that the version of systemd that they support understands far fewer systemd unit file keys than more modern versions. In such cases (Ubuntu Xenial & Bionic, and Debian Stretch) the `cargo-deb` "variant" to use will be set to `minimal` if there exists a `[package.metadata.deb.variants.minimal]` TOML table in `Cargo.toml`. When cross-compiling the `minimal-cross` variant is looked for instead.
+
+- **Modified configuration files:** When upgrading a DEB package the installer knows which files are so-called [`conffiles`](https://www.debian.org/doc/manuals/maint-guide/dother.en.html#conffiles). In an interactive shell session when a package is upgraded and it is detected that the user has made changes to a `conffile` that is supplied by the package being upgraded, the user is asked whether to keep or discard their modifications. In an automated environment like the package testing phase of Ploutos nobody is present to answer this question, but we want to test that package upgrade succeeds also when preserving user changes instead of taking the new configuration files provided by the package. Therefore Ploutos sets the `confold` option when upgrading the package so that the users "old" configuration files are kept.
 
 ### Install-time package dependencies
 
