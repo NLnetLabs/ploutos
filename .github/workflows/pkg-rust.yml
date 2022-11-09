@@ -133,8 +133,7 @@ on:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with field cross-compilation 'target's, e.g. arm-unknown-linux-musleabihf."
         required: false
         type: string
-        default: |
-          target: ['no-cross']
+        default: '{}'
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
@@ -487,27 +486,17 @@ jobs:
   #
   # See: https://github.com/rust-embedded/cross#docker-in-docker
   cross:
+    if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
     runs-on: ubuntu-20.04
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
-    - name: Verify inputs
-      id: verify
-      run: |
-        if [[ "${{ matrix.target }}" == "no-cross" ]]; then
-          echo "no-cross=true" >> $GITHUB_OUTPUT
-        else
-          echo "no-cross=false" >> $GITHUB_OUTPUT
-        fi
-
     - name: Checkout repository
-      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/checkout@v3
 
     - name: Cache cargo cross if available
       id: cache-cargo-cross
-      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/cache@v3
       with:
         path: |
@@ -516,17 +505,15 @@ jobs:
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Install Cargo Cross if needed
-      if: ${{ steps.verify.outputs.no-cross == 'false' && steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
+      if: ${{ steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
       run: |
         cargo install cross
 
     - name: Cross compile
-      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       run: |
         cross build --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
-      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       run: |
         rm -f bins.tar
         find target/${{ matrix.target }}/release/ -maxdepth 1 -type f -executable | xargs tar vpcf bins.tar
@@ -538,7 +525,6 @@ jobs:
     # artifacts to be packaged by the scripts that upload to packages.nlnetlabs.nl we prefix the artifact name with
     # `tmp-` which will be ignored by packages.nlnetlabs.nl scripts.
     - name: Upload built binaries
-      if: ${{ steps.verify.outputs.no-cross == 'false' }}
       uses: actions/upload-artifact@v3
       with:
         name: tmp-cross-binaries-${{ matrix.target }}
@@ -552,7 +538,8 @@ jobs:
   #   - https://github.com/mmstick/cargo-deb
   #   - https://github.com/cat-in-136/cargo-generate-rpm
   pkg:
-    if: ${{ needs.prepare.outputs.package_build_rules != '{}' }}
+    # Use of always() here ensures that even if the cross job is skipped we will still run
+    if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
     needs: [cross, prepare]
     runs-on: ubuntu-latest
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
