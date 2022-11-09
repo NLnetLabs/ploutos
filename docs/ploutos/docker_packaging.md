@@ -57,7 +57,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `platform` | Yes | Set the [target platform for the build](https://docs.docker.com/engine/reference/commandline/buildx_build/#platform), e.g. `linux/amd64`. See [^1], [^2] and [^3]. |
 | `shortname` | Yes | Suffixes the tag of the architecture specific "manifest" image with this value, e.g. `amd64`. |
 | `target` | No | Used to determine the correct cross-compiled binary GitHub Actions artifact to compile & download. Only used when `mode` is `copy`. |
-| `mode` | No | `copy` (for cross-compiled targets) or `build` (default). Passed through to the `Dockerfile` as build arg `MODE`. |
+| `mode` | No | `copy` (for cross-compiled targets) or `build`. Passed through to the `Dockerfile` as build arg `MODE`. |
 | `cargo_args` | No | Can be used when testing, e.g. set to `--no-default-features` to speed up the application build. Passed through to the Dockerfile as build arg `CARGO_ARGS`. |
 
 [^1]: https://go.dev/doc/install/source#environment (from [^4])
