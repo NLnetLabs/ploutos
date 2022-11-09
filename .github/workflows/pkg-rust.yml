@@ -130,10 +130,10 @@ on:
   workflow_call:
     inputs:
       cross_build_rules:
-        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with field cross-compilation 'target's, e.g. arm-unknown-linux-musleabihf."
+        description: "This input is deprecated. Cross build targets will be determined automatically."
         required: false
         type: string
-        default: '{}'
+        default: ''
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
@@ -169,7 +169,7 @@ on:
         type: string
         default: './Dockerfile'
       docker_build_rules:
-        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with platform, shortname, crosstarget (required if mode is copy), mode (optional: build (default) or copy) and cargo_args (optional) fields."
+        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with platform, shortname, target (required if mode is copy), mode (optional: build (default) or copy) and cargo_args (optional) fields."
         required: false
         type: string
         default: '{}'
@@ -250,7 +250,7 @@ jobs:
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
-      cross_build_rules: ${{ steps.pre_process_rules.outputs.cross_build_rules }}
+      cross_build_rules: ${{ steps.determine_cross_build_rules.outputs.matrix }}
       docker_build_rules: ${{ steps.pre_process_rules.outputs.docker_build_rules }}
       package_build_rules: ${{ steps.pre_process_rules.outputs.package_build_rules }}
       package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
@@ -261,20 +261,18 @@ jobs:
       - name: Pre-process rules
         id: pre_process_rules
         run: |
-          echo "cross_build_rules<<END_OF_CROSS_BUILD_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.cross_build_rules }}' ]]; then
-            yq '${{ inputs.cross_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
-          else
-            echo '${{ inputs.cross_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
+          if [[ '${{ inputs.cross_build_rules }}' != '' ]]; then
+            echo "::warning::The 'cross_build_rules' input is deprecated. Cross build targets will be determined automatically."
           fi
-          echo 'END_OF_CROSS_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
           if [[ -f '${{ inputs.docker_build_rules }}' ]]; then
-            yq '${{ inputs.docker_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
+            JSON=$(yq '${{ inputs.docker_build_rules }}' -I=0 -p=yaml -o=json)
           else
-            echo '${{ inputs.docker_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
+            JSON=$(echo '${{ inputs.docker_build_rules }}' | yq -I=0 -p=yaml -o=json)
           fi
+          JSON=$(echo $JSON | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
+          echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
@@ -304,6 +302,26 @@ jobs:
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_TEST_RULES' >> $GITHUB_OUTPUT
 
+      - name: Determine cross build rules
+        id: determine_cross_build_rules
+        run: |
+          JSON='${{ steps.pre_process_rules.outputs.docker_build_rules }}'
+          DOCKER_TARGETS=$(echo $JSON | jq '.. | .target? | select(. != null)')
+
+          JSON='${{ steps.pre_process_rules.outputs.package_build_rules }}'
+          PKG_TARGETS=$(echo $JSON | jq '.. | .target? | select(. != null)')
+
+          # This is a bit ridiculous invoking jq three times... there must be an easier way
+          ALL_TARGETS=$(echo ${DOCKER_TARGETS} ${PKG_TARGETS} | jq -s 'flatten | unique | .[] | select(. != "x86_64")' | jq -s)
+
+          echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
+          if [ "${ALL_TARGETS}" == '[]' ]; then
+            echo '{}' >> $GITHUB_OUTPUT
+          else
+            echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
+          fi
+          echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
+
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
         shell: bash
@@ -311,9 +329,9 @@ jobs:
           echo "============================================================================="
           echo "Cross build rules:"
           echo "============================================================================="
-          JSON='${{ steps.pre_process_rules.outputs.cross_build_rules }}'
+          JSON='${{ steps.determine_cross_build_rules.outputs.matrix }}'
           if [[ "${JSON}" != "{}" ]]; then
-            echo '${{ steps.pre_process_rules.outputs.cross_build_rules }}'
+            echo '${{ steps.determine_cross_build_rules.outputs.matrix }}'
           else
             echo None
           fi
@@ -1395,7 +1413,7 @@ jobs:
         if: ${{ steps.verify.outputs.mode == 'copy' }}
         uses: actions/download-artifact@v3
         with:
-          name: tmp-cross-binaries-${{ matrix.crosstarget }}
+          name: tmp-cross-binaries-${{ matrix.target }}
           # The file downloaded to dockerbin/xxx will be used by the Dockerfile
           # Note: matrix.platform here has to match the Docker BuildX $TARGETPLATFORM variable available while building
           # the Dockerfile, e.g. linux/amd64.
