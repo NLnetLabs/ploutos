@@ -410,7 +410,7 @@ jobs:
           fi
 
       - name: Verify Docker credentials
-        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && steps.verify_inputs.outputs.has_docker_secrets }}
+        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && steps.verify_inputs.outputs.has_docker_secrets == true }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
@@ -1355,10 +1355,11 @@ jobs:
   # NOTE: If you extend the set of matrix includes in this job you must also extend the call to docker manifest create
   # in the docker-manifest job below.
   docker:
-    if: ${{ needs.prepare.outputs.docker_build_rules != '{}' }}
+    # Use of always() here ensures that even if the cross job is skipped we will still run
+    if: ${{ always() && needs.prepare.outputs.docker_build_rules != '{}' }}
+    needs: [cross, prepare]
     outputs:
       published: ${{ steps.publish.conclusion == 'success' }}
-    needs: [cross, prepare]
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -1467,7 +1468,7 @@ jobs:
           docker run --rm ${{ steps.gen.outputs.image_name }} ${{ inputs.docker_sanity_check_command }}
 
       - name: Log into Docker Hub
-        if: ${{ needs.prepare.outputs.has_docker_secrets }}
+        if: ${{ needs.prepare.outputs.has_docker_secrets == true }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
@@ -1482,7 +1483,7 @@ jobs:
 
       - name: Publish image to Docker Hub
         id: publish
-        if: ${{ needs.prepare.outputs.has_docker_secrets && contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
+        if: ${{ needs.prepare.outputs.has_docker_secrets == true && contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
         uses: docker/build-push-action@v3
         with:
           context: ${{ inputs.docker_context_path }}
@@ -1503,7 +1504,7 @@ jobs:
   # Logs in to Docker Hub using secrets configured in this GitHub repository.
   docker-manifest:
     needs: [prepare, docker]
-    if: ${{ needs.prepare.outputs.has_docker_secrets && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
+    if: ${{ needs.prepare.outputs.has_docker_secrets == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
