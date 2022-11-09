@@ -1,6 +1,6 @@
 # NLnet Labs reusable & starter workflows
 
-This repository contains [GitHub reusable workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) and associated [starter workflows](https://docs.github.com/en/actions/using-workflows/creating-starter-workflows-for-your-organization) used by NLnet Labs GitHub repositories, but also usable by you.
+This repository contains [GitHub reusable workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) and associated [starter workflows](https://docs.github.com/en/actions/using-workflows/creating-starter-workflows-for-your-organization) used by many NLnet Labs GitHub Rust projects.
 
 GitHub Actions workflows are so-called [reusable workflows](https://docs.github.com/en/actions/using-workflows/reusing-workflows) if they contain a `workflow_call` trigger. This trigger enables the workflow to be called from another workflow, i.e. to be re-used.
 
