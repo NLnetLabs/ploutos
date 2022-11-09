@@ -9,6 +9,7 @@
   - [Package build rules](#package-build-rules)
     - [Permitted `<image>` values](#permitted-image-values)
   - [Package test rules](#package-test-rules)
+    - [Package test scripts](#package-test-scripts)
 - [Outputs](#outputs)
 - [How it works](#how-it-works)
   - [Build host pre-installed packages](#build-host-pre-installed-packages)
