@@ -168,7 +168,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 |---|---|---|
 | `pkg` | Yes | The package to build. Used in various places. See below. |
 | `image` | Yes | Specifies the Docker image used by GitHub Actions to run the job in which your application will be built (when not cross-compiled) and packaged. The package type to build is implied by `<os_name>`, e.g. DEBs for Ubuntu and Debian, RPMs for CentOS Has the form `<os_name>:<os_rel>` (e.g. `ubuntu:jammy`, `debian:buster`, `centos:7`, etc). Also see `os` below.  |
-| `target` | Yes | Should be `x86_64` If `x86_64` the Rust application will be compiled using `cargo-deb` (for DEB) or `cargo build` (for RPM) and stripped. Otherwise it will be used to determine the correct cross-compiled binary GitHub Actions artifact to download. |
+| `target` | Yes | Should be `x86_64` If `x86_64` the Rust application will be compiled using `cargo-deb` (for DEB) or `cargo build` (for RPM) and stripped. Otherwise it will be used to determine the cross-compiled binary GitHub Actions artifact to compile and download. |
 | `os` | No | Overrides the value of `image` when determining `os_name` and `os_rel`. |
 | `extra_build_args` | No | A space separated set of additional command line arguments to pass to `cargo-deb`/`cargo build`. |
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to inclde in an RPM package. See below for more info. |

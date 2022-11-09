@@ -3,8 +3,6 @@
 **Contents:**
 - [Known issues](#known-issues)
 - [Inputs](#inputs)
-  - [Workflow inputs](#workflow-inputs)
-  - [Cross build rules](#docker-build-rules)
 - [Outputs](#outputs)
 - [How it works](#how-it-works)
   - [Why is the cross tool used?](#why-is-the-cross-tool-used)
@@ -15,32 +13,7 @@
 
 ## Inputs
 
-### Workflow inputs
-
-| Input | Type | Required | Description |
-|---|---|---|---|
-| `cross_build_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | Yes | See below.  |
-
-### Cross build rules
-
-A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the build process:
-
-| Matrix Key | Required | Description |
-|---|---|---|
-| `target` | Yes | A list of [Rust target triples](https://doc.rust-lang.org/nightly/rustc/platform-support.html) to cross-compile your application for. |
-
-Example using an inline YAML string matrix definition:
-
-```yaml
-jobs:
-  my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
-    with:
-      cross_build_rules: |
-        target:
-          - arm-unknown-linux-musleabihf
-          - arm-unknown-linux-gnueabihf
-```
+None. The set of targets to cross-compile for is automatically determined from the unique union of the `target` values supplied in the `docker_build_rules` and/or `package_build_rules` inputs.
 
 ## Outputs
 

@@ -83,7 +83,7 @@ Note that Git checkout is **NOT** done by the caller. Instead Ploutos checks out
 Only the packaging types that you request (via the workflow call parameters) will actually be run, i.e. you can build only DEB packages, or only RPM and Docker, and cross-compile or not as needed.
 
 - `prepare` - checks if the given inputs look roughly okay.
-- [`cross`](./cross_compiling.md) - cross-compiles the Rust Cargo application per the provided rules (if any).
+- [`cross`](./cross_compiling.md) - cross-compiles the Rust Cargo application if needed.
 - [`pkg`](./os_packaging.md) - compiles (if not already cross-compiled) and packages the Rust Cargo application as a DEB or RPM package.
 - [`pkg-test`](./os_packaging.md) - tests the produced DEB/RPM packages, both with some standard checks and optionally with application-specific checks provided by you.
 - [`docker`](./docker_packaging.md) - builds and publishes one or more Docker images.
