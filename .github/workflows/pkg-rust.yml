@@ -189,6 +189,16 @@ on:
         required: false
         type: string
         default: ''
+      deb_apt_key_url:
+        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key."
+        required: false
+        type: string
+        default: 'https://packages.nlnetlabs.nl/aptkey.asc'
+      deb_apt_source:
+        description: "When upgrading from a previously published package, this is either lines of text to write to an APT sources file, or the relative path to an APT sources file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders."
+        required: false
+        type: string
+        default: 'deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
 
       cross_build_args:
         description: "Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`."
@@ -212,6 +222,20 @@ on:
         required: false
         type: string
         default: ''
+      rpm_yum_key_url:
+        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key."
+        required: false
+        type: string
+        default: 'https://packages.nlnetlabs.nl/aptkey.asc'
+      rpm_yum_repo:
+        description: "When upgrading from a previously published package, this is either lines of text to write to an RPM repo file, or the relative path to an RPM repo file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders."
+        required: false
+        type: string
+        default: |
+          [nlnetlabs]
+          name=NLnet Labs
+          baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
+          enabled=1
 
       package_test_scripts_path:
         description: "The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade."
@@ -226,9 +250,12 @@ on:
         required: false
 
     outputs:
-      docker_published:
+      docker_images_published:
         description: "Whether publishing of Docker images was done or not."
         value: ${{ jobs.docker.outputs.published }}
+      docker_manifest_published:
+        description: "Whether publishing of the Docker manifest was done or not."
+        value: ${{ jobs.docker-manifest.outputs.published }}
 
 defaults:
   run:
@@ -410,7 +437,7 @@ jobs:
           fi
 
       - name: Verify Docker credentials
-        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && steps.verify_inputs.outputs.has_docker_secrets == true }}
+        if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && fromJSON(steps.verify_inputs.outputs.has_docker_secrets) == true }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
@@ -652,7 +679,6 @@ jobs:
             apt-get install -y curl
             ;;
           centos)
-            yum update -y
             ;;
         esac
 
@@ -663,13 +689,12 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            apt-get install -y binutils build-essential jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
+            apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
             ;;
           centos)
+            sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum install epel-release -y
-            yum update -y
-            yum install -y jq rpmlint ${{ inputs.rpm_extra_build_packages }}
-            yum groupinstall -y "Development Tools"
+            yum install -y findutils gcc jq rpmlint ${{ inputs.rpm_extra_build_packages }}
             ;;
         esac
 
@@ -929,7 +954,7 @@ jobs:
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/.github/v3.0.1/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/.github/v3.0.4/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
@@ -1079,7 +1104,9 @@ jobs:
   # actual deployment targets, nor do GH runners support all targets that we want to test. Don't test in Docker
   # containers as they do not support systemd.
   pkg-test:
-    if: ${{ needs.prepare.outputs.package_test_rules != '{}' }}
+    # Use of always() here ensures that even if the _cross_ job (note: not the 'pkg' job) is skipped we will still run.
+    # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
+    if: ${{ always() && needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
     runs-on: ubuntu-20.04
     strategy:
@@ -1190,7 +1217,6 @@ jobs:
               # see: https://stackoverflow.com/a/70930049
               sg lxd -c "lxc exec testcon -- sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*"
             fi
-            sg lxd -c "lxc exec testcon -- yum update -y"
             sg lxd -c "lxc exec testcon -- yum install -y man"
             ;;
         esac
@@ -1216,9 +1242,14 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            echo "deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main" >$HOME/nlnetlabs.list
-            sg lxd -c "lxc file push $HOME/nlnetlabs.list testcon/etc/apt/sources.list.d/"
-            sg lxd -c "lxc exec testcon -- wget -q https://packages.nlnetlabs.nl/aptkey.asc"
+            if [[ -f '${{ inputs.deb_apt_source }}' ]]; then
+              sg lxd -c "lxc file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list"
+            else
+              echo '${{ inputs.deb_apt_source }}' >$HOME/ploutos.list
+              sg lxd -c "lxc file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/"
+            fi
+            sg lxd -c "lxc exec testcon -- sed -i -e 's/\${OS_NAME}/${OS_NAME}/g' -e 's/\${OS_REL}/${OS_REL}/g' /etc/apt/sources.list.d/ploutos.list"
+            sg lxd -c "lxc exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-key add ./aptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-get -y update"
             sg lxd -c "lxc exec testcon -- apt-get install -y ${{ matrix.pkg }}"
@@ -1242,12 +1273,14 @@ jobs:
             fi
             ;;
           centos)
-            echo '[nlnetlabs]' >$HOME/nlnetlabs.repo
-            echo 'name=NLnet Labs' >>$HOME/nlnetlabs.repo
-            echo 'baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch' >>$HOME/nlnetlabs.repo
-            echo 'enabled=1' >>$HOME/nlnetlabs.repo
-            sg lxd -c "lxc file push $HOME/nlnetlabs.repo testcon/etc/yum.repos.d/"
-            sg lxd -c "lxc exec testcon -- rpm --import https://packages.nlnetlabs.nl/aptkey.asc"
+            if [[ -f '${{ inputs.rpm_yum_repo }}' ]]; then
+              sg lxd -c "lxc file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo"
+            else
+              echo '${{ inputs.rpm_yum_repo }}' >$HOME/ploutos.repo
+              sg lxd -c "lxc file push $HOME/ploutos.repo testcon/etc/yum.repos.d/"
+            fi
+            sg lxd -c "lxc exec testcon -- sed -i -e 's/\${OS_NAME}/${OS_NAME}/g' -e 's/\${OS_REL}/${OS_REL}/g' /etc/yum.repos.d/ploutos.repo"
+            sg lxd -c "lxc exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}"
             sg lxd -c "lxc exec testcon -- yum install -y ${{ matrix.pkg }}"
             ;;
         esac
@@ -1468,7 +1501,7 @@ jobs:
           docker run --rm ${{ steps.gen.outputs.image_name }} ${{ inputs.docker_sanity_check_command }}
 
       - name: Log into Docker Hub
-        if: ${{ needs.prepare.outputs.has_docker_secrets == true }}
+        if: ${{ fromJSON(needs.prepare.outputs.has_docker_secrets) == true }}
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
@@ -1483,7 +1516,7 @@ jobs:
 
       - name: Publish image to Docker Hub
         id: publish
-        if: ${{ needs.prepare.outputs.has_docker_secrets == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
+        if: ${{ fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
         uses: docker/build-push-action@v3
         with:
           context: ${{ inputs.docker_context_path }}
@@ -1504,7 +1537,11 @@ jobs:
   # Logs in to Docker Hub using secrets configured in this GitHub repository.
   docker-manifest:
     needs: [prepare, docker]
-    if: ${{ needs.prepare.outputs.has_docker_secrets == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
+    outputs:
+      published: ${{ steps.publish.conclusion == 'success' }}
+    # Use of always() here ensures that even if the _cross_ job (note: not the 'docker' job) is skipped we will still run.
+    # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
+    if: ${{ always() && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
@@ -1547,6 +1584,7 @@ jobs:
           done
 
       - name: Publish multi-arch image manifest(s) to Docker Hub
+        id: publish
         run: |
           LOWER_DOCKER_ORG="${{ steps.decode.outputs.lower_docker_org }}"
           for REPO_AND_TAG in ${{ steps.decode.outputs.repo_and_tag_pairs }}; do
