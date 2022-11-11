@@ -255,12 +255,12 @@ Post package creation `Lintian` (for DEBs) and `rpmlint` for (RPMs) will be invo
 
 Rust is installed from [rustup](https://rustup.rs/) using the [minimal profile](https://rust-lang.github.io/rustup/concepts/profiles.html).
 
-Some limited base development tools are installed prior to Rust compilation to support cases where a native library must be built for a dependency.
+Some limited base development tools are installed prior to Rust compilation to support cases where a native library must be built for a dependency, plus some tools used by Ploutos itself:
 
 | `os_name` | Packages installed |
 |---|---|
-| `debian` or `ubuntu` | `binutils`, `build-essential` and `pkg-config` |
-| `centos` | `Development Tools` |
+| `debian` or `ubuntu` | `binutils`, `gcc`, `dpkg-dev`, `jq`, `lintian` & `pkg-config` |
+| `centos` | `findutils`, `gcc`, `jq` & `rpmlint` |
 
 If needed you can cause more packages to be installed in the build host using the `deb_extra_build_packages` and/or `rpm_extra_build_packages` workflow inputs.
 ### Special cases
