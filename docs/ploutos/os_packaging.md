@@ -15,7 +15,7 @@
   - [Build host pre-installed packages](#build-host-pre-installed-packages)
   - [Install-time package dependencies](#install-time-package-dependencies)
   - [Target-specific and multi-package packaging](#target-specific-and-multi-package-packaging)
-  - [Maintainer script(let)s](#maintener-scriptlets)
+  - [Maintainer script(let)s](#maintainer-scriptlets)
   - [Systemd units](#systemd-units)
   - [Automated handling of special cases](#automated-handling-of-special-cases)
 
