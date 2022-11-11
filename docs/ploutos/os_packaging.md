@@ -161,7 +161,7 @@ Many of the settings that affect DEB and RPM packaging are taken from your `Carg
 | `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
 | `deb_apt_source` | string | No* | A line or lines to write to an APT `/etc/apt/sources.list.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 | `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install in the build host when (not cross) compiling. |
-| `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of `pre_install_script`, `post_install_script` and/or `post_uninstall_script`. |
+| `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of the `pre_install_script`, `pre_uninstall_script`, `post_install_script` and/or `post_uninstall_script` `cargo-generate-rpm` settings. |
 | `rpm_yum_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `rpm_yum_repo`. Defaults to the NLnet Labs package repository key URL. |
 | `rpm_yum_source` | string | No* | A line or lines to write to a YUM `/etc/yum.repos.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 
@@ -307,6 +307,8 @@ Debian packages implement such capabilities via so-called [maintainer scripts](h
 `cargo-generate-rpm` supports `pre_install_script`, `pre_uninstall_script,` `post_install_script` and `post_uninstall_script` keys in `[package.metadata.generate-rpm]` TOML table of `Cargo.toml` which expect scripts defined inline as TOML strings.
 
 Both DEB and RPM support so-called "macros" within the maintainer scripts. `cargo-deb` has built-in support for a [subset](https://github.com/kornelski/cargo-deb/blob/main/autoscripts/) of the RPM macros, mostly for working with systemd units, which can be incorporated automatically by adding a `#DEBHELPER#` line to your maintainer script file. `cargo-generate-rpm` has no equivalent but, similar to the `cargo-deb` support, Ploutos is able to [emulate](https://github.com/NLnetLabs/.github/blob/main/fragments/macros.systemd.sh) systemd unit related macros by replacing a `#RPM_SYSTEMD_MACROS#` line in your maintainer scripts.
+
+For RPMs, do not set `xxx_script` settings in `[package.metadata.generate-rpm]` to the target path of a script that is included as a `[package.metadata.generate-rpm]` "asset". While this may work in some cases, it will not in others. For example it will NOT work for post-uninstall scripts as the script file will be deleted before it can be executed. Instead, if you do not wish to include entire shell scripts in your `Cargo.toml` file, Ploutos supports defining the `xxx_script` setting values in a separate TOML file via the `rpm_scriptlets_path` workflow input.
 
 Further reading:
 - [Debian policy manual chapter 6: Package maintainer scripts and installation procedure](https://www.debian.org/doc/debian-policy/ch-maintainerscripts)
