@@ -227,7 +227,10 @@ flowchart LR
   next -- fresh\ninstall --> install-new
   install-prev --> test1
   install-new --> test1
-  test1 --> upgrade --> test2 --> uninstall --> reinstall
+  test1 --> next2{mode}
+  next2 -- upgrade\nfrom\npublished --> upgrade --> test2 --> uninstall
+  next2 -- fresh\ninstall --> uninstall
+  uninstall --> reinstall
 ```
 
 A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the testing process:
