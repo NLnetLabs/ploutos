@@ -163,6 +163,15 @@ Many of the settings that affect DEB and RPM packaging are taken from your `Carg
 
 ### Package build rules
 
+By supplying `package_build_rules` you instruct Ploutos to package your Rust Cargo application. The process looks like this:
+
+```mermaid
+flowchart LR
+  download --> package
+  compile --> package
+  package --> post-process --> verify --> upload
+```
+
 A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the build process:
 
 | Matrix Key | Required | Description |
@@ -190,6 +199,26 @@ It may not matter which O/S release the RPM or DEB package is built inside, exce
 
 ### Package test rules
 
+Testing packages is optional. Only packages that were built using `package_build_rules` can be tested.
+
+The testing process looks like this:
+
+```mermaid
+flowchart LR
+  prep-container[Launch & setup\nLXC container]
+  install-prev[Install last\npublished pkg]
+  install-new[Install just\nbuilt pkg]
+  test1[run\npost-install\ntests]
+  test2[run\npost-upgrade\ntests]
+
+  prep-container --> next{mode}
+  next -- upgrade\nfrom\npublished --> install-prev
+  next -- fresh\ninstall --> install-new
+  install-prev --> test1
+  install-new --> test1
+  test1 --> upgrade --> test2 --> uninstall --> reinstall
+```
+
 A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following keys must be provided to guide the testing process:
 
 | Matrix Key | Required | Description |
@@ -202,7 +231,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 
 ### Package test scripts
 
-In addition to verifying the built package and installing it to test that the package works, you may also supply an application specific test script.
+In addition to verifying the built package (during the `pkg` job) and installing it (during the `pkg-test` job) to test that it works, you may also supply an application specific test script to run during the `pkg-test` job post-install and post-upgrade.
 
 The script should be provided as the relative path to an executable file that is part of your application git repository, i.e. available when the repository branch being tested is checked out.
 
