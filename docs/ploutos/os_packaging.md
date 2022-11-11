@@ -9,15 +9,15 @@
   - [Package build rules](#package-build-rules)
     - [Permitted `<image>` values](#permitted-image-values)
   - [Package test rules](#package-test-rules)
-    - [Package test scripts](#package-test-scripts)
+    - [Package test script inputs](#package-test-script-inputs)
 - [Outputs](#outputs)
 - [How it works](#how-it-works)
   - [Build host pre-installed packages](#build-host-pre-installed-packages)
-  - [Special cases](#special-cases)
   - [Install-time package dependencies](#install-time-package-dependencies)
-  - [Custom handling of `Cargo.toml`](#custom-handling-of-cargotoml)
+  - [Target-specific and multi-package packaging](#target-specific-and-multi-package-packaging)
+  - [Maintainer scripts](#maintener-scripts)
   - [Systemd units](#systemd-units)
-    - [Target dependent unit files](#target-dependent-unit-files)
+  - [Automated handling of special cases](#automated-handling-of-special-cases)
 
 ## Introduction
 
@@ -199,6 +199,8 @@ It may not matter which O/S release the RPM or DEB package is built inside, exce
 
 ### Package test rules
 
+By supplying `package_test_rules` you instruct Ploutos to test your packages (beyond the basic verification done post-build).
+
 Testing packages is optional. Only packages that were built using `package_build_rules` can be tested.
 
 The testing process looks like this:
@@ -229,7 +231,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `mode` | Yes | One of: `fresh-install` or `upgrade-from-published` _(assumes a previous version is available in the default package repositories)_. |
 | `ignore_upgrade_failure` | No | If package upgrade fails should this be ignored? (default: false). Ignoring an upgrade can be necessary when a prior release has a bug in the scripts that are run when the package is upgraded, otherwise the `pkg-test` job will fail. |
 
-### Package test scripts
+### Package test script inputs
 
 In addition to verifying the built package (during the `pkg` job) and installing it (during the `pkg-test` job) to test that it works, you may also supply an application specific test script to run during the `pkg-test` job post-install and post-upgrade.
 
@@ -249,7 +251,11 @@ The `pkg` and `pkg-test` workflow jobs will do a Git checkout of the repository 
 
 The `cargo-deb` and/or `cargo-generate-rpm` tools will be invoked to package (and if not cross-compiled, will also compile) your Rust application.
 
-Post package creation `Lintian` (for DEBs) and `rpmlint` for (RPMs) will be invoked to report on any issues with the created archives. (note: Ploutos may continue even if errors are reported as these tools can be extremely strict and you may not need or want to resolve all issues they report).
+Post package creation, the built package will be checked for issues (using `Lintian` for DEBs, and `rpmlint` for RPMs).
+
+If testing is enabled the packages will be installed inside an LXC container running the O/S that the package was intended for, using the appropriate package management tool (e.g. `apt` or `yum`). The package will also be uninstalled and reinstalled to further exercise any scripts included in the packages to perform special actions on install/upgrade/uninstall.
+
+To complete the testing regime, if enabled, a separate test run installs a the most recently published (assumed to be) older version of the package then upgrades it using the newly built package.
 
 ### Build host pre-installed packages
 
@@ -263,7 +269,30 @@ Some limited base development tools are installed prior to Rust compilation to s
 | `centos` | `findutils`, `gcc`, `jq` & `rpmlint` |
 
 If needed you can cause more packages to be installed in the build host using the `deb_extra_build_packages` and/or `rpm_extra_build_packages` workflow inputs.
-### Special cases
+
+### Install-time package dependencies
+
+Both DEB and RPM packages support the concept of other packages that should be installed in order to use our package. Both `cargo-deb` (via `$auto`) and `cargo-generate-rpm` (via `auto-req`) are able to determine needed shared libraries and the package that provides them and automagically adds such dependendencies to the created package. For cross-compiled binaries and/or for additional tools known to be needed (either by your application and/or its pre/post install scripts) you must specify such dependencies manually in `Cargo.toml`.
+
+### Target-specific and multi-package packaging
+
+Ploutos has some special behaviours regarding selection of the right `Cargo.toml` TOML table settings to use with `cargo-deb` and `cargo-generate-rpm`.
+
+While both `cargo-deb` and `cargo-generate-rpm` take their core configuration from a combination of `Cargo.toml` `[package.metadata.XXX]` settings and command line arguments, and both support the notion of "variants" as a way to override and/or extend the settings defined in the `[package.metadata.XXX]` TOML table, "variant" support in `cargo-generate-rpm` is relatively new and not yet fully adoptd by Ploutos and neither tool supports defining packaging settings for more than one application in a single `Cargo.toml` file.
+
+For DEB packaging, Ploutos will look for and instruct `cargo-deb` to use a variant named `<os_name>-<os_rel>` (or `<os_name>-<os_rel>-<target>` when cross-compiling) if it exists, and assuming that the `minimal` or `minimal-cross` profiles don't also exist and have not been chosen (see 'Support for "old" O/S releases' above).
+
+For both DEB and RPM packaging, Ploutos has some limited support for defining packaging settings for more than one package in a single `Cargo.toml` file. If a `[package.metadata.deb_alt_base_<pkg>]` (for DEBs), or `[package.metadata.generate-rpm-alt-base-<pkg>]` (for RPMs), TOML table exists in `Cargo.toml` Ploutos will replace the proper `[package.metadata.deb]` or `[package.metadata.generate-rpm]` TOML table with the "alternate" table that was found.
+
+### Maintainer scripts
+
+TO DO
+
+### Systemd units
+
+TO DO
+
+### Automated handling of special cases
 
 Ploutos is aware of certain cases that must be handled specially, for example:
 
@@ -291,21 +320,3 @@ Ploutos is aware of certain cases that must be handled specially, for example:
 - **Support for "old" O/S releases:** For some "old" O/S releases it is known that the version of systemd that they support understands far fewer systemd unit file keys than more modern versions. In such cases (Ubuntu Xenial & Bionic, and Debian Stretch) the `cargo-deb` "variant" to use will be set to `minimal` if there exists a `[package.metadata.deb.variants.minimal]` TOML table in `Cargo.toml`. When cross-compiling the `minimal-cross` variant is looked for instead.
 
 - **Modified configuration files:** When upgrading a DEB package the installer knows which files are so-called [`conffiles`](https://www.debian.org/doc/manuals/maint-guide/dother.en.html#conffiles). In an interactive shell session when a package is upgraded and it is detected that the user has made changes to a `conffile` that is supplied by the package being upgraded, the user is asked whether to keep or discard their modifications. In an automated environment like the package testing phase of Ploutos nobody is present to answer this question, but we want to test that package upgrade succeeds also when preserving user changes instead of taking the new configuration files provided by the package. Therefore Ploutos sets the `confold` option when upgrading the package so that the users "old" configuration files are kept.
-
-### Install-time package dependencies
-
-Both DEB and RPM packages support the concept of other packages that should be installed in order to use our package. Both `cargo-deb` (via `$auto`) and `cargo-generate-rpm` (via `auto-req`) are able to determine needed shared libraries and the package that provides them and automagically adds such dependendencies to the created package. For cross-compiled binaries and/or for additional tools known to be needed (either by your application and/or its pre/post install scripts) you must specify such dependencies manually in `Cargo.toml`.
-
-### Custom handling of `Cargo.toml`
-
-Ploutos has some special behaviours regarding selection of the right `Cargo.toml` TOML table settings to use with `cargo-deb` and `cargo-generate-rpm`.
-
-While both `cargo-deb` and `cargo-generate-rpm` take their core configuration from a combination of `Cargo.toml` `[package.metadata.XXX]` settings and command line arguments, and both support the notion of "variants" as a way to override and/or extend the settings defined in the `[package.metadata.XXX]` TOML table, "variant" support in `cargo-generate-rpm` is relatively new and not yet fully adoptd by Ploutos and neither tool supports defining packaging settings for more than one application in a single `Cargo.toml` file.
-
-For DEB packaging, Ploutos will look for and instruct `cargo-deb` to use a variant named `<os_name>-<os_rel>` (or `<os_name>-<os_rel>-<target>` when cross-compiling) if it exists, and assuming that the `minimal` or `minimal-cross` profiles don't also exist and have not been chosen (see 'Support for "old" O/S releases' above).
-
-For both DEB and RPM packaging, Ploutos has some limited support for defining packaging settings for more than one package in a single `Cargo.toml` file. If a `[package.metadata.deb_alt_base_<pkg>]` (for DEBs), or `[package.metadata.generate-rpm-alt-base-<pkg>]` (for RPMs), TOML table exists in `Cargo.toml` Ploutos will replace the proper `[package.metadata.deb]` or `[package.metadata.generate-rpm]` TOML table with the "alternate" table that was found.
-
-### Systemd units
-
-TO DO
