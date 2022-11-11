@@ -158,8 +158,12 @@ Many of the settings that affect DEB and RPM packaging are taken from your `Carg
 | `package_test_scripts_path` | string | No | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install in the build host when (not cross) compiling. |
 | `deb_maintainer` | string | No* | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. Required when packaging for a DEB based O/S in order to generate the required [`changelog`](https://www.debian.org/doc/manuals/maint-guide/dreq.en.html#changelog) file. |
+| `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
+| `deb_apt_source` | string | No* | A line or lines to write to an APT `/etc/apt/sources.list.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 | `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install in the build host when (not cross) compiling. |
 | `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of `pre_install_script`, `post_install_script` and/or `post_uninstall_script`. |
+| `rpm_yum_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `rpm_yum_repo`. Defaults to the NLnet Labs package repository key URL. |
+| `rpm_yum_source` | string | No* | A line or lines to write to a YUM `/etc/yum.repos.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 
 ### Package build rules
 
@@ -240,6 +244,14 @@ The script should be provided as the relative path to an executable file that is
 The script can optionally check different things after initial installation vs after upgrade from a previous installation, by checking the value of the first command line argument provided to the script. This will either be `post-install` or `post-upgrade`.
 
 If the script exits with a non-zero exit code then the `pkg-test` job will fail.
+
+### Upgrade testing
+
+To test package upgrade there must exist an earlier version of the package to upgrade from. Upgrade testing is only done if a matrix item in `package_test_rules` sets `mode` to `upgrade-from-published` as opposed to `fresh-install`.
+
+To demonstrate and test the actual end user upgrade experience, upgrade testing installs the most recently published version of the package from its public repository, assuming that that package is an earlier version than the one being built _(**note:** if not you will get an error about the upgrade not being an upgrade)_ and then upgrades it using the newly built package.
+
+For backward compatibility the testing process assumes by default that the package is located in the NLnet Labs public package repository. If it is located in some other repository you can override the default locations using the `deb_apt_key_url` and `deb_apt_source` inputs, and their RPM counterparts `rpm_yum_key_url` and `rpm_yum_repo`.
 
 ## Outputs
 
