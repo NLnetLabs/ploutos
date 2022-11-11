@@ -44,6 +44,9 @@ _**Note: This example assumes have a GitHub account, that you are running on Lin
 
 For the packaging process to work we need simple Hello World Cargo project to package, and a bare minimum of package metadata, let's create that and verify that it compiles and runs:
 
+<details>
+  <summary>Click here to show the example</summary>
+
 ```shell
 $ cargo new my_pkg_test
 $ cd my_pkg_test
@@ -142,6 +145,8 @@ Setting up pkg_hw_test (0.1.0-1jammy) ...
 $ pkg_hw_test 
 Hello, world!
 ```
+
+</details>
 
 ## Inputs
 
