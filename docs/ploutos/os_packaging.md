@@ -310,6 +310,8 @@ Both DEB and RPM support so-called "macros" within the maintainer scripts. `carg
 
 For RPMs, do not set `xxx_script` settings in `[package.metadata.generate-rpm]` to a command to execute a script at its installed location as set in the `[package.metadata.generate-rpm]` TOML table `assets` array. While this may work in some cases, it will not in others. For example it will NOT work for post-uninstall scripts as the script file will be deleted before it can be executed. Instead, if you do not wish to include entire shell scripts in your `Cargo.toml` file, Ploutos supports defining the `xxx_script` setting values in a separate TOML file via the `rpm_scriptlets_path` workflow input.
 
+Lastly, if your scripts execute other programs, e.g. `adduser`, those programs have to be present on the target system, and so the package that provides them should be added as a runtime install dependency (via the `depends` setting in the `[package.metadata.deb]` TOML table in `Cargo.toml` for DEBs, or the `requires` setting in the `[package.metadata.generate-rpm]` table for RPMs). The automated depdendency discovery features of the `cargo-deb` and `cargo-generate-rpm` tools are not capable of detecting dependencies of maintainer script(let)s.
+
 Further reading:
 - [Debian policy manual chapter 6: Package maintainer scripts and installation procedure](https://www.debian.org/doc/debian-policy/ch-maintainerscripts)
 - [Fedora Packaging Guidelines](https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/)
