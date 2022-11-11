@@ -15,7 +15,7 @@
   - [Build host pre-installed packages](#build-host-pre-installed-packages)
   - [Install-time package dependencies](#install-time-package-dependencies)
   - [Target-specific and multi-package packaging](#target-specific-and-multi-package-packaging)
-  - [Maintainer scripts](#maintener-scripts)
+  - [Maintainer script(let)s](#maintener-scriptlets)
   - [Systemd units](#systemd-units)
   - [Automated handling of special cases](#automated-handling-of-special-cases)
 
@@ -296,9 +296,22 @@ For DEB packaging, Ploutos will look for and instruct `cargo-deb` to use a varia
 
 For both DEB and RPM packaging, Ploutos has some limited support for defining packaging settings for more than one package in a single `Cargo.toml` file. If a `[package.metadata.deb_alt_base_<pkg>]` (for DEBs), or `[package.metadata.generate-rpm-alt-base-<pkg>]` (for RPMs), TOML table exists in `Cargo.toml` Ploutos will replace the proper `[package.metadata.deb]` or `[package.metadata.generate-rpm]` TOML table with the "alternate" table that was found.
 
-### Maintainer scripts
+### Maintainer script(let)s
 
-TO DO
+For some packages you may wish to take more action on install, upgrade or uninstall of your package than just adding files to the target system. For example you may wish to start/stop services, create user accounts, generate config files, etc.
+
+Debian packages implement such capabilities via so-called [maintainer scripts](https://www.debian.org/doc/debian-policy/ch-maintainerscripts), while RPM packages do so via so-called [scriptlets](https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/).
+
+`cargo-deb` supports a `maintainer-scripts` key in the `[package.metadata.deb]` TOML table of `Cargo.toml` which specifies the path to a directory containing `preinst`, `postinst`, `prerm` and/or `postrm` scripts which will be included in the DEB package in the right way such that tools such as `apt` will execute them as appropriate on package install, upgrade and/or uninstall.
+
+`cargo-generate-rpm` supports `pre_install_script`, `pre_uninstall_script,` `post_install_script` and `post_uninstall_script` keys in `[package.metadata.generate-rpm]` TOML table of `Cargo.toml` which expect scripts defined inline as TOML strings.
+
+Both DEB and RPM support so-called "macros" within the maintainer scripts. `cargo-deb` has built-in support for a [subset](https://github.com/kornelski/cargo-deb/blob/main/autoscripts/) of the RPM macros for working with systemd units which can be incorporated automatically by adding a `#DEBHELPER#` line to your maintainer script file. `cargo-generate-rpm` has no equivalent but, similar to the `cargo-deb` support, Ploutos is able to [emulate](https://github.com/NLnetLabs/.github/blob/main/fragments/macros.systemd.sh) systemd unit related macros by replacing a `#RPM_SYSTEMD_MACROS#` line in your maintainer scripts.
+
+Further reading:
+- [Debian policy manual chapter 6: Package maintainer scripts and installation procedure](https://www.debian.org/doc/debian-policy/ch-maintainerscripts)
+- [Fedora Packaging Guidelines](https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/)
+- [Maximum RPM: Install/Erase-time Scripts](http://ftp.rpm.org/max-rpm/s1-rpm-inside-scripts.html#S2-RPM-INSIDE-ERASE-TIME-SCRIPTS)
 
 ### Systemd units
 
