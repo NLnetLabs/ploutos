@@ -42,7 +42,7 @@ Produced DEB and RPM packages will be attached as artifacts to the caller workfl
 
 > The Ploutos workflow does **NOT** publish DEB and/or RPM packages anywhere. If you want your users to be able to download the produced DEB and/or RPM either directly or from a package repository using a tool like `apt` (for DEB) or `yum` (for RPM) you will need to upload the packages to the appropriate location yourself.
 
-Produced Docker images will be published to [Docker Hub](https://hub.docker.com/). In order for this to work you must configure the destination Docker Hub organisation, repository, username and password/access token and ensure that the used credentials provide write access to the relevant Docker Hub repository.
+Produced Docker images can optionally be published to [Docker Hub](https://hub.docker.com/). In order for this to work you must configure the destination Docker Hub organisation, repository, username and password/access token and ensure that the used credentials provide write access to the relevant Docker Hub repository.
 
 At NLnet Labs we publish produced DEB and RPM packages at https://packages.nlnetlabs.nl/ via an internal process that downloads the workflow run artifacts and signs & uploads them to the correct location, and Docker images are published by the Ploutos workflow to the appropriate repository under the https://hub.docker.com/r/nlnetlabs/ Docker organisation.
 
@@ -122,7 +122,7 @@ For a more useful example complete with step-by-step explanation of all the piec
 
 ## Key concepts and general configuration
 
-Read [this page](./key_concepts_and_config.md) more about key concepts and general configuration not specific to any single packaging type.
+Read [this page](./key_concepts_and_config.md) to learn more about key concepts and general configuration not specific to any single packaging type.
 
 ## Creating specific package types
 
