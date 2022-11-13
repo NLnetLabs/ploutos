@@ -6,7 +6,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [Why use Ploutos?](#why-use-ploutos)
 - [Known issues](#known-issues)
 - [See also](#see-also)
-- [Can I just run the Ploutos workflow?](#can-i-just-run-the-pkg-workflow)
+- [Can I just run the Ploutos workflow?](#can-i-just-run-the-ploutos-workflow)
 - [What packages can the Ploutos workflow produce?](#what-packages-can-the-ploutos-workflow-produce)
 - [How can I run the created packages?](#how-can-i-run-the-created-packages)
 - [How does it work?](#how-does-it-work)
