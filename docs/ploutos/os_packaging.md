@@ -154,6 +154,8 @@ Hello, world!
 
 Many of the settings that affect DEB and RPM packaging are taken from your `Cargo.toml` file by the [`cargo-deb`](https://github.com/kornelski/cargo-deb) and [`cargo-generate-rpm`](https://github.com/cat-in-136/cargo-generate-rpm) tools respectively. For more information read their respective documentation.
 
+Both `cargo-deb` and `cargo-generate-rpm` have a `variant` feature. Ploutos will look for a `cargo-deb` "variant" by the name `<os_name>-<os_rel>[-<target>]` (with target only included in the variant name when cross-compiling, i.e. when `<target>` is not `x86_64`. It also supports the concept of a "minimal" variant, more on that below. `cargo-generate-rpm` variants are not currently supported, except for some limited use internal to Ploutos.
+
 ### Workflow inputs
 
 | Input | Type | Required | Description |
@@ -310,11 +312,13 @@ For some packages you may wish to take more action on install, upgrade or uninst
 
 Debian packages implement such capabilities via so-called [maintainer scripts](https://www.debian.org/doc/debian-policy/ch-maintainerscripts), while RPM packages do so via so-called [scriptlets](https://docs.fedoraproject.org/en-US/packaging-guidelines/Scriptlets/).
 
-`cargo-deb` supports a `maintainer-scripts` key in the `[package.metadata.deb]` TOML table of `Cargo.toml` which specifies the path to a directory containing `preinst`, `postinst`, `prerm` and/or `postrm` scripts which will be included in the DEB package in the right way such that tools such as `apt` will execute them as appropriate on package install, upgrade and/or uninstall.
+`cargo-deb` supports a `maintainer-scripts` key in the `[package.metadata.deb]` TOML table of `Cargo.toml` which specifies the path to a directory containing `preinst`, `postinst`, `prerm` and/or `postrm` scripts which will be included in the DEB package in the right way such that tools such as `apt` will execute them as appropriate on package install, upgrade and/or uninstall. The exact files that are selected for inclusion is affected by the `cargo-deb` "variant" that Ploutos enables.
 
 `cargo-generate-rpm` supports `pre_install_script`, `pre_uninstall_script,` `post_install_script` and `post_uninstall_script` keys in `[package.metadata.generate-rpm]` TOML table of `Cargo.toml` which expect scripts defined inline as TOML strings.
 
-Both DEB and RPM support so-called "macros" within the maintainer scripts. `cargo-deb` has built-in support for a [subset](https://github.com/kornelski/cargo-deb/blob/main/autoscripts/) of the RPM macros, mostly for working with systemd units, which can be incorporated automatically by adding a `#DEBHELPER#` line to your maintainer script file. `cargo-generate-rpm` has no equivalent but, similar to the `cargo-deb` support, Ploutos is able to [emulate](https://github.com/NLnetLabs/.github/blob/main/fragments/macros.systemd.sh) systemd unit related macros by replacing a `#RPM_SYSTEMD_MACROS#` line in your maintainer scripts.
+Both DEB and RPM support so-called "macros" within the maintainer scripts. `cargo-deb` has built-in support for a [subset](https://github.com/kornelski/cargo-deb/blob/main/autoscripts/) of the RPM macros, mostly for working with systemd units, which can be incorporated automatically by adding a `#DEBHELPER#` line to your maintainer script file. This will take care of activating any systemd units that were detected during package creation.
+
+`cargo-generate-rpm` has no equivalent but, Ploutos is able to [emulate](https://github.com/NLnetLabs/.github/blob/main/fragments/macros.systemd.sh) systemd unit related macros by replacing a `#RPM_SYSTEMD_MACROS#` line in your maintainer scripts. You are responsible for invoking the macros yourself however from your scriptlets, just including `#RPM_SYSTEMD_MACROS#` is not enough.
 
 For RPMs, do not set `xxx_script` settings in `[package.metadata.generate-rpm]` to a command to execute a script at its installed location as set in the `[package.metadata.generate-rpm]` TOML table `assets` array. While this may work in some cases, it will not in others. For example it will NOT work for post-uninstall scripts as the script file will be deleted before it can be executed. Instead, if you do not wish to include entire shell scripts in your `Cargo.toml` file, Ploutos supports defining the `xxx_script` setting values in a separate TOML file via the `rpm_scriptlets_path` workflow input.
 
@@ -327,7 +331,11 @@ Further reading:
 
 ### Systemd units
 
-TO DO
+To have your application start and stop automatically on operating systems that support systemd, you can install systemd a unit to handle this for you.
+
+`cargo-deb` has native support for detecting systemd unit files and installing them into the correct place and can supply the commands a maintainer script needs to use to (de)activate the unit on (un)install. It is even able to select different unit files based on the `cargo-deb` "variant" that Ploutos enables (e.g. see section _"Support for old O/S releases"_ in [Automated handling of special cases](#automated-handling-of-special-cases) below).
+
+`cargo-generate-rpm` has no such native support, but if you include a systemd unit file as an "asset" in the `[package.metadata.generate-rpm]` section of `Cargo.toml` you can then (de)activate the unit as needed by using the `#RPM_SYSTEMD_MACROS#` mentioned above in the section on [Maintainer script(let)s](#maintainer-scriptlets).
 
 ### Automated handling of special cases
 
