@@ -49,7 +49,7 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
     with:
       docker_org: my_org
       docker_repo: my_image_name

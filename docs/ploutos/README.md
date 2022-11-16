@@ -113,7 +113,7 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v3
+    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
 ```
 
 _**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_
