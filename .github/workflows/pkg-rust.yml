@@ -134,6 +134,11 @@ on:
         required: false
         type: string
         default: ''
+      cross_max_wait_mins:
+        description: "The maximum number of minutes the pkg and/or docker builds will wait for the cross-compiled artifact to become available. Defaults to 10 minutes."
+        required: false
+        type: string
+        default: '10'
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
@@ -278,6 +283,8 @@ jobs:
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
       cross_build_rules: ${{ steps.determine_cross_build_rules.outputs.matrix }}
+      cross_max_tries: ${{ steps.determine_cross_build_rules.outputs.max_tries }}
+      cross_retry_delay_ms: ${{ steps.determine_cross_build_rules.outputs.retry_delay_ms }}
       docker_build_rules: ${{ steps.pre_process_rules.outputs.docker_build_rules }}
       package_build_rules: ${{ steps.pre_process_rules.outputs.package_build_rules }}
       package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
@@ -348,6 +355,11 @@ jobs:
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
           fi
           echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
+
+          RETRY_DELAY_MS=30000
+          MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
+          echo "retry_delay_ms=${RETRY_DELAY_MS}" >> $GITHUB_OUTPUT
+          echo "max_tries=${MAX_TRIES}" >> $GITHUB_OUTPUT
 
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
@@ -585,7 +597,7 @@ jobs:
   pkg:
     # Use of always() here ensures that even if the cross job is skipped we will still run
     if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
-    needs: [cross, prepare]
+    needs: prepare
     runs-on: ubuntu-latest
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
     # Specifying container causes all of the steps in this job to run inside a Docker container (which is why the
@@ -753,12 +765,14 @@ jobs:
             ;;
         esac
 
-    - name: Download cross compiled binaries
+    - name: Download cross-compiled binaries
       if: ${{ matrix.target != 'x86_64' }}
-      uses: actions/download-artifact@v3
+      uses: ximon18/download-artifact@v3
       with:
         name: tmp-cross-binaries-${{ matrix.target }}
         path: .
+        maxTries: ${{ needs.prepare.outputs.cross_max_tries }}
+        retryDelayMs: ${{ needs.prepare.outputs.cross_retry_delay_ms }}
   
     - name: Untar the set of downloaded binaries
       if: ${{ matrix.target != 'x86_64' }}
@@ -1390,7 +1404,7 @@ jobs:
   docker:
     # Use of always() here ensures that even if the cross job is skipped we will still run
     if: ${{ always() && needs.prepare.outputs.docker_build_rules != '{}' }}
-    needs: [cross, prepare]
+    needs: prepare
     outputs:
       published: ${{ steps.publish.conclusion == 'success' }}
     runs-on: ubuntu-20.04
@@ -1443,15 +1457,17 @@ jobs:
 
       - uses: docker/setup-buildx-action@v2
 
-      - name: Download cross compiled binaries
+      - name: Download cross-compiled binaries
         if: ${{ steps.verify.outputs.mode == 'copy' }}
-        uses: actions/download-artifact@v3
+        uses: ximon18/download-artifact@v3
         with:
           name: tmp-cross-binaries-${{ matrix.target }}
           # The file downloaded to dockerbin/xxx will be used by the Dockerfile
           # Note: matrix.platform here has to match the Docker BuildX $TARGETPLATFORM variable available while building
           # the Dockerfile, e.g. linux/amd64.
           path: dockerbin/${{ matrix.platform }}
+          maxTries: ${{ needs.prepare.outputs.cross_max_tries }}
+          retryDelayMs: ${{ needs.prepare.outputs.cross_retry_delay_ms }}
 
       - name: Untar the set of downloaded binaries
         if: ${{ steps.verify.outputs.mode == 'copy' }}
