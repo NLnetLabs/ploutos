@@ -15,7 +15,7 @@ When you refer to the Ploutos workflow you are also indicating which version of 
 ```yaml
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
 ```
 
 Here we see that the v3 version of the workflow will be used.
@@ -77,7 +77,7 @@ An input of "matrix" type can be specified in one of two ways:
   ```yaml
   jobs:
     my_pkg_job:
-      uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+      uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
       with:
         cross_build_rules: |
           target:
@@ -90,7 +90,7 @@ An input of "matrix" type can be specified in one of two ways:
   ```yaml
   jobs:
     my_pkg_job:
-      uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+      uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
       with:
         cross_build_rules: pkg/rules/cross_build_rules.yml
   ```

@@ -32,7 +32,7 @@ The Ploutos workflow was originally written for use only by NLnet Labs. As such 
 
 - **The starter workflow:** If you already know how to use this workflow but just want to quickly add it to a new project you might find the [starter workflow](../starter_workflow.md) helpful _(**only** visible to NLnet Labs GitHub organization members unfortunately)_.
 
-- **The testing & template repository:** The https://github.com/NLnetLabs/.github-testing/ repository contains test data and workflow invocations for testing the Ploutos workflow and is also a GitHub template repository from which you can create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
+- **The testing & template repository:** The https://github.com/NLnetLabs/ploutos-testing/ repository contains test data and workflow invocations for testing the Ploutos workflow and is also a GitHub template repository from which you can create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
 
 - **Examples of the workflow in use:** This documentation contains some limited examples but if you're looking for real world examples of how to invoke and configure the Ploutos workflow take a look at the [projects that are already using the Ploutos workflow](https://github.com/NLnetLabs/.github/network/dependents).
 
@@ -60,7 +60,7 @@ Docker images can be run using the [`docker run`](https://docs.docker.com/engine
 
 ## How does it work?
 
-The Ploutos workflow is a GitHub Actions "reusable workflow" because it [defines](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L130) the `workflow_call` trigger and the set of inputs that must be provided in order to call the workflow. For an explanation of GitHub reusable workflows see the [official GitHub Actions documentation](https://docs.github.com/en/actions/using-workflows/reusing-workflows) on reusable workflows.
+The Ploutos workflow is a GitHub Actions "reusable workflow" because it [defines](https://github.com/NLnetLabs/ploutos/blob/main/.github/workflows/pkg-rust.yml#L130) the `workflow_call` trigger and the set of inputs that must be provided in order to call the workflow. For an explanation of GitHub reusable workflows see the [official GitHub Actions documentation](https://docs.github.com/en/actions/using-workflows/reusing-workflows) on reusable workflows.
 
 Once called the workflow runs one or more jobs like so:
 
@@ -100,8 +100,8 @@ The core parts of the workflow are not specific to GitHub but instead just invok
 ## How can I use it?
 
 1. Decide which package types you want to create.
-2. Determine which [inputs](https://github.com/NLnetLabs/.github/blob/main/.github/workflows/pkg-rust.yml#L131) you need to provide to the Ploutos workflow.
-3. Create the files in your repository that will be referenced by the inputs _(perhaps start from the [template](https://github.com/NLnetLabs/.github-testing/))_.
+2. Determine which [inputs](https://github.com/NLnetLabs/ploutos/blob/main/.github/workflows/pkg-rust.yml#L131) you need to provide to the Ploutos workflow.
+3. Create the files in your repository that will be referenced by the inputs _(perhaps start from the [template](https://github.com/NLnetLabs/ploutos-testing/))_.
 4. Call the Ploutos workflow from your own workflow with the chosen inputs _(by hand or via the [starter workflow](/.starter_workflow.md))_.
 5. Run your workflow _(e.g. triggered by a push, or use the GitHUb [`workflow_dispatch` manual trigger](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow))_.
 6. Use the created packages:
@@ -119,7 +119,7 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
 ```
 
 _**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_

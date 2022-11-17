@@ -71,7 +71,7 @@ Example using an inline YAML string matrix definition:
 ```yaml
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
     with:
       docker_build_rules: |
         include:
@@ -106,7 +106,7 @@ The Ploutos workflow supports two Docker specific secrets which can be passed to
 ```yaml
 jobs:
   full:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
     secrets:
       DOCKER_HUB_ID: ${{ secrets.YOUR_DOCKER_HUB_ID }}
       DOCKER_HUB_TOKEN: ${{ secrets.YOUR_DOCKER_HUB_TOKEN }}
@@ -117,7 +117,7 @@ Or, if you are willing to trust the packaging workflow with all of your secrets!
 ```yaml
 jobs:
   full:
-    uses: NLnetLabs/.github/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
     secrets: inherit
 ```
 
