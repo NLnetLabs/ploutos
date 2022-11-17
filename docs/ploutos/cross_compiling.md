@@ -3,6 +3,7 @@
 **Contents:**
 - [Known issues](#known-issues)
 - [Inputs](#inputs)
+  - [Workflow inputs](#workflow-inputs)
 - [Outputs](#outputs)
 - [How it works](#how-it-works)
   - [Why is the cross tool used?](#why-is-the-cross-tool-used)
@@ -13,7 +14,13 @@
 
 ## Inputs
 
-None. The set of targets to cross-compile for is automatically determined from the unique union of the `target` values supplied in the `docker_build_rules` and/or `package_build_rules` inputs.
+The set of targets to cross-compile for is automatically determined from the unique union of the `target` values supplied in the `docker_build_rules` and/or `package_build_rules` inputs.
+
+### Workflow inputs
+
+| Input | Type | Required | Description |
+|---|---|---|---|
+| `cross_max_wait_mins` | string | No | The maximum number of minutes alowed for the `cross` job to complete the cross-compilation process and to upload the resulting binaries as workflow artifacts. After this permutations of the downstream `docker` and `pkg` workflow jobs will fail if the artifact has not yet become available to download. |
 
 ## Outputs
 
@@ -28,9 +35,7 @@ While these are referred to as "temporary" artifacts (because they are not neede
 
 ## How it works
 
-The `docker` workflow job will do a Git checkout of the repository that hosts the caller workflow.
-
-The `cross` cross-compiling job runs before the other jobs in the Ploutos workflow.
+The `cross` job runs in parallel to the `docker` and `pkg` jobs in the Ploutos workflow. Permutations of those jobs that need to use the cross-compiled binaries will wait `cross_max_wait_mins` minutes until the binary they need has been uploaded as a workflow artifact by the `cross` job.
 
 Cross compilation takes place inside a Docker container running on an x86_64 GH runner host using an image from the Rust [`cross`](https://github.com/cross-rs/cross) project. These images contain the correct toolchain components needed to compile for one of the [supported targets](https://github.com/cross-rs/cross#supported-targets).
 
