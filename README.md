@@ -1,4 +1,4 @@
-# .github
+# Ploutos
 
 This repository provides configuration and services for the NLnet Labs GitHub account and its repositories.
 
