@@ -850,7 +850,7 @@ jobs:
               mkdir -p target/debian
             fi
             echo "${MATRIX_PKG} (${PKG_APP_VER}) unstable; urgency=medium" >target/debian/changelog
-            echo "  * See: https://github.com/${{ env.GITHUB_REPOSITORY }}/releases/tag/v${APP_NEW_VER}" >>target/debian/changelog
+            echo "  * See: https://github.com/${{ github.repository }}/releases/tag/v${APP_NEW_VER}" >>target/debian/changelog
             echo " -- maintainer ${MAINTAINER}  ${RFC5322_TS}" >>target/debian/changelog
 
             echo "Generated changelog:"
