@@ -1,5 +1,7 @@
 # Ploutos: User guide
 
+<kbd><img src="https://user-images.githubusercontent.com/3304436/202397155-2dbb01e0-df0a-4a53-89ba-9778d3ed8abc.png" width="800"/></kbd>
+
 In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Packaging **reusable** workflow (hereafter the "Ploutos workflow") from your own repository and how to create the supporting files needed.
 
 **Contents:**
