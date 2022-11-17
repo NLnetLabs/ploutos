@@ -45,6 +45,6 @@ Alternatives were explored but found lacking.
 
 Docker buildx QEmu based cross-compilation for example is far too slow ([due to the emulated execution](https://github.com/multiarch/qemu-user-static/issues/176#issuecomment-1191078533)) and doesn't parallelize across multiple GitHub hosted runners.
 
-Native Rust Cargo support for cross-compilation requires you to know more about the required toolchain, to install the required tools yourself including the appropriate strip tool, to add a `.cargo/config.toml` file to your project with the paths to the tools to use (which may vary by build environment!).
+Native Rust Cargo support for cross-compilation requires you to know more about the required toolchain, to install the required tools yourself including the appropriate strip tool, set required environment variables, and to add a `.cargo/config.toml` file to your project with the paths to the tools to use (which may vary by build environment!).
 
 As a Rust project, the fact that the `cross` tool was originally developed by the Rust Embedded Working Group Tools team makes it highly attractive for our use case.
