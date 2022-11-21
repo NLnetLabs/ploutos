@@ -160,7 +160,7 @@ Both `cargo-deb` and `cargo-generate-rpm` have a `variant` feature. Ploutos will
 | Input | Type | Required | Description |
 |---|---|---|---|
 | `package_build_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | Yes | Defines packages to build and how to build them. See below. |
-| `package_test_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | No | Defines the packages to test and how to test them. See below.  |
+| `package_test_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | No | Defines the packages to test and how to test them. Defaults to `package_build_rules`. See below.  |
 | `package_test_scripts_path` | string | No | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install in the build host when (not cross) compiling. |
 | `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
@@ -192,6 +192,8 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `extra_build_args` | No | A space separated set of additional command line arguments to pass to `cargo-deb`/`cargo build`. |
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to inclde in an RPM package. See below for more info. |
 
+**Note:** When `package_test_rules` is not supplied the `package_build_rules` matrix is also used as the `package_test_rules` matrix, since normally you want to test every package that you build. When using `package_build_rules` this way you can also supply `package_test_rules` matrix keys in the `package_build_rules` input. These will be ignored by the package building workflow job.
+
 #### Permitted `<image>` values
 
 The `<image>` **MUST** be one of the following:
@@ -210,7 +212,7 @@ It may not matter which O/S release the RPM or DEB package is built inside, exce
 
 `package_test_rules` instructs Ploutos to test your packages (beyond the basic verification done post-build).
 
-Only packages that were built using `package_build_rules` can be tested. By default the packages built according to  `package_build_rules` will be tested, minus any packages for which testing is not supported (e.g. missing LXC image or unsupported architecture). 
+Only packages that were built using `package_build_rules` can be tested. By default the packages built according to  `package_build_rules` will be tested, minus any packages for which testing is not supported (e.g. missing LXC image or unsupported architecture).
 
 Testing packages is optional. To disable testing of packages completely set `package_test_rules` to `none`.
 
