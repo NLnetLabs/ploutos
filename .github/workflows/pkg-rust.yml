@@ -1159,13 +1159,19 @@ jobs:
           echo "mode=${{ matrix.mode }}" >> $GITHUB_OUTPUT
         fi
 
+        if [[ '${{ matrix.os }}' == '' ]]; then
+          echo "image=${{ matrix.image }}" >> $GITHUB_OUTPUT
+        else
+          echo "image=${{ matrix.os }}" >> $GITHUB_OUTPUT
+        fi
+
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
     # that will be available in GH Action step definitions below.
     - name: Set vars
       id: setvars
       shell: bash
       env:
-        MATRIX_IMAGE: ${{ matrix.image }}
+        MATRIX_IMAGE: ${{ steps.verify.outputs.image }}
       run: |
         # Get the operating system and release name (e.g. ubuntu and xenial) from the image name (e.g. ubuntu:xenial) by
         # extracting only the parts before and after but not including the colon:
