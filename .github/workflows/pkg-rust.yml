@@ -150,10 +150,10 @@ on:
         type: string
         default: '{}'
       package_test_rules:
-        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (from package_build_rules), LXC 'image' (<dist>:<rel>), 'target' (from package_build_rules) and 'mode' (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
-        required: false
-        type: string
-        default: '{}'
+          description: "'use_package_build_rules' (default), 'none', or a relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (from package_build_rules), LXC 'image' (<dist>:<rel>), 'target' (from package_build_rules) and 'mode' (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
+          required: false
+          type: string
+          default: 'use_package_build_rules'
 
       # Using Docker Hub terminology, for a Docker image named nlnetlabs/krill:v0.1.2-arm64:
       #   - The Organization would be 'nlnetlabs'.
@@ -318,7 +318,11 @@ jobs:
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.package_test_rules }}' ]]; then
+          if [[ '${{ inputs.package_test_rules }}' == 'none' ]]; then
+            JSON='{}'
+          elif [[ '${{ inputs.package_test_rules }}' == 'use_package_build_rules' ]]; then
+            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
+          elif [[ -f '${{ inputs.package_test_rules }}' ]]; then
             JSON=$(yq '${{ inputs.package_test_rules }}' -I=0 -p=yaml -o=json)
           else
             JSON=$(echo '${{ inputs.package_test_rules }}' | yq -I=0 -p=yaml -o=json)
@@ -326,13 +330,25 @@ jobs:
 
           # Exclude debian:stretch because the LXC image is no longer available
           if [[ "${JSON}" != "{}" ]]; then
-            CONTROL_JSON=$(echo ${JSON} | jq 'del(.image[] | select(. == "i-dont-exist"))' | jq -c)
-            MODIFIED_JSON=$(echo ${JSON} | jq 'del(.image[] | select(. == "debian:stretch"))' | jq -c)
+            CONTROL_JSON=$(echo ${JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.image[] | select(. == "debian:stretch")) | del(.include[] | select(.image == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[] | select(.os == "debian:stretch"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
-              echo "::warning::Removed debian:stretch from package_test_rules because the LXC image no longer exists"
+              echo "::warning::Removed debian:stretch image from package_test_rules because the LXC image no longer exists"
               JSON="${MODIFIED_JSON}"
             fi
           fi
+
+          # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
+          if [[ "${JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[] | select(. != "x86_64")) | del(.include[] | select(.target != "x86_64"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed non-x86_64 targets from package_test_rules because testing is only supported for x86_64 targets"
+              JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_TEST_RULES' >> $GITHUB_OUTPUT
 
@@ -1132,6 +1148,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Verify inputs
+      id: verify
       run: |
         if [[ '${{ matrix.image }}' == '' ]]; then
           echo "::error::Required matrix variable 'image' is not defined in package_test_rules."
@@ -1148,13 +1165,25 @@ jobs:
           exit 1
         fi
 
+        if [[ '${{ matrix.mode }}' == '' ]]; then
+          echo "mode=fresh-install" >> $GITHUB_OUTPUT
+        else
+          echo "mode=${{ matrix.mode }}" >> $GITHUB_OUTPUT
+        fi
+
+        if [[ '${{ matrix.os }}' == '' ]]; then
+          echo "image=${{ matrix.image }}" >> $GITHUB_OUTPUT
+        else
+          echo "image=${{ matrix.os }}" >> $GITHUB_OUTPUT
+        fi
+
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
     # that will be available in GH Action step definitions below.
     - name: Set vars
       id: setvars
       shell: bash
       env:
-        MATRIX_IMAGE: ${{ matrix.image }}
+        MATRIX_IMAGE: ${{ steps.verify.outputs.image }}
       run: |
         # Get the operating system and release name (e.g. ubuntu and xenial) from the image name (e.g. ubuntu:xenial) by
         # extracting only the parts before and after but not including the colon:
@@ -1252,7 +1281,7 @@ jobs:
 
     - name: Install previously published ${{ matrix.pkg }} package
       id: instprev
-      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1300,7 +1329,7 @@ jobs:
         esac
 
     - name: Install the newly built ${{ matrix.pkg }} package
-      if: ${{ matrix.mode == 'fresh-install' }}
+      if: ${{ steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1314,7 +1343,7 @@ jobs:
         esac
 
     - name: Test the installed ${{ matrix.pkg }} package
-      if: ${{ inputs.package_test_scripts_path != '' && matrix.mode == 'fresh-install' }}
+      if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh"
@@ -1324,7 +1353,7 @@ jobs:
     - name: Upgrade from the published ${{ matrix.pkg }} package to the newly built package
       id: upgrade_package
       continue-on-error: true
-      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1346,7 +1375,7 @@ jobs:
           core.setFailed("Package upgrade failed unexpectedly")
 
     - name: Verify that conffiles have not been altered by the upgrade
-      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1358,7 +1387,7 @@ jobs:
         esac
 
     - name: Test the upgraded ${{ matrix.pkg }} package
-      if: ${{ inputs.package_test_scripts_path != '' && matrix.mode == 'upgrade-from-published' }}
+      if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh"
