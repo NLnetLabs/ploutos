@@ -150,10 +150,10 @@ on:
         type: string
         default: '{}'
       package_test_rules:
-        description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (from package_build_rules), LXC 'image' (<dist>:<rel>), 'target' (from package_build_rules) and 'mode' (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
-        required: false
-        type: string
-        default: '{}'
+          description: "'use_package_build_rules' (default), 'none', or a relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (from package_build_rules), LXC 'image' (<dist>:<rel>), 'target' (from package_build_rules) and 'mode' (fresh-install or upgrade-from-published). See also: https://uk.lxd.images.canonical.com/"
+          required: false
+          type: string
+          default: 'use_package_build_rules'
 
       # Using Docker Hub terminology, for a Docker image named nlnetlabs/krill:v0.1.2-arm64:
       #   - The Organization would be 'nlnetlabs'.
@@ -318,7 +318,11 @@ jobs:
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.package_test_rules }}' ]]; then
+          if [[ '${{ inputs.package_test_rules }}' == 'none' ]]; then
+            JSON='{}'
+          elif [[ '${{ inputs.package_test_rules }}' == 'use_package_build_rules' ]]; then
+            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
+          elif [[ -f '${{ inputs.package_test_rules }}' ]]; then
             JSON=$(yq '${{ inputs.package_test_rules }}' -I=0 -p=yaml -o=json)
           else
             JSON=$(echo '${{ inputs.package_test_rules }}' | yq -I=0 -p=yaml -o=json)
