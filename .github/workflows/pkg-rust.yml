@@ -311,10 +311,19 @@ jobs:
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           if [[ -f '${{ inputs.package_build_rules }}' ]]; then
-            yq '${{ inputs.package_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
+            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
           else
-            echo '${{ inputs.package_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
+            JSON=$(echo '${{ inputs.package_build_rules }}' | yq -I=0 -p=yaml -o=json)
           fi
+
+          # Don't permute the build job over variables intended only for use by the pkg-test job but which were supplied
+          # via package_build_rules as a convenience for the user to avoid having to supply package_test_rules which
+          # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
+          # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
+          # pkb job are identical and thus pointless waste and just plain confusing.
+          MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.mode)')
+
+          echo ${MODIFIED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
@@ -342,7 +351,7 @@ jobs:
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
           if [[ "${JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[] | select(. != "x86_64")) | del(.include[] | select(.target != "x86_64"))')
+            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[] | select(. != "x86_64")) | del(.include[] | select(.target != "x86_64" and .target != null))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed non-x86_64 targets from package_test_rules because testing is only supported for x86_64 targets"
               JSON="${MODIFIED_JSON}"
@@ -984,7 +993,7 @@ jobs:
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v4.0.0/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 

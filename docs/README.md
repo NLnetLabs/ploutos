@@ -115,7 +115,7 @@ on:
 
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
 ```
 
 _**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_

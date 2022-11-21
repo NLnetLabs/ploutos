@@ -15,7 +15,7 @@ When you refer to the Ploutos workflow you are also indicating which version of 
 ```yaml
 jobs:
   my_pkg_job:
-    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
 ```
 
 Here we see that the v3 version of the workflow will be used.
@@ -24,7 +24,7 @@ What may not be obvious is that this will work for v3.0.0, v3.0.1, v3.3.4 and so
 
 The version number consists of MAJOR.MINOR.PATCH components. Any change in minor and patch versions should be backward compatible and thus safe to use automatically.
 
-If a backward incompatible change is made however then the the major version number will be increased, e.g. from `v3` to `v4`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
+If a backward incompatible change is made however then the the major version number will be increased, e.g. from `v5` to `v6`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
 
 ## Application versions
 
@@ -77,7 +77,7 @@ An input of "matrix" type can be specified in one of two ways:
   ```yaml
   jobs:
     my_pkg_job:
-      uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
+      uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
       with:
         cross_build_rules: |
           target:
@@ -90,7 +90,7 @@ An input of "matrix" type can be specified in one of two ways:
   ```yaml
   jobs:
     my_pkg_job:
-      uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
+      uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
       with:
         cross_build_rules: pkg/rules/cross_build_rules.yml
   ```
