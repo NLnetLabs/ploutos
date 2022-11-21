@@ -871,7 +871,7 @@ jobs:
             # 1. Use the same logic as cargo-deb, i.e. take the maintainer from the package.metadata.deb.maintainer
             #    key in Cargo.toml (for the selected variant) if defined, else use the first author instead.
             V=${VARIANT:-null}
-            MAINTAINER=$(cargo read-manifest | jq -r "[.metadata.deb.variants.$V.maintainer, .metadata.deb.maintainer, .authors[0]] | del(..|nulls)[0]")
+            MAINTAINER=$(cargo read-manifest | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(..|nulls)[0]')
 
             # 2. Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
             #    exist on Ubuntu 16.04 and Debian 9
