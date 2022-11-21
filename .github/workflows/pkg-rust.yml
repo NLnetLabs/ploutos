@@ -1136,6 +1136,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Verify inputs
+      id: verify
       run: |
         if [[ '${{ matrix.image }}' == '' ]]; then
           echo "::error::Required matrix variable 'image' is not defined in package_test_rules."
@@ -1150,6 +1151,12 @@ jobs:
         if [[ '${{ matrix.pkg }}' == '' ]]; then
           echo "::error::Required matrix variable 'pkg' is not defined in package_test_rules."
           exit 1
+        fi
+
+        if [[ '${{ matrix.mode }}' == '' ]]; then
+          echo "mode=fresh-install" >> $GITHUB_OUTPUT
+        else
+          echo "mode=${{ matrix.mode }}" >> $GITHUB_OUTPUT
         fi
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
@@ -1256,7 +1263,7 @@ jobs:
 
     - name: Install previously published ${{ matrix.pkg }} package
       id: instprev
-      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1304,7 +1311,7 @@ jobs:
         esac
 
     - name: Install the newly built ${{ matrix.pkg }} package
-      if: ${{ matrix.mode == 'fresh-install' }}
+      if: ${{ steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1318,7 +1325,7 @@ jobs:
         esac
 
     - name: Test the installed ${{ matrix.pkg }} package
-      if: ${{ inputs.package_test_scripts_path != '' && matrix.mode == 'fresh-install' }}
+      if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh"
@@ -1328,7 +1335,7 @@ jobs:
     - name: Upgrade from the published ${{ matrix.pkg }} package to the newly built package
       id: upgrade_package
       continue-on-error: true
-      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1350,7 +1357,7 @@ jobs:
           core.setFailed("Package upgrade failed unexpectedly")
 
     - name: Verify that conffiles have not been altered by the upgrade
-      if: ${{ matrix.mode == 'upgrade-from-published' }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1362,7 +1369,7 @@ jobs:
         esac
 
     - name: Test the upgraded ${{ matrix.pkg }} package
-      if: ${{ inputs.package_test_scripts_path != '' && matrix.mode == 'upgrade-from-published' }}
+      if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh"
