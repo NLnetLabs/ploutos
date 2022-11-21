@@ -311,10 +311,19 @@ jobs:
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           if [[ -f '${{ inputs.package_build_rules }}' ]]; then
-            yq '${{ inputs.package_build_rules }}' -p=yaml -o=json >> $GITHUB_OUTPUT
+            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
           else
-            echo '${{ inputs.package_build_rules }}' | yq -p=yaml -o=json >> $GITHUB_OUTPUT
+            JSON=$(echo '${{ inputs.package_build_rules }}' | yq -I=0 -p=yaml -o=json)
           fi
+
+          # Don't permute the build job over variables intended only for use by the pkg-test job but which were supplied
+          # via package_build_rules as a convenience for the user to avoid having to supply package_test_rules which
+          # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
+          # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
+          # pkb job are identical and thus pointless waste and just plain confusing.
+          MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.mode)')
+
+          echo ${MODIFIED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
