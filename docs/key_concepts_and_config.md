@@ -122,3 +122,9 @@ The Rust version used to compile your application is not expliclity controlled a
 - For Docker images it depends on how your `Dockerfile` performs the compilation.
 
 _**Known issue:** [Inconsistent Rust compiler version](https://github.com/NLnetLabs/.github/issues/52)_
+
+## Artifact prefixing
+
+By default temporary and final produced artifacts are named under the assumption that no other workflow jobs exist that also upload artifacts and thus may cause artifact name conflicts.
+
+If necessary the `artifact_prefix` worjflow string input can be used to specify a prefix that will be added to every GitHub actions artifact uploaded by Ploutos.
