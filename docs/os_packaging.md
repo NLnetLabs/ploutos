@@ -78,7 +78,6 @@ jobs:
         pkg: ["mytest"]
         image: ["ubuntu:jammy"]
         target: ["x86_64"]
-      deb_maintainer: 'Build Bot <build.bot@example.com>'
 ```
 
 Assuming that you have just created an empty GitHub repository, let's setup Git to push to it, add & commit the files we have created and push them to GitHub:
@@ -164,7 +163,6 @@ Both `cargo-deb` and `cargo-generate-rpm` have a `variant` feature. Ploutos will
 | `package_test_rules` | [matrix](./key_concepts_and_config.md#matrix-rules) | No | Defines the packages to test and how to test them. See below.  |
 | `package_test_scripts_path` | string | No | The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade. |
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install in the build host when (not cross) compiling. |
-| `deb_maintainer` | string | No* | The name and email address of the Debian package maintainers, e.g. `The NLnet Labs RPKI Team <rpki@nlnetlabs.nl>`. Required when packaging for a DEB based O/S in order to generate the required [`changelog`](https://www.debian.org/doc/manuals/maint-guide/dreq.en.html#changelog) file. |
 | `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
 | `deb_apt_source` | string | No* | A line or lines to write to an APT `/etc/apt/sources.list.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 | `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install in the build host when (not cross) compiling. |
@@ -357,7 +355,7 @@ Ploutos is aware of certain cases that must be handled specially, for example:
 
   Where:
   - `${APP_NEW_VER}` is the value of the `version` key in `Cargo.toml`.
-  - `${MAINTAINER}` is the value of the `<deb_maintainer>` workflow input.
+  - `${MAINTAINER}` is the value of the `package.metadata.deb.maintainer` key in `Cargo.toml` (for the selected variant) if set, else the first value set for the `author` key.
   - `${MATRIX_PKG}` is the value of the `<pkg>` matrix key for the current permutation of the package build rules matrix being built.
   - `${PKG_APP_VER}` is the version of the application being built based on `version` in `Cargo.toml` but post-processed to handle things like [pre-releases](#./key_concepts_and_config#application-versions) or [next development versions](#./key_concepts_and_config#next-dev-version).
   - `${RFC5322_TS}` is set to the time now while building.
