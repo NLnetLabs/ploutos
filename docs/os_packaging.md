@@ -208,9 +208,15 @@ It may not matter which O/S release the RPM or DEB package is built inside, exce
 
 ### Package test rules
 
-By supplying `package_test_rules` you instruct Ploutos to test your packages (beyond the basic verification done post-build).
+`package_test_rules` instructs Ploutos to test your packages (beyond the basic verification done post-build).
 
-Testing packages is optional. Only packages that were built using `package_build_rules` can be tested.
+Only packages that were built using `package_build_rules` can be tested. By default the packages built according to  `package_build_rules` will be tested, minus any packages for which testing is not supported (e.g. missing LXC image or unsupported architecture). 
+
+Testing packages is optional. To disable testing of packages completely set `package_test_rules` to `none`.
+
+To test package upgrade you must also supply the `deb_apt_xxx` and/or `rpm_yum_xxx` workflow inputs as needed by your packages. To test upgrade of all built packages without supplying `package_test_rules`, add a `mode` key to the `package_build_rules` matrix with value `upgrade-from-published`.
+
+If you wish to test only a subset of the built packages and/or wish to test package upgrade with only a subset of the packages, then you will need to fully specify the `package_test_rules` input matrix.
 
 The testing process looks like this:
 
