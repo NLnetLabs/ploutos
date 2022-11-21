@@ -713,7 +713,7 @@ jobs:
             apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
             ;;
           centos)
-            sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
+            #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum install epel-release -y
             yum install -y findutils gcc jq rpmlint ${{ inputs.rpm_extra_build_packages }}
             ;;
