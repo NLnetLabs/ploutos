@@ -72,7 +72,7 @@ on:
   
 jobs:
   package:
-    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v4
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
     with:
       package_build_rules: |
         pkg: ["mytest"]
