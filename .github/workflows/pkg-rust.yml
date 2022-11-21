@@ -1314,7 +1314,7 @@ jobs:
         esac
 
     - name: Test the installed ${{ matrix.pkg }} package
-      if: ${{ inputs.package_test_scripts_path != '' }}
+      if: ${{ inputs.package_test_scripts_path != '' && matrix.mode == 'fresh-install' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh"
