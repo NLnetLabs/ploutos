@@ -129,6 +129,11 @@ name: Packaging
 on:
   workflow_call:
     inputs:
+      artifact_prefix:
+        description: "An optional prefix to apply to generated artifact names. Intended for internal testing."
+        required: false
+        type: string
+        default: ''
       cross_build_rules:
         description: "This input is deprecated. Cross build targets will be determined automatically."
         required: false
@@ -572,7 +577,7 @@ jobs:
     - name: Upload built binaries
       uses: actions/upload-artifact@v3
       with:
-        name: tmp-cross-binaries-${{ matrix.target }}
+        name: ${{ inputs.artifact-prefix }}tmp-cross-binaries-${{ matrix.target }}
         path: bins.tar
 
   # -------------------------------------------------------------------------------------------------------------------
@@ -757,7 +762,7 @@ jobs:
       if: ${{ matrix.target != 'x86_64' }}
       uses: ximon18/download-artifact@v3
       with:
-        name: tmp-cross-binaries-${{ matrix.target }}
+        name: ${{ inputs.artifact-prefix }}tmp-cross-binaries-${{ matrix.target }}
         path: .
         maxTries: ${{ needs.prepare.outputs.cross_max_tries }}
         retryDelayMs: ${{ needs.prepare.outputs.cross_retry_delay_ms }}
@@ -1100,7 +1105,7 @@ jobs:
     - name: Upload package
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
+        name: ${{ inputs.artifact-prefix }}${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
           target/debian/*.deb
           target/generate-rpm/*.rpm
@@ -1178,7 +1183,7 @@ jobs:
     - name: Download package
       uses: actions/download-artifact@v3
       with:
-        name: ${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
+        name: ${{ inputs.artifact-prefix }}${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
     - name: Add current user to LXD group
       run: |
@@ -1456,7 +1461,7 @@ jobs:
         if: ${{ steps.verify.outputs.mode == 'copy' }}
         uses: ximon18/download-artifact@v3
         with:
-          name: tmp-cross-binaries-${{ matrix.target }}
+          name: ${{ inputs.artifact-prefix }}tmp-cross-binaries-${{ matrix.target }}
           # The file downloaded to dockerbin/xxx will be used by the Dockerfile
           # Note: matrix.platform here has to match the Docker BuildX $TARGETPLATFORM variable available while building
           # the Dockerfile, e.g. linux/amd64.
@@ -1522,7 +1527,7 @@ jobs:
       - name: Upload built image to GitHub Actions
         uses: actions/upload-artifact@v3
         with:
-          name: tmp-docker-image-${{ matrix.shortname }}
+          name: ${{ inputs.artifact-prefix }}tmp-docker-image-${{ matrix.shortname }}
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
 
       - name: Publish image to Docker Hub
