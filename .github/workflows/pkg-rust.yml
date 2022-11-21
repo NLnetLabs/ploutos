@@ -344,7 +344,7 @@ jobs:
             CONTROL_JSON=$(echo ${JSON} | jq -c)
             MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[] | select(. != "x86_64")) | del(.include[] | select(.target != "x86_64"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
-              echo "::warning::Removed non-x86_64 target from package_test_rules because testing is only supported for x86_64 targets"
+              echo "::warning::Removed non-x86_64 targets from package_test_rules because testing is only supported for x86_64 targets"
               JSON="${MODIFIED_JSON}"
             fi
           fi
