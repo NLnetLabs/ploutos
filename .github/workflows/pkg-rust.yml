@@ -332,7 +332,7 @@ jobs:
           if [[ "${JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${JSON} | jq -c)
             MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.image[] | select(. == "debian:stretch")) | del(.include[] | select(.image == "debian:stretch"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.os[] | select(. == "debian:stretch")) | del(.include[] | select(.os == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[] | select(.os == "debian:stretch"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed debian:stretch image from package_test_rules because the LXC image no longer exists"
               JSON="${MODIFIED_JSON}"
