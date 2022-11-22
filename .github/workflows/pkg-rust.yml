@@ -210,6 +210,11 @@ on:
         required: false
         type: string
         default: 'deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
+      deb_extra_lintian_args:
+        description: "Extra arguments to pass to Lintian, the DEB package verification tool."
+        required: false
+        type: string
+        default: 
 
       cross_build_args:
         description: "Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`."
@@ -1115,10 +1120,11 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             dpkg --info target/debian/*.deb
-            if [[ "${CROSS_TARGET}" == "x86_64" ]]; then
-              EXTRA_LINTIAN_ARGS=
-            else
-              EXTRA_LINTIAN_ARGS="--suppress-tags unstripped-binary-or-object,statically-linked-binary"
+
+            EXTRA_LINTIAN_ARGS="${{ inputs.deb_extra_lintian_args }}"
+
+            if [[ "${CROSS_TARGET}" != "x86_64" ]]; then
+              EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --suppress-tags unstripped-binary-or-object,statically-linked-binary"
             fi
 
             if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
