@@ -1133,6 +1133,7 @@ jobs:
                 *)
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error,warning"
                   ;;
+              esac
             fi
 
             lintian --version
