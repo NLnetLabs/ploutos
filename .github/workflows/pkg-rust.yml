@@ -636,10 +636,14 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Verify inputs
+    - name: Print matrix
+      # Disable default use of bash -x for easier to read output in the log
+      shell: bash
       run: |
         echo '${{ toJSON(matrix) }}'
 
+    - name: Verify inputs
+      run: |
         if [[ ! -f Cargo.toml ]]; then
           echo "::error::File 'Cargo.toml' is missing. This workflow is only intended for use with Rust Cargo projects."
           exit 1
@@ -1186,11 +1190,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Verify inputs
-      id: verify
+    - name: Print matrix
+      # Disable default use of bash -x for easier to read output in the log
+      shell: bash
       run: |
         echo '${{ toJSON(matrix) }}'
 
+    - name: Verify inputs
+      id: verify
+      run: |
         if [[ '${{ matrix.image }}' == '' ]]; then
           echo "::error::Required matrix variable 'image' is not defined in package_test_rules."
           exit 1
@@ -1485,11 +1493,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Verify inputs
-        id: verify
+      - name: Print matrix
+        # Disable default use of bash -x for easier to read output in the log
+        shell: bash
         run: |
           echo '${{ toJSON(matrix) }}'
 
+      - name: Verify inputs
+        id: verify
+        run: |
           MODE="${{ matrix.mode }}"
 
           case ${MODE} in
