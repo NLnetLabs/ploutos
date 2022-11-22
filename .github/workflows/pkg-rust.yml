@@ -144,6 +144,12 @@ on:
         required: false
         type: string
         default: '10'
+      strict_mode:
+        description: "if true, certain types of potential spurious warning or error that are usually ignored will instead be considered fatal. Defaults to false."
+        required: false
+        type: boolean
+        default: false
+
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
@@ -1114,6 +1120,11 @@ jobs:
             else
               EXTRA_LINTIAN_ARGS="--suppress-tags unstripped-binary-or-object,statically-linked-binary"
             fi
+
+            if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
+              EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
+            fi
+
             lintian --version
             lintian -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
             ;;
