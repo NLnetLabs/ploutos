@@ -1128,6 +1128,7 @@ jobs:
 
                 bionic|stretch|buster)
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
+                  ;;
 
                 *)
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error,warning"
