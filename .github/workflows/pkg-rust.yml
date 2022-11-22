@@ -1122,11 +1122,11 @@ jobs:
             fi
 
             if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
-              EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
+              EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error,warning"
             fi
 
             lintian --version
-            lintian -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
+            lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
             ;;
           centos)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
