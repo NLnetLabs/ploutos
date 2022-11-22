@@ -638,6 +638,8 @@ jobs:
 
     - name: Verify inputs
       run: |
+        echo ${{ matrix }}
+
         if [[ ! -f Cargo.toml ]]; then
           echo "::error::File 'Cargo.toml' is missing. This workflow is only intended for use with Rust Cargo projects."
           exit 1
@@ -1187,6 +1189,8 @@ jobs:
     - name: Verify inputs
       id: verify
       run: |
+        echo ${{ matrix }}
+
         if [[ '${{ matrix.image }}' == '' ]]; then
           echo "::error::Required matrix variable 'image' is not defined in package_test_rules."
           exit 1
@@ -1484,6 +1488,8 @@ jobs:
       - name: Verify inputs
         id: verify
         run: |
+          echo ${{ matrix }}
+
           MODE="${{ matrix.mode }}"
 
           case ${MODE} in
