@@ -144,6 +144,12 @@ on:
         required: false
         type: string
         default: '10'
+      strict_mode:
+        description: "if true, certain types of potential spurious warning or error that are usually ignored will instead be considered fatal. Defaults to false."
+        required: false
+        type: boolean
+        default: false
+
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
         required: false
@@ -630,6 +636,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    - name: Print matrix
+      # Disable default use of bash -x for easier to read output in the log
+      shell: bash
+      run: |
+        echo '${{ toJSON(matrix) }}'
+
     - name: Verify inputs
       run: |
         if [[ ! -f Cargo.toml ]]; then
@@ -900,8 +912,13 @@ jobs:
 
             # 1. Use the same logic as cargo-deb, i.e. take the maintainer from the package.metadata.deb.maintainer
             #    key in Cargo.toml (for the selected variant) if defined, else use the first author instead.
+            #
+            # Note:
+            #    With jq 1.6: del(..|nulls)
+            #    With jq 1.5: del(recurse(.[]?;true)|select(. == null))
+            #    Older systems only have jq 1.5 so we have to use the more verbose construct.
             V=${VARIANT:-null}
-            MAINTAINER=$(cargo read-manifest | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(..|nulls)[0]')
+            MAINTAINER=$(cargo read-manifest | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
 
             # 2. Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
             #    exist on Ubuntu 16.04 and Debian 9
@@ -993,7 +1010,7 @@ jobs:
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.0.1/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
@@ -1109,13 +1126,30 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             dpkg --info target/debian/*.deb
-            if [[ "${CROSS_TARGET}" == "x86_64" ]]; then
-              EXTRA_LINTIAN_ARGS=
-            else
-              EXTRA_LINTIAN_ARGS="--suppress-tags unstripped-binary-or-object,statically-linked-binary"
+
+            EXTRA_LINTIAN_ARGS="${{ matrix.deb_extra_lintian_args }}"
+
+            if [[ "${CROSS_TARGET}" != "x86_64" ]]; then
+              EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --suppress-tags unstripped-binary-or-object,statically-linked-binary"
             fi
+
+            if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
+              case ${OS_REL} in
+                focal)
+                  ;;
+
+                bionic|stretch|buster)
+                  EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
+                  ;;
+
+                *)
+                  EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error,warning"
+                  ;;
+              esac
+            fi
+
             lintian --version
-            lintian -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
+            lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
             ;;
           centos)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
@@ -1155,6 +1189,12 @@ jobs:
     # Fetch the test scripts that we will run
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Print matrix
+      # Disable default use of bash -x for easier to read output in the log
+      shell: bash
+      run: |
+        echo '${{ toJSON(matrix) }}'
 
     - name: Verify inputs
       id: verify
@@ -1452,6 +1492,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Print matrix
+        # Disable default use of bash -x for easier to read output in the log
+        shell: bash
+        run: |
+          echo '${{ toJSON(matrix) }}'
 
       - name: Verify inputs
         id: verify
