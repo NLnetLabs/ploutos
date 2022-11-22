@@ -345,7 +345,9 @@ To have your application start and stop automatically on operating systems that 
 
 ### Automated handling of special cases
 
-Ploutos is aware of certain cases that must be handled specially, for example:
+Ploutos is aware of certain cases that must be handled specially. Note that special cases are usually only handled for long-term support (LTS) operating system versions, behaviour may not be correct on non-LTS versions.
+
+Examples of special cases handled by Ploutos include:
 
 - **CentOS 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus, when building the package, if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work. When testing the package if the image is `centos:8` it will be replaced by `rockylinux:8` because the CentOS 8 image no longer exists in the LXC image repository.
 

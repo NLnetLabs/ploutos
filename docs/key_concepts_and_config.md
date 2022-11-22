@@ -3,6 +3,7 @@
 **Contents:**
 
 - [Stability promise](#stability-promise)
+- [Operating system versions](#operating-system-versions)
 - [Application versions](#application-versions)
 - [Next dev version](#next-dev-version)
 - [Matrix rules](#matrix-rules)
@@ -25,6 +26,10 @@ What may not be obvious is that this will work for v3.0.0, v3.0.1, v3.3.4 and so
 The version number consists of MAJOR.MINOR.PATCH components. Any change in minor and patch versions should be backward compatible and thus safe to use automatically.
 
 If a backward incompatible change is made however then the the major version number will be increased, e.g. from `v5` to `v6`. In that case you will not get the new version with the breaking changes unless you manually update the `uses` line in your workfow to refer to the new major version.
+
+## Operating system versions
+
+Ploutos aims to support so-called long-term stable (LTS) versions of operating systems that it packages for.
 
 ## Application versions
 
