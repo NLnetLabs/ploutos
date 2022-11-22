@@ -165,6 +165,7 @@ Both `cargo-deb` and `cargo-generate-rpm` have a `variant` feature. Ploutos will
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install in the build host when (not cross) compiling. |
 | `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
 | `deb_apt_source` | string | No* | A line or lines to write to an APT `/etc/apt/sources.list.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
+| `deb_extra_lintian_args` | string | No | A space separated set of additional command line arguments to pass to the Debian Lintian package linting tool. Useful to suppress errors you wish to ignore or to supress warnings when `strict_mode` is set to `true`. |
 | `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install in the build host when (not cross) compiling. |
 | `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of the `pre_install_script`, `pre_uninstall_script`, `post_install_script` and/or `post_uninstall_script` `cargo-generate-rpm` settings. |
 | `rpm_yum_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `rpm_yum_repo`. Defaults to the NLnet Labs package repository key URL. |

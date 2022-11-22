@@ -128,3 +128,7 @@ _**Known issue:** [Inconsistent Rust compiler version](https://github.com/NLnetL
 By default temporary and final produced artifacts are named under the assumption that no other workflow jobs exist that also upload artifacts and thus may cause artifact name conflicts.
 
 If necessary the `artifact_prefix` worjflow string input can be used to specify a prefix that will be added to every GitHub actions artifact uploaded by Ploutos.
+
+## Strict mode
+
+Some actions performed by Ploutos can result in warnings or errors that are potentially spurious, that is to say that just because Lintian or rpmlint or some other tool reports a problem does not mean to say that we should consider it fatal. For such cases Ploutos by default includes the output of the tools in the log, and in some cases raises warnings in the workflow log, but won't fail the workflow run. If needed by setting the `strict_mode` workflow input to `true` you can force Ploutos to be stricter in some cases than it would normally be.
