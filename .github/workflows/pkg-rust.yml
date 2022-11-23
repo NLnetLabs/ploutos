@@ -306,9 +306,10 @@ jobs:
             echo "::warning::The 'cross_build_rules' input is deprecated. Cross build targets will be determined automatically."
           fi
 
-          read -r -d '' DOCKER_BUILD_RULES <<-'EOF'
+          DOCKER_BUILD_RULES=$(cat <<'EOF'
           ${{ inputs.docker_build_rules }}
           EOF
+          )
           if [[ -f "${DOCKER_BUILD_RULES}" ]]; then
             JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
@@ -320,9 +321,10 @@ jobs:
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          read -r -d '' PACKAGE_BUILD_RULES <<-'EOF'
+          PACKAGE_BUILD_RULES=$(cat <<'EOF'
           ${{ inputs.package_build_rules }}
           EOF
+          )
           if [[ -f "${PACKAGE_BUILD_RULES}" ]]; then
             JSON=$(yq "${PACKAGE_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
@@ -340,9 +342,10 @@ jobs:
           echo ${MODIFIED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          read -r -d '' PACKAGE_TEST_RULES <<-'EOF'
+          PACKAGE_TEST_RULES=$(cat <<'EOF'
           ${{ inputs.package_test_rules }}
           EOF
+          )
           if [[ "${PACKAGE_TEST_RULES}" == 'none' ]]; then
             JSON='{}'
           elif [[ "${PACKAGE_TEST_RULES}" == 'use_package_build_rules' ]]; then
