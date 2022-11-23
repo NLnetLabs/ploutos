@@ -298,6 +298,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # TODO: extract common code into helper functions
       - name: Pre-process rules
         id: pre_process_rules
         run: |
@@ -305,21 +306,29 @@ jobs:
             echo "::warning::The 'cross_build_rules' input is deprecated. Cross build targets will be determined automatically."
           fi
 
-          echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.docker_build_rules }}' ]]; then
-            JSON=$(yq '${{ inputs.docker_build_rules }}' -I=0 -p=yaml -o=json)
+          DOCKER_BUILD_RULES=$(cat <<'EOF'
+          ${{ inputs.docker_build_rules }}
+          EOF
+          )
+          if [[ -f "${DOCKER_BUILD_RULES}" ]]; then
+            JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo '${{ inputs.docker_build_rules }}' | yq -I=0 -p=yaml -o=json)
+            JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
           JSON=$(echo $JSON | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
+
+          echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.package_build_rules }}' ]]; then
-            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
+          PACKAGE_BUILD_RULES=$(cat <<'EOF'
+          ${{ inputs.package_build_rules }}
+          EOF
+          )
+          if [[ -f "${PACKAGE_BUILD_RULES}" ]]; then
+            PACKAGE_BUILD_RULES_RAW_JSON=$(yq "${PACKAGE_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo '${{ inputs.package_build_rules }}' | yq -I=0 -p=yaml -o=json)
+            PACKAGE_BUILD_RULES_RAW_JSON=$(echo "${PACKAGE_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
           # Don't permute the build job over variables intended only for use by the pkg-test job but which were supplied
@@ -327,44 +336,50 @@ jobs:
           # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
           # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
           # pkb job are identical and thus pointless waste and just plain confusing.
-          MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.mode)')
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_RAW_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
 
-          echo ${MODIFIED_JSON} | jq >> $GITHUB_OUTPUT
+          echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
+          echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
-          if [[ '${{ inputs.package_test_rules }}' == 'none' ]]; then
-            JSON='{}'
-          elif [[ '${{ inputs.package_test_rules }}' == 'use_package_build_rules' ]]; then
-            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
-          elif [[ -f '${{ inputs.package_test_rules }}' ]]; then
-            JSON=$(yq '${{ inputs.package_test_rules }}' -I=0 -p=yaml -o=json)
+          PACKAGE_TEST_RULES=$(cat <<'EOF'
+          ${{ inputs.package_test_rules }}
+          EOF
+          )
+          if [[ "${PACKAGE_TEST_RULES}" == 'none' ]]; then
+            PACKAGE_TEST_RULES_RAW_JSON='{}'
+          elif [[ "${PACKAGE_TEST_RULES}" == 'use_package_build_rules' ]]; then
+            PACKAGE_TEST_RULES_RAW_JSON="${PACKAGE_BUILD_RULES_RAW_JSON}"
+          elif [[ -f "${PACKAGE_TEST_RULES}" ]]; then
+            PACKAGE_TEST_RULES_RAW_JSON=$(yq "${PACKAGE_TEST_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo '${{ inputs.package_test_rules }}' | yq -I=0 -p=yaml -o=json)
+            PACKAGE_TEST_RULES_RAW_JSON=$(echo "${PACKAGE_TEST_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
           # Exclude debian:stretch because the LXC image is no longer available
-          if [[ "${JSON}" != "{}" ]]; then
-            CONTROL_JSON=$(echo ${JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.image[] | select(. == "debian:stretch")) | del(.include[] | select(.image == "debian:stretch"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[] | select(.os == "debian:stretch"))')
+          PACKAGE_TEST_RULES_PROCESSED_JSON="${PACKAGE_TEST_RULES_RAW_JSON}"
+          if [[ "${PACKAGE_TEST_RULES_RAW_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c 'del(.image[]? | select(. == "debian:stretch")) | del(.include[]? | select(.image == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed debian:stretch image from package_test_rules because the LXC image no longer exists"
-              JSON="${MODIFIED_JSON}"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
             fi
           fi
 
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
-          if [[ "${JSON}" != "{}" ]]; then
-            CONTROL_JSON=$(echo ${JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[] | select(. != "x86_64")) | del(.include[] | select(.target != "x86_64" and .target != null))')
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.target[]? | select(. != "x86_64")) | del(.include[]? | select(.target != "x86_64" and .target != null))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed non-x86_64 targets from package_test_rules because testing is only supported for x86_64 targets"
-              JSON="${MODIFIED_JSON}"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
             fi
           fi
 
-          echo ${JSON} | jq >> $GITHUB_OUTPUT
+          echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
+          echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_TEST_RULES' >> $GITHUB_OUTPUT
 
       - name: Determine cross build rules
@@ -1010,7 +1025,7 @@ jobs:
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.0.1/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.0.2/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
@@ -1641,7 +1656,7 @@ jobs:
       published: ${{ steps.publish.conclusion == 'success' }}
     # Use of always() here ensures that even if the _cross_ job (note: not the 'docker' job) is skipped we will still run.
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
-    if: ${{ always() && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
+    if: ${{ always() && needs.prepare.outputs.docker_build_rules != '{}' && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
