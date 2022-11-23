@@ -346,7 +346,7 @@ jobs:
           if [[ "${PACKAGE_TEST_RULES}" == 'none' ]]; then
             JSON='{}'
           elif [[ "${PACKAGE_TEST_RULES}" == 'use_package_build_rules' ]]; then
-            JSON=$(yq "${PACKAGE_BUILD_RULES}" -I=0 -p=yaml -o=json)
+            JSON=$(echo "${PACKAGE_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           elif [[ -f "${PACKAGE_TEST_RULES}" ]]; then
             JSON=$(yq "${PACKAGE_TEST_RULES}" -I=0 -p=yaml -o=json)
           else
