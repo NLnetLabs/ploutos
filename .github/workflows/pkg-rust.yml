@@ -686,7 +686,8 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "pkg=pkg" >> $GITHUB_OUTPUT
+          CARGO_NAME=$(cargo read-manifest | jq -r '.name')
+          echo "pkg=${CARGO_NAME}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
@@ -1237,7 +1238,8 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "pkg=pkg" >> $GITHUB_OUTPUT
+          CARGO_NAME=$(cargo read-manifest | jq -r '.name')
+          echo "pkg=${CARGO_NAME}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
