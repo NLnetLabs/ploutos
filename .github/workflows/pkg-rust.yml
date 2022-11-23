@@ -1236,6 +1236,18 @@ jobs:
                 if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
                   EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
                 fi
+
+                mkdir ~/.config
+                cat <<'EOF' >~/.config/rpmlint
+        addFilter("E: no-binary")
+        addFilter("E: no-buildhost-tag")
+        addFilter("E: no-changelogname-tag")
+        addFilter("E: no-signature")
+        addFilter("E: no-packager-tag")
+        addFilter("E: no-group-tag")
+        EOF
+
+                EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc ~/.config/rpmlint"
                 ;;
             esac
 
