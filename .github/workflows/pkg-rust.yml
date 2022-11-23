@@ -1177,18 +1177,28 @@ jobs:
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error,warning"
                   ;;
               esac
+            else
+              case ${OS_REL} in
+                focal|bionic|stretch|buster)
+                  ;;
+
+                *)
+                  EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error"
+                  ;;
+              esac
             fi
 
             lintian --version
             lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
             ;;
+
           centos)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
             if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
               rpmlint target/generate-rpm/*.rpm
             else
-            rpmlint target/generate-rpm/*.rpm || true
+              rpmlint target/generate-rpm/*.rpm || true
             fi
             ;;
         esac
