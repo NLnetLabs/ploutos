@@ -1215,6 +1215,7 @@ jobs:
             #    centos:7 Docker image    : rpmlint 1.5
             #    rockylinux:8 Docker image: rpmlint 1.10
             #    rockylinux:8 Docker image: rpmlint 2.4.0 (via pip3 install rpmlint)
+            #    fedora:37 Docker image:    rpmlint 2.2.0
             #
             # CentOS / RockyLinux 8 supports rpmlint 2.x via python3-pip, so we can use the newer version instead, but
             # this can't be installed on CentOS 7 due to a missing rpm-python3 RPM bindings package needed by pip3
@@ -1239,8 +1240,9 @@ jobs:
                   EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
                 fi
 
+                LINTER_CONFIG_PATH="$HOME/.config/rpmlint"
                 mkdir $HOME/.config
-                cat <<'EOF' >$HOME/.config/rpmlint
+                cat <<'EOF' >${LINTER_CONFIG_PATH}
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
         addFilter("E: no-changelogname-tag")
@@ -1249,7 +1251,17 @@ jobs:
         addFilter("E: no-group-tag")
         EOF
 
-                EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc $HOME/.config/rpmlint"
+                # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
+                # version doesn't come with any existing list of valid licenses so we have to install one ourselves.
+                # With rpmlint 1.x, or rpmlint 2.x installed from O/S package (e.g. on fedora:37) the valid license
+                # set is pre-loaded, but that doesn't help us here. If we don't solve this a warning, or error in
+                # strict mode, will be raised about the unknown license used by the RPM being checked (as all
+                # licenses are unknown!).
+                LICENSES_CONF_URL="https://raw.githubusercontent.com/rpm-software-management/rpmlint/2.4.0/configs/Fedora/licenses.toml"
+                LICENSES_CONF_PATH="$HOME/.config/rpmlint-licenses.conf"
+                curl --proto '=https' --tlsv1.2 --fail --output ${LICENSES_CONF_PATH} ${LICENSES_CONF_URL}
+
+                EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc ${LINTER_CONFIG_PATH} --config ${LICENSES_CONF_PATH}"
                 ;;
             esac
 
