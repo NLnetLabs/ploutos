@@ -686,7 +686,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          CARGO_NAME=$(cargo read-manifest | jq -r '.name')
+          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
           echo "pkg=${CARGO_NAME}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
@@ -1238,7 +1238,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          CARGO_NAME=$(cargo read-manifest | jq -r '.name')
+          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
           echo "pkg=${CARGO_NAME}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
