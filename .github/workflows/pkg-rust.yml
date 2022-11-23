@@ -306,7 +306,6 @@ jobs:
             echo "::warning::The 'cross_build_rules' input is deprecated. Cross build targets will be determined automatically."
           fi
 
-          echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
           read -r -d '' DOCKER_BUILD_RULES <<-'EOF'
           ${{ inputs.docker_build_rules }}
           EOF
@@ -316,10 +315,11 @@ jobs:
             JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
           JSON=$(echo $JSON | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
+
+          echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           read -r -d '' PACKAGE_BUILD_RULES <<-'EOF'
           ${{ inputs.package_build_rules }}
           EOF
@@ -336,17 +336,17 @@ jobs:
           # pkb job are identical and thus pointless waste and just plain confusing.
           MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.mode)')
 
+          echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${MODIFIED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
-          echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
           read -r -d '' PACKAGE_TEST_RULES <<-'EOF'
           ${{ inputs.package_test_rules }}
           EOF
           if [[ "${PACKAGE_TEST_RULES}" == 'none' ]]; then
             JSON='{}'
           elif [[ "${PACKAGE_TEST_RULES}" == 'use_package_build_rules' ]]; then
-            JSON=$(yq "${PACKAGE_TEST_RULES}" -I=0 -p=yaml -o=json)
+            JSON=$(yq "${PACKAGE_BUILD_RULES}" -I=0 -p=yaml -o=json)
           elif [[ -f "${PACKAGE_TEST_RULES}" ]]; then
             JSON=$(yq "${PACKAGE_TEST_RULES}" -I=0 -p=yaml -o=json)
           else
@@ -374,6 +374,7 @@ jobs:
             fi
           fi
 
+          echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_TEST_RULES' >> $GITHUB_OUTPUT
 
