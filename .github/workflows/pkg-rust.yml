@@ -690,7 +690,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "pkg=${{ steps.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
+          echo "pkg=${{ needs.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
@@ -1241,7 +1241,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "pkg=${{ steps.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
+          echo "pkg=${{ needs.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
