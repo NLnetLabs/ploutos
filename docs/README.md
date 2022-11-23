@@ -2,7 +2,7 @@
 
 In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Packaging **reusable** workflow (hereafter the "Ploutos workflow") from your own repository and how to create the supporting files needed.
 
-> _**WARNING:** Using Ploutos is free for public GitHub repositories, but is **NOT FREE** for **private GitHub repositories**. As Ploutos runs many jobs in parallel (if configured to build for multiple package types and/or targets) it can consume a LOT of GitHub Actions minutes. If you exceed the [free limits for GitHub private repositories](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions) it will cost money! For example a workflow that ran for ~11 minutes actually used ~141 minutes of GitHub Actions resources in total. For a single run on 2-core Linux runners the cost at the time of writing that would be about €1 (€0.008/min * 141 minutes), but if in future we were to support macOS runners that could cost substantially more because of the higher price of macOS hosted runners)._
+> _**WARNING:** Using Ploutos is free for public GitHub repositories, but is **NOT FREE** for **private GitHub repositories**. As Ploutos runs many jobs in parallel (if configured to build for multiple package types and/or targets) it can consume a LOT of GitHub Actions minutes. If you exceed the [free limits for GitHub private repositories](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions) it will cost money! For example a workflow that ran for ~11 minutes actually used ~141 minutes of GitHub Actions resources in total._
 
 **Contents:**
 - [Why use Ploutos?](#why-use-ploutos)
