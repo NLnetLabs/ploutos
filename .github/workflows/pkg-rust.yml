@@ -1225,8 +1225,8 @@ jobs:
             # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/20
             case ${OS_REL} in
               7)
-                mkdir ~/.config
-                cat <<'EOF' >~/.config/rpmlint
+                mkdir $HOME/.config
+                cat <<'EOF' >$HOME/.config/rpmlint
         from Config import *
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
@@ -1239,8 +1239,8 @@ jobs:
                   EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
                 fi
 
-                mkdir ~/.config
-                cat <<'EOF' >~/.config/rpmlint
+                mkdir $HOME/.config
+                cat <<'EOF' >$HOME/.config/rpmlint
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
         addFilter("E: no-changelogname-tag")
@@ -1249,7 +1249,7 @@ jobs:
         addFilter("E: no-group-tag")
         EOF
 
-                EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc ~/.config/rpmlint"
+                EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc $HOME/.config/rpmlint"
                 ;;
             esac
 
