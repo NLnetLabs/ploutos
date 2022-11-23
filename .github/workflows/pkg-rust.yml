@@ -311,14 +311,19 @@ jobs:
           EOF
           )
           if [[ -f "${DOCKER_BUILD_RULES}" ]]; then
-            JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
+            DOCKER_BUILD_RULES_RAW_JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
+            DOCKER_BUILD_RULES_RAW_JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
-          JSON=$(echo $JSON | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
+
+          # Convert string values to array of single string values (as GitHub matrix values must be arrays)
+          DOCKER_BUILD_RULES_PROCESSED_JSON=$(echo ${DOCKER_BUILD_RULES_RAW_JSON} | jq 'with_entries(if .value | type == "string" then .value |= [.] elif .value | type != "array" then error("rule values must be strings or arrays") else . end)')
+
+          # Rename "crosstarget" keys to "target" (we support "crosstarget" for backward compatibility)
+          DOCKER_BUILD_RULES_PROCESSED_JSON=$(echo ${DOCKER_BUILD_RULES_PROCESSED_JSON} | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
 
           echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
-          echo ${JSON} | jq >> $GITHUB_OUTPUT
+          echo ${DOCKER_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
           PACKAGE_BUILD_RULES=$(cat <<'EOF'
@@ -331,12 +336,15 @@ jobs:
             PACKAGE_BUILD_RULES_RAW_JSON=$(echo "${PACKAGE_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
+          # Convert string values to array of single string values (as GitHub matrix values must be arrays)
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_RAW_JSON} | jq 'with_entries(if .value | type == "string" then .value |= [.] elif .value | type != "array" then error("rule values must be strings or arrays") else . end)')
+
           # Don't permute the build job over variables intended only for use by the pkg-test job but which were supplied
           # via package_build_rules as a convenience for the user to avoid having to supply package_test_rules which
           # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
           # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
           # pkb job are identical and thus pointless waste and just plain confusing.
-          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_RAW_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
@@ -356,8 +364,10 @@ jobs:
             PACKAGE_TEST_RULES_RAW_JSON=$(echo "${PACKAGE_TEST_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
+          # Convert string values to array of single string values (as GitHub matrix values must be arrays)
+          PACKAGE_TEST_RULES_PROCESSED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq 'with_entries(if .value | type == "string" then .value |= [.] elif .value | type != "array" then error("rule values must be strings or arrays") else . end)')
+
           # Exclude debian:stretch because the LXC image is no longer available
-          PACKAGE_TEST_RULES_PROCESSED_JSON="${PACKAGE_TEST_RULES_RAW_JSON}"
           if [[ "${PACKAGE_TEST_RULES_RAW_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c)
             MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c 'del(.image[]? | select(. == "debian:stretch")) | del(.include[]? | select(.image == "debian:stretch"))')
