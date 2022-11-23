@@ -668,6 +668,7 @@ jobs:
         echo '${{ toJSON(matrix) }}'
 
     - name: Verify inputs
+      id: verify
       run: |
         if [[ ! -f Cargo.toml ]]; then
           echo "::error::File 'Cargo.toml' is missing. This workflow is only intended for use with Rust Cargo projects."
@@ -685,8 +686,9 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "::error::Required matrix variable 'pkg' is not defined in package_build_rules."
-          exit 1
+          echo "pkg=pkg" >> $GITHUB_OUTPUT
+        else
+          echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
 
     - name: Set vars
@@ -773,7 +775,7 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-        key: ${{ matrix.image }}-${{ matrix.target }}-${{ matrix.pkg }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ matrix.image }}-${{ matrix.target }}-${{ steps.verify.outputs.pkg }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     # Speed up tooling installation by only re-downloading and re-building dependent crates if we change the version of
     # the tool that we are using.
@@ -837,7 +839,7 @@ jobs:
     # arguments.
     - name: Create the package
       env:
-        MATRIX_PKG: ${{ matrix.pkg }}
+        MATRIX_PKG: ${{ steps.verify.outputs.pkg }}
         EXTRA_BUILD_ARGS: ${{ matrix.extra_build_args }}
         CROSS_TARGET: ${{ matrix.target }}
       run: |
@@ -1189,7 +1191,7 @@ jobs:
     - name: Upload package
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ inputs.artifact_prefix }}${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
+        name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
           target/debian/*.deb
           target/generate-rpm/*.rpm
@@ -1235,8 +1237,9 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "::error::Required matrix variable 'pkg' is not defined in package_test_rules."
-          exit 1
+          echo "pkg=pkg" >> $GITHUB_OUTPUT
+        else
+          echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
 
         if [[ '${{ matrix.mode }}' == '' ]]; then
@@ -1286,7 +1289,7 @@ jobs:
     - name: Download package
       uses: actions/download-artifact@v3
       with:
-        name: ${{ inputs.artifact_prefix }}${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
+        name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
     - name: Add current user to LXD group
       run: |
@@ -1338,7 +1341,7 @@ jobs:
             ;;
         esac
 
-    - name: Copy the newly built ${{ matrix.pkg }} package into the LXC container
+    - name: Copy the newly built ${{ steps.verify.outputs.pkg }} package into the LXC container
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1353,7 +1356,7 @@ jobs:
             ;;
         esac
 
-    - name: Install previously published ${{ matrix.pkg }} package
+    - name: Install previously published ${{ steps.verify.outputs.pkg }} package
       id: instprev
       if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
@@ -1369,12 +1372,12 @@ jobs:
             sg lxd -c "lxc exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-key add ./aptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-get -y update"
-            sg lxd -c "lxc exec testcon -- apt-get install -y ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}"
 
             # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
             # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
-            SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
-            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ matrix.pkg }}.conffiles"
+            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
+            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
 
             # append a line break to the conffile
             for F in $(sg lxd -c "lxc exec testcon -- cat ${CONFIFILE_LIST_FILE}"); do
@@ -1398,11 +1401,11 @@ jobs:
             fi
             sg lxd -c "lxc exec testcon -- sed -i -e 's/\${OS_NAME}/${OS_NAME}/g' -e 's/\${OS_REL}/${OS_REL}/g' /etc/yum.repos.d/ploutos.repo"
             sg lxd -c "lxc exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}"
-            sg lxd -c "lxc exec testcon -- yum install -y ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}"
             ;;
         esac
 
-    - name: Install the newly built ${{ matrix.pkg }} package
+    - name: Install the newly built ${{ steps.verify.outputs.pkg }} package
       if: ${{ steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         case ${OS_NAME} in
@@ -1416,15 +1419,15 @@ jobs:
             ;;
         esac
 
-    - name: Test the installed ${{ matrix.pkg }} package
+    - name: Test the installed ${{ steps.verify.outputs.pkg }} package
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
-        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
+        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh"
         sg lxd -c "lxc exec testcon -- chmod +x /tmp/test.sh"
         sg lxd -c "lxc exec testcon -- /tmp/test.sh post-install"
 
-    - name: Upgrade from the published ${{ matrix.pkg }} package to the newly built package
+    - name: Upgrade from the published ${{ steps.verify.outputs.pkg }} package to the newly built package
       id: upgrade_package
       continue-on-error: true
       if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
@@ -1453,17 +1456,17 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
+            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
             sg lxd -c "lxc exec testcon -- sh -c '[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}'"
             ;;
           centos)
             ;;
         esac
 
-    - name: Test the upgraded ${{ matrix.pkg }} package
+    - name: Test the upgraded ${{ steps.verify.outputs.pkg }} package
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
-        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
+        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh"
         sg lxd -c "lxc exec testcon -- chmod +x /tmp/test2.sh"
         sg lxd -c "lxc exec testcon -- /tmp/test2.sh post-upgrade"
@@ -1472,10 +1475,10 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get -y remove ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}"
             ;;
           centos)
-            sg lxd -c "lxc exec testcon -- yum remove -y ${{ matrix.pkg }}" 2>&1 | tee remove.log
+            sg lxd -c "lxc exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }}" 2>&1 | tee remove.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' remove.log
             ;;
