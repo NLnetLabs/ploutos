@@ -1656,7 +1656,7 @@ jobs:
       published: ${{ steps.publish.conclusion == 'success' }}
     # Use of always() here ensures that even if the _cross_ job (note: not the 'docker' job) is skipped we will still run.
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
-    if: ${{ always() && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
+    if: ${{ always() && fromJSON(needs.docker.outputs.published) == true && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
     runs-on: ubuntu-20.04
     steps:
       - name: Log into Docker Hub
