@@ -1207,31 +1207,40 @@ jobs:
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
 
-            if [[ "${OS_REL}" == "7" ]]; then
-              # The no-binary check is faulty on older rpmlint versions and the only way to disable the check is by 
-              # writing a config file to disk. Also filter out the no-buildhost-tag and no-changelogname-tag errors as
-              # we have no way to add the missing tags. At the time of writing versions encountered were:
-              #    centos:7 Docker image    : rpmlint 1.5
-              #    rockylinux:8 Docker image: rpmlint 1.10
-              # Both wrongly raise "E: no-binary"
-              #
-              # CentOS / RockyLinux 8 supports rpmlint 2.x via python3-pip, so we can use the newer version instead,
-              # but this can't be installed on CentOS 7 due to a missing rpm-python3 RPM bindings package needed by pip3
-              # install.
-              #
-              # See: https://github.com/rpm-software-management/rpmlint/blob/rpmlint-1.4/README#L39
-              # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/20
-              mkdir ~/.config
-              cat <<'EOF' >~/.config/rpmlint
+            EXTRA_RPMLINT_ARGS="${{ matrix.rpm_extra_rpmlint_args }}"
+            case ${OS_REL} in
+              7)
+                # The no-binary check is faulty on older rpmlint versions and the only way to disable the check is by 
+                # writing a config file to disk. Also filter out the no-buildhost-tag and no-changelogname-tag errors as
+                # we have no way to add the missing tags. At the time of writing versions encountered were:
+                #    centos:7 Docker image    : rpmlint 1.5
+                #    rockylinux:8 Docker image: rpmlint 1.10
+                # Both wrongly raise "E: no-binary"
+                #
+                # CentOS / RockyLinux 8 supports rpmlint 2.x via python3-pip, so we can use the newer version instead,
+                # but this can't be installed on CentOS 7 due to a missing rpm-python3 RPM bindings package needed by pip3
+                # install.
+                #
+                # See: https://github.com/rpm-software-management/rpmlint/blob/rpmlint-1.4/README#L39
+                # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/20
+                mkdir ~/.config
+                cat <<'EOF' >~/.config/rpmlint
         from Config import *
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
         addFilter("E: no-changelogname-tag")
         EOF
-            fi
+                ;;
+
+              8)
+                if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
+                  EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
+                fi
+                ;;
+            esac
 
             rpmlint --version
-            rpmlint target/generate-rpm/*.rpm
+            rpmlint ${EXTRA_RPMLINT_ARGS} target/generate-rpm/*.rpm
             ;;
         esac
 
