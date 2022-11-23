@@ -284,7 +284,7 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     outputs:
-      cargo_name: ${{ steps.verify.outputs.cargo_name }}
+      cargo_name: ${{ steps.verify_inputs.outputs.cargo_name }}
       has_docker_secrets: ${{ steps.verify_inputs.outputs.has_docker_secrets }}
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
