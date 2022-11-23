@@ -298,6 +298,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # TODO: extract common code into helper functions
       - name: Pre-process rules
         id: pre_process_rules
         run: |
@@ -306,20 +307,26 @@ jobs:
           fi
 
           echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.docker_build_rules }}' ]]; then
-            JSON=$(yq '${{ inputs.docker_build_rules }}' -I=0 -p=yaml -o=json)
+          read -r -d '' DOCKER_BUILD_RULES <<-'EOF'
+          ${{ inputs.docker_build_rules }}
+          EOF
+          if [[ -f "${DOCKER_BUILD_RULES}" ]]; then
+            JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo '${{ inputs.docker_build_rules }}' | yq -I=0 -p=yaml -o=json)
+            JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
           JSON=$(echo $JSON | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
           echo ${JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
-          if [[ -f '${{ inputs.package_build_rules }}' ]]; then
-            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
+          read -r -d '' PACKAGE_BUILD_RULES <<-'EOF'
+          ${{ inputs.package_build_rules }}
+          EOF
+          if [[ -f "${PACKAGE_BUILD_RULES}" ]]; then
+            JSON=$(yq "${PACKAGE_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo '${{ inputs.package_build_rules }}' | yq -I=0 -p=yaml -o=json)
+            JSON=$(echo "${PACKAGE_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
           # Don't permute the build job over variables intended only for use by the pkg-test job but which were supplied
@@ -333,14 +340,17 @@ jobs:
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
 
           echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
-          if [[ '${{ inputs.package_test_rules }}' == 'none' ]]; then
+          read -r -d '' PACKAGE_TEST_RULES <<-'EOF'
+          ${{ inputs.package_test_rules }}
+          EOF
+          if [[ "${PACKAGE_TEST_RULES}" == 'none' ]]; then
             JSON='{}'
-          elif [[ '${{ inputs.package_test_rules }}' == 'use_package_build_rules' ]]; then
-            JSON=$(yq '${{ inputs.package_build_rules }}' -I=0 -p=yaml -o=json)
-          elif [[ -f '${{ inputs.package_test_rules }}' ]]; then
-            JSON=$(yq '${{ inputs.package_test_rules }}' -I=0 -p=yaml -o=json)
+          elif [[ "${PACKAGE_TEST_RULES}" == 'use_package_build_rules' ]]; then
+            JSON=$(yq "${PACKAGE_TEST_RULES}" -I=0 -p=yaml -o=json)
+          elif [[ -f "${PACKAGE_TEST_RULES}" ]]; then
+            JSON=$(yq "${PACKAGE_TEST_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo '${{ inputs.package_test_rules }}' | yq -I=0 -p=yaml -o=json)
+            JSON=$(echo "${PACKAGE_TEST_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
           # Exclude debian:stretch because the LXC image is no longer available
