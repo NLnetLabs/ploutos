@@ -1207,8 +1207,6 @@ jobs:
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
 
-            EXTRA_RPMLINT_ARGS=
-
             # The no-binary check is being raised for some reason, and other checks are failing relating to "tags" that
             # cargo-generate-rpm does not currently support setting. The only way to disable certain checks is by
             # writing a config file to disk. At the time of writing versions of rpmlint encountered were:
@@ -1224,10 +1222,14 @@ jobs:
             # See: https://github.com/rpm-software-management/rpmlint/blob/2.4.0/README.md#configuration
             # See: https://github.com/rpm-software-management/rpmlint/blob/rpmlint-1.4/README#L39
             # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/20
+
+            EXTRA_RPMLINT_ARGS=
+            LINTER_CONFIG_PATH="$HOME/.config/rpmlint"
+
             case ${OS_REL} in
               7)
                 mkdir $HOME/.config
-                cat <<'EOF' >$HOME/.config/rpmlint
+                cat <<'EOF' >${LINTER_CONFIG_PATH}
         from Config import *
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
@@ -1240,7 +1242,6 @@ jobs:
                   EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
                 fi
 
-                LINTER_CONFIG_PATH="$HOME/.config/rpmlint"
                 mkdir $HOME/.config
                 cat <<'EOF' >${LINTER_CONFIG_PATH}
         addFilter("E: no-binary")
@@ -1251,10 +1252,6 @@ jobs:
         addFilter("E: no-signature")
         addFilter("E: no-url-tag")
         EOF
-
-                for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
-                  echo 'addFilter("E: '${CHECK_NAME}'")' >> ${LINTER_CONFIG_PATH}
-                done
 
                 # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
                 # version doesn't come with any existing list of valid licenses so we have to install one ourselves.
@@ -1269,6 +1266,12 @@ jobs:
                 EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc ${LINTER_CONFIG_PATH} --config ${LICENSES_CONF_PATH}"
                 ;;
             esac
+
+            for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
+              echo 'addFilter("E: '${CHECK_NAME}'")' >> ${LINTER_CONFIG_PATH}
+            done
+
+            cat ${LINTER_CONFIG_PATH}
 
             rpmlint --version
             rpmlint ${EXTRA_RPMLINT_ARGS} target/generate-rpm/*.rpm
