@@ -1268,7 +1268,7 @@ jobs:
             esac
 
             for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
-              echo 'setBadness('${CHECK_NAME}', 0)' >> ${LINTER_CONFIG_PATH}
+              echo "setBadness('${CHECK_NAME}', 0)" >> ${LINTER_CONFIG_PATH}
             done
 
             cat ${LINTER_CONFIG_PATH}
