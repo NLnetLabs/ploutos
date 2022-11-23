@@ -75,9 +75,9 @@ jobs:
     uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
     with:
       package_build_rules: |
-        pkg: ["mytest"]
-        image: ["ubuntu:jammy"]
-        target: ["x86_64"]
+        pkg: mytest
+        image: "ubuntu:jammy"
+        target: x86_64
 ```
 
 Assuming that you have just created an empty GitHub repository, let's setup Git to push to it, add & commit the files we have created and push them to GitHub:
