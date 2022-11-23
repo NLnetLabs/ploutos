@@ -1345,7 +1345,7 @@ jobs:
             ;;
         esac
 
-    - name: Copy the newly built ${{ steps.verify.outputs.pkg }} package into the LXC container
+    - name: Copy the newly built package into the LXC container
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1360,7 +1360,7 @@ jobs:
             ;;
         esac
 
-    - name: Install previously published ${{ steps.verify.outputs.pkg }} package
+    - name: Install previously published package
       id: instprev
       if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
@@ -1409,7 +1409,7 @@ jobs:
             ;;
         esac
 
-    - name: Install the newly built ${{ steps.verify.outputs.pkg }} package
+    - name: Install the newly built package
       if: ${{ steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         case ${OS_NAME} in
@@ -1423,7 +1423,7 @@ jobs:
             ;;
         esac
 
-    - name: Test the installed ${{ steps.verify.outputs.pkg }} package
+    - name: Test the installed package
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
@@ -1431,7 +1431,7 @@ jobs:
         sg lxd -c "lxc exec testcon -- chmod +x /tmp/test.sh"
         sg lxd -c "lxc exec testcon -- /tmp/test.sh post-install"
 
-    - name: Upgrade from the published ${{ steps.verify.outputs.pkg }} package to the newly built package
+    - name: Upgrade from the published package to the newly built package
       id: upgrade_package
       continue-on-error: true
       if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
@@ -1467,7 +1467,7 @@ jobs:
             ;;
         esac
 
-    - name: Test the upgraded ${{ steps.verify.outputs.pkg }} package
+    - name: Test the upgraded package
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
