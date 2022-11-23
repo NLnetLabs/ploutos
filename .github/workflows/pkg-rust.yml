@@ -284,6 +284,7 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     outputs:
+      cargo_name: ${{ steps.verify.outputs.cargo_name }}
       has_docker_secrets: ${{ steps.verify_inputs.outputs.has_docker_secrets }}
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
@@ -497,6 +498,9 @@ jobs:
             echo "has_docker_secrets=false" >> $GITHUB_OUTPUT
           fi
 
+          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
+          echo "cargo_name=${CARGO_NAME}" >> $GITHUB_OUTPUT
+
       - name: Verify Docker credentials
         if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && fromJSON(steps.verify_inputs.outputs.has_docker_secrets) == true }}
         uses: docker/login-action@v2
@@ -686,8 +690,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
-          echo "pkg=${CARGO_NAME}" >> $GITHUB_OUTPUT
+          echo "pkg=${{ steps.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
@@ -1238,8 +1241,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
-          echo "pkg=${CARGO_NAME}" >> $GITHUB_OUTPUT
+          echo "pkg=${{ steps.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
         else
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
