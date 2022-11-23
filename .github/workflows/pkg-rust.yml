@@ -359,8 +359,8 @@ jobs:
           # Exclude debian:stretch because the LXC image is no longer available
           if [[ "${JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.image[] | select(. == "debian:stretch")) | del(.include[] | select(.image == "debian:stretch"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[] | select(.os == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.image[]? | select(. == "debian:stretch")) | del(.include[]? | select(.image == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed debian:stretch image from package_test_rules because the LXC image no longer exists"
               JSON="${MODIFIED_JSON}"
@@ -370,7 +370,7 @@ jobs:
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
           if [[ "${JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[] | select(. != "x86_64")) | del(.include[] | select(.target != "x86_64" and .target != null))')
+            MODIFIED_JSON=$(echo ${JSON} | jq -c 'del(.target[]? | select(. != "x86_64")) | del(.include[]? | select(.target != "x86_64" and .target != null))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed non-x86_64 targets from package_test_rules because testing is only supported for x86_64 targets"
               JSON="${MODIFIED_JSON}"
