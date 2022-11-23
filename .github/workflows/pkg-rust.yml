@@ -1207,7 +1207,7 @@ jobs:
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
 
-            EXTRA_RPMLINT_ARGS="${{ matrix.rpm_extra_rpmlint_args }}"
+            EXTRA_RPMLINT_ARGS=
 
             # The no-binary check is being raised for some reason, and other checks are failing relating to "tags" that
             # cargo-generate-rpm does not currently support setting. The only way to disable certain checks is by
@@ -1246,10 +1246,15 @@ jobs:
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
         addFilter("E: no-changelogname-tag")
-        addFilter("E: no-signature")
-        addFilter("E: no-packager-tag")
         addFilter("E: no-group-tag")
+        addFilter("E: no-packager-tag")
+        addFilter("E: no-signature")
+        addFilter("E: no-url-tag")
         EOF
+
+                for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
+                  echo 'addFilter("E: '${CHECK_NAME}'")' >> ${LINTER_CONFIG_PATH}
+                done
 
                 # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
                 # version doesn't come with any existing list of valid licenses so we have to install one ourselves.
