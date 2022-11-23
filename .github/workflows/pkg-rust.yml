@@ -1185,7 +1185,11 @@ jobs:
           centos)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
+            if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
+              rpmlint target/generate-rpm/*.rpm
+            else
             rpmlint target/generate-rpm/*.rpm || true
+            fi
             ;;
         esac
 
