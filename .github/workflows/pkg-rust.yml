@@ -1196,19 +1196,18 @@ jobs:
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
 
-            if [[ "${OS_NAME}:${OS_REL}" == "centos:7" ]]; then
-              # The no-binary check is faulty on older rpmlint versions and the only way to disable the check is by
-              # writing a config file to disk. Also filter out the no-buildhost-tag and no-changelogname-tag errors
-              # as we have no way to set them.
-              # See: hhttps://github.com/rpm-software-management/rpmlint/blob/rpmlint-1.4/README#L39
-              mkdir ~/.config
-              cat <<'EOF' >~/.config/rpmlint
+            # The no-binary check is faulty on older rpmlint versions and the only way to disable the check is by
+            # writing a config file to disk. Also filter out the no-buildhost-tag and no-changelogname-tag errors as we
+            # have no way to add the missing tags.
+            # See: https://github.com/rpm-software-management/rpmlint/blob/rpmlint-1.4/README#L39
+            # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/20
+            mkdir ~/.config
+            cat <<'EOF' >~/.config/rpmlint
         from Config import *
         addFilter("E: no-binary")
         addFilter("E: no-buildhost-tag")
         addFilter("E: no-changelogname-tag")
         EOF
-            fi
 
             if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
               rpmlint target/generate-rpm/*.rpm
