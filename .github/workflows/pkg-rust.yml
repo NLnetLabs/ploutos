@@ -1231,9 +1231,9 @@ jobs:
                 mkdir $HOME/.config
                 cat <<'EOF' >${LINTER_CONFIG_PATH}
         from Config import *
-        setBadness('no-binary'. 0)
-        setBadness('no-buildhost-tag'. 0)
-        setBadness('no-changelogname-tag'. 0)
+        setBadness('no-binary', 0)
+        setBadness('no-buildhost-tag', 0)
+        setBadness('no-changelogname-tag', 0)
         EOF
                 ;;
 
@@ -1244,13 +1244,13 @@ jobs:
 
                 mkdir $HOME/.config
                 cat <<'EOF' >${LINTER_CONFIG_PATH}
-        setBadness('no-binary'. 0)
-        setBadness('no-buildhost-tag'. 0)
-        setBadness('no-changelogname-tag'. 0)
-        setBadness('no-group-tag'. 0)
-        setBadness('no-packager-tag'. 0)
-        setBadness('no-signature'. 0)
-        setBadness('no-url-tag'. 0)
+        setBadness('no-binary', 0)
+        setBadness('no-buildhost-tag', 0)
+        setBadness('no-changelogname-tag', 0)
+        setBadness('no-group-tag', 0)
+        setBadness('no-packager-tag', 0)
+        setBadness('no-signature', 0)
+        setBadness('no-url-tag', 0)
         EOF
 
                 # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
@@ -1268,7 +1268,7 @@ jobs:
             esac
 
             for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
-              echo 'setBadness(''${CHECK_NAME}''. 0)' >> ${LINTER_CONFIG_PATH}
+              echo 'setBadness(''${CHECK_NAME}'', 0)' >> ${LINTER_CONFIG_PATH}
             done
 
             cat ${LINTER_CONFIG_PATH}
