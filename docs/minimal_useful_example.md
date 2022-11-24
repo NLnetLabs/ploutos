@@ -54,8 +54,8 @@ jobs:
       docker_org: my_org
       docker_repo: my_image_name
       docker_build_rules: |
-        platform: ["linux/amd64"]
-        shortname: ["amd64"]
+        platform: "linux/amd64"
+        shortname: "amd64"
 ```
 
 There are a few things to note here:

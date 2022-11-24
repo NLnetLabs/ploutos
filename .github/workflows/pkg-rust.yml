@@ -284,6 +284,7 @@ jobs:
   prepare:
     runs-on: ubuntu-22.04
     outputs:
+      cargo_name: ${{ steps.verify_inputs.outputs.cargo_name }}
       has_docker_secrets: ${{ steps.verify_inputs.outputs.has_docker_secrets }}
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
@@ -311,14 +312,19 @@ jobs:
           EOF
           )
           if [[ -f "${DOCKER_BUILD_RULES}" ]]; then
-            JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
+            DOCKER_BUILD_RULES_RAW_JSON=$(yq "${DOCKER_BUILD_RULES}" -I=0 -p=yaml -o=json)
           else
-            JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
+            DOCKER_BUILD_RULES_RAW_JSON=$(echo "${DOCKER_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
-          JSON=$(echo $JSON | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
+
+          # Convert string values to array of single string values (as GitHub matrix values must be arrays)
+          DOCKER_BUILD_RULES_PROCESSED_JSON=$(echo ${DOCKER_BUILD_RULES_RAW_JSON} | jq 'with_entries(if .value | type == "string" then .value |= [.] elif .value | type != "array" then error("rule values must be strings or arrays") else . end)')
+
+          # Rename "crosstarget" keys to "target" (we support "crosstarget" for backward compatibility)
+          DOCKER_BUILD_RULES_PROCESSED_JSON=$(echo ${DOCKER_BUILD_RULES_PROCESSED_JSON} | jq '(.. | select(has("crosstarget")?)) |= with_entries(if .key == "crosstarget" then .key = "target" else . end)')
 
           echo "docker_build_rules<<END_OF_DOCKER_BUILD_RULES" >> $GITHUB_OUTPUT
-          echo ${JSON} | jq >> $GITHUB_OUTPUT
+          echo ${DOCKER_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_DOCKER_BUILD_RULES' >> $GITHUB_OUTPUT
 
           PACKAGE_BUILD_RULES=$(cat <<'EOF'
@@ -331,12 +337,15 @@ jobs:
             PACKAGE_BUILD_RULES_RAW_JSON=$(echo "${PACKAGE_BUILD_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
+          # Convert string values to array of single string values (as GitHub matrix values must be arrays)
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_RAW_JSON} | jq 'with_entries(if .value | type == "string" then .value |= [.] elif .value | type != "array" then error("rule values must be strings or arrays") else . end)')
+
           # Don't permute the build job over variables intended only for use by the pkg-test job but which were supplied
           # via package_build_rules as a convenience for the user to avoid having to supply package_test_rules which
           # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
           # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
           # pkb job are identical and thus pointless waste and just plain confusing.
-          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_RAW_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
@@ -356,8 +365,10 @@ jobs:
             PACKAGE_TEST_RULES_RAW_JSON=$(echo "${PACKAGE_TEST_RULES}" | yq -I=0 -p=yaml -o=json)
           fi
 
+          # Convert string values to array of single string values (as GitHub matrix values must be arrays)
+          PACKAGE_TEST_RULES_PROCESSED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq 'with_entries(if .value | type == "string" then .value |= [.] elif .value | type != "array" then error("rule values must be strings or arrays") else . end)')
+
           # Exclude debian:stretch because the LXC image is no longer available
-          PACKAGE_TEST_RULES_PROCESSED_JSON="${PACKAGE_TEST_RULES_RAW_JSON}"
           if [[ "${PACKAGE_TEST_RULES_RAW_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c)
             MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c 'del(.image[]? | select(. == "debian:stretch")) | del(.include[]? | select(.image == "debian:stretch"))')
@@ -486,6 +497,9 @@ jobs:
           else
             echo "has_docker_secrets=false" >> $GITHUB_OUTPUT
           fi
+
+          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
+          echo "cargo_name=${CARGO_NAME}" >> $GITHUB_OUTPUT
 
       - name: Verify Docker credentials
         if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && fromJSON(steps.verify_inputs.outputs.has_docker_secrets) == true }}
@@ -658,6 +672,7 @@ jobs:
         echo '${{ toJSON(matrix) }}'
 
     - name: Verify inputs
+      id: verify
       run: |
         if [[ ! -f Cargo.toml ]]; then
           echo "::error::File 'Cargo.toml' is missing. This workflow is only intended for use with Rust Cargo projects."
@@ -675,8 +690,9 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "::error::Required matrix variable 'pkg' is not defined in package_build_rules."
-          exit 1
+          echo "pkg=${{ needs.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
 
     - name: Set vars
@@ -751,7 +767,20 @@ jobs:
           centos)
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum install epel-release -y
-            yum install -y findutils gcc jq rpmlint ${{ inputs.rpm_extra_build_packages }}
+            yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
+
+            # note: we also install python magic otherwise binaries are not identified as such and rpmlint outputs:
+            #   E: no-binary
+            case ${OS_REL} in
+              7)
+                yum install -y python-magic rpmlint
+                ;;
+
+              8)
+                yum install -y cpio python3-pip
+                pip3 install python-magic rpmlint
+                ;;
+            esac
             ;;
         esac
 
@@ -763,7 +792,7 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-        key: ${{ matrix.image }}-${{ matrix.target }}-${{ matrix.pkg }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ matrix.image }}-${{ matrix.target }}-${{ steps.verify.outputs.pkg }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     # Speed up tooling installation by only re-downloading and re-building dependent crates if we change the version of
     # the tool that we are using.
@@ -827,7 +856,7 @@ jobs:
     # arguments.
     - name: Create the package
       env:
-        MATRIX_PKG: ${{ matrix.pkg }}
+        MATRIX_PKG: ${{ steps.verify.outputs.pkg }}
         EXTRA_BUILD_ARGS: ${{ matrix.extra_build_args }}
         CROSS_TARGET: ${{ matrix.target }}
       run: |
@@ -1153,7 +1182,7 @@ jobs:
                 focal)
                   ;;
 
-                bionic|stretch|buster)
+                xenial|bionic|stretch|buster)
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
                   ;;
 
@@ -1161,15 +1190,98 @@ jobs:
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error,warning"
                   ;;
               esac
+            else
+              case ${OS_REL} in
+                focal|xenial|bionic|stretch|buster)
+                  ;;
+
+                *)
+                  EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on error"
+                  ;;
+              esac
             fi
 
             lintian --version
             lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
             ;;
+
           centos)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
-            rpmlint target/generate-rpm/*.rpm || true
+
+            # rpmlint checks are failing that relate to "tags" that cargo-generate-rpm does not currently support
+            # setting. The only way to disable certain checks is by writing a config file to disk. At the time of
+            # writing versions of rpmlint encountered were:
+            #
+            #    centos:7 Docker image    : rpmlint 1.5
+            #    rockylinux:8 Docker image: rpmlint 1.10
+            #    rockylinux:8 Docker image: rpmlint 2.4.0 (via pip3 install rpmlint)
+            #    fedora:37 Docker image:    rpmlint 2.2.0
+            #
+            # CentOS / RockyLinux 8 supports rpmlint 2.x via python3-pip, so we can use the newer version instead, but
+            # this can't be installed on CentOS 7 due to a missing rpm-python3 RPM bindings package needed by pip3
+            # install.
+            #
+            # See: https://github.com/rpm-software-management/rpmlint/blob/2.4.0/README.md#configuration
+            # See: https://github.com/rpm-software-management/rpmlint/blob/rpmlint-1.4/README#L39
+            # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/20
+
+            EXTRA_RPMLINT_ARGS=
+            LINTER_CONFIG_PATH="$HOME/.config/rpmlint"
+
+            case ${OS_REL} in
+              7)
+                # On CentOS 7 we only have the older rpmlint 1.x available, which has a known issue with the
+                # `missing-call-to-chdir-with-chroot` check causing false positives, therefore we filter this error
+                # out. The false positive issue was fixed in rpmlint 2.x.
+                #
+                # See: https://github.com/rpm-software-management/rpmlint/issues/84
+                mkdir $HOME/.config
+                cat <<'EOF' >${LINTER_CONFIG_PATH}
+        from Config import *
+        addFilter(".: no-buildhost-tag")
+        addFilter(".: no-changelogname-tag")
+        addFilter(".: missing-call-to-chdir-with-chroot")
+        EOF
+                ;;
+
+              8)
+                if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
+                  EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
+                fi
+
+                mkdir $HOME/.config
+                cat <<'EOF' >${LINTER_CONFIG_PATH}
+        addFilter(".: no-buildhost-tag")
+        addFilter(".: no-changelogname-tag")
+        addFilter(".: no-group-tag")
+        addFilter(".: no-packager-tag")
+        addFilter(".: no-signature")
+        addFilter(".: no-url-tag")
+        EOF
+
+                # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
+                # version doesn't come with any existing list of valid licenses so we have to install one ourselves.
+                # With rpmlint 1.x, or rpmlint 2.x installed from O/S package (e.g. on fedora:37) the valid license
+                # set is pre-loaded, but that doesn't help us here. If we don't solve this a warning, or error in
+                # strict mode, will be raised about the unknown license used by the RPM being checked (as all
+                # licenses are unknown!).
+                LICENSES_CONF_URL="https://raw.githubusercontent.com/rpm-software-management/rpmlint/2.4.0/configs/Fedora/licenses.toml"
+                LICENSES_CONF_PATH="$HOME/.config/rpmlint-licenses.conf"
+                curl --proto '=https' --tlsv1.2 --fail --output ${LICENSES_CONF_PATH} ${LICENSES_CONF_URL}
+
+                EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc ${LINTER_CONFIG_PATH} --config ${LICENSES_CONF_PATH}"
+                ;;
+            esac
+
+            for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
+              echo 'addFilter(".: '${CHECK_NAME}'")' >> ${LINTER_CONFIG_PATH}
+            done
+
+            cat ${LINTER_CONFIG_PATH}
+
+            rpmlint --version
+            rpmlint ${EXTRA_RPMLINT_ARGS} target/generate-rpm/*.rpm
             ;;
         esac
 
@@ -1179,7 +1291,7 @@ jobs:
     - name: Upload package
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ inputs.artifact_prefix }}${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
+        name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
           target/debian/*.deb
           target/generate-rpm/*.rpm
@@ -1225,8 +1337,9 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "::error::Required matrix variable 'pkg' is not defined in package_test_rules."
-          exit 1
+          echo "pkg=${{ needs.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
 
         if [[ '${{ matrix.mode }}' == '' ]]; then
@@ -1276,7 +1389,7 @@ jobs:
     - name: Download package
       uses: actions/download-artifact@v3
       with:
-        name: ${{ inputs.artifact_prefix }}${{ matrix.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
+        name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
     - name: Add current user to LXD group
       run: |
@@ -1328,7 +1441,7 @@ jobs:
             ;;
         esac
 
-    - name: Copy the newly built ${{ matrix.pkg }} package into the LXC container
+    - name: Copy the newly built package into the LXC container
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -1343,7 +1456,7 @@ jobs:
             ;;
         esac
 
-    - name: Install previously published ${{ matrix.pkg }} package
+    - name: Install previously published package
       id: instprev
       if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
@@ -1359,12 +1472,12 @@ jobs:
             sg lxd -c "lxc exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-key add ./aptkey.asc"
             sg lxd -c "lxc exec testcon -- apt-get -y update"
-            sg lxd -c "lxc exec testcon -- apt-get install -y ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}"
 
             # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
             # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
-            SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
-            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ matrix.pkg }}.conffiles"
+            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
+            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
 
             # append a line break to the conffile
             for F in $(sg lxd -c "lxc exec testcon -- cat ${CONFIFILE_LIST_FILE}"); do
@@ -1388,11 +1501,11 @@ jobs:
             fi
             sg lxd -c "lxc exec testcon -- sed -i -e 's/\${OS_NAME}/${OS_NAME}/g' -e 's/\${OS_REL}/${OS_REL}/g' /etc/yum.repos.d/ploutos.repo"
             sg lxd -c "lxc exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}"
-            sg lxd -c "lxc exec testcon -- yum install -y ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}"
             ;;
         esac
 
-    - name: Install the newly built ${{ matrix.pkg }} package
+    - name: Install the newly built package
       if: ${{ steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         case ${OS_NAME} in
@@ -1406,15 +1519,15 @@ jobs:
             ;;
         esac
 
-    - name: Test the installed ${{ matrix.pkg }} package
+    - name: Test the installed package
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
-        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
+        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh"
         sg lxd -c "lxc exec testcon -- chmod +x /tmp/test.sh"
         sg lxd -c "lxc exec testcon -- /tmp/test.sh post-install"
 
-    - name: Upgrade from the published ${{ matrix.pkg }} package to the newly built package
+    - name: Upgrade from the published package to the newly built package
       id: upgrade_package
       continue-on-error: true
       if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
@@ -1443,17 +1556,17 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            SAVED_MD5SUMS="/tmp/${{ matrix.pkg }}-conffiles.md5"
+            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
             sg lxd -c "lxc exec testcon -- sh -c '[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}'"
             ;;
           centos)
             ;;
         esac
 
-    - name: Test the upgraded ${{ matrix.pkg }} package
+    - name: Test the upgraded package
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
-        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ matrix.pkg }}/g')"
+        TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
         sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh"
         sg lxd -c "lxc exec testcon -- chmod +x /tmp/test2.sh"
         sg lxd -c "lxc exec testcon -- /tmp/test2.sh post-upgrade"
@@ -1462,10 +1575,10 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get -y remove ${{ matrix.pkg }}"
+            sg lxd -c "lxc exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}"
             ;;
           centos)
-            sg lxd -c "lxc exec testcon -- yum remove -y ${{ matrix.pkg }}" 2>&1 | tee remove.log
+            sg lxd -c "lxc exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }}" 2>&1 | tee remove.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' remove.log
             ;;

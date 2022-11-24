@@ -75,9 +75,9 @@ jobs:
     uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
     with:
       package_build_rules: |
-        pkg: ["mytest"]
-        image: ["ubuntu:jammy"]
-        target: ["x86_64"]
+        pkg: mytest
+        image: "ubuntu:jammy"
+        target: x86_64
 ```
 
 Assuming that you have just created an empty GitHub repository, let's setup Git to push to it, add & commit the files we have created and push them to GitHub:
@@ -165,7 +165,6 @@ Both `cargo-deb` and `cargo-generate-rpm` have a `variant` feature. Ploutos will
 | `deb_extra_build_packages` | string | No | A space separated set of additional Debian packages to install in the build host when (not cross) compiling. |
 | `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
 | `deb_apt_source` | string | No* | A line or lines to write to an APT `/etc/apt/sources.list.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
-| `deb_extra_lintian_args` | string | No | A space separated set of additional command line arguments to pass to the Debian Lintian package linting tool. Useful to suppress errors you wish to ignore or to supress warnings when `strict_mode` is set to `true`. |
 | `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install in the build host when (not cross) compiling. |
 | `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of the `pre_install_script`, `pre_uninstall_script`, `post_install_script` and/or `post_uninstall_script` `cargo-generate-rpm` settings. |
 | `rpm_yum_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `rpm_yum_repo`. Defaults to the NLnet Labs package repository key URL. |
@@ -191,7 +190,9 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `target` | Yes | Should be `x86_64` If `x86_64` the Rust application will be compiled using `cargo-deb` (for DEB) or `cargo build` (for RPM) and stripped. Otherwise it will be used to determine the cross-compiled binary GitHub Actions artifact to compile and download. |
 | `os` | No | Overrides the value of `image` when determining `os_name` and `os_rel`. |
 | `extra_build_args` | No | A space separated set of additional command line arguments to pass to `cargo-deb`/`cargo build`. |
+| `deb_extra_lintian_args` | No | A space separated set of additional command line arguments to pass to the Debian Lintian package linting tool. Useful to suppress errors you wish to ignore or to supress warnings when `strict_mode` is set to `true`. |
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to inclde in an RPM package. See below for more info. |
+| `rpm_rpmlint_check_filters` | No | A space separated set of additional rpmlint checks to filter out. See https://fedoraproject.org/wiki/Common_Rpmlint_issues for some example check names, e.g. `no-documentation`. |
 
 **Note:** When `package_test_rules` is not supplied the `package_build_rules` matrix is also used as the `package_test_rules` matrix, since normally you want to test every package that you build. When using `package_build_rules` this way you can also supply `package_test_rules` matrix keys in the `package_build_rules` input. These will be ignored by the package building workflow job.
 
