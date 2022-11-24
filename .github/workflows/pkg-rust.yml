@@ -836,7 +836,7 @@ jobs:
             else
               EXTRA_CARGO_INSTALL_ARGS=""
             fi
-            cargo install cargo-deb --version ${CARGO_DEB_VER} --locked ${EXTRA_CARGO_INSTALL_ARGS}
+            cargo install cargo-deb --version ${CARGO_DEB_VER} ${EXTRA_CARGO_INSTALL_ARGS}
             ;;
         esac
 
@@ -845,7 +845,7 @@ jobs:
       run: |
         case ${OS_NAME} in
           centos)
-            cargo install cargo-generate-rpm --version ${CARGO_GENERATE_RPM_VER} --locked
+            cargo install cargo-generate-rpm --version ${CARGO_GENERATE_RPM_VER}
             ;;
         esac
 
