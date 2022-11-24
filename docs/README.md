@@ -107,7 +107,7 @@ The core parts of the workflow are not specific to GitHub but instead just invok
 
 ## Examples
 
-- [Simple Docker example](./minimal_useful_example.md)
+- [Simple Docker example](./minimal_docker_example.md)
 - [Simple DEB example](./os_packaging.md#example)
 - [Real use cases](https://github.com/NLnetLabs/ploutos/network/dependents?dependent_type=REPOSITORY)
 
