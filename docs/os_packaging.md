@@ -40,7 +40,7 @@ _**Note:** DEB and RPM packages support many different metadata fields and the n
 
 ## Example
 
-_**Note: This example assumes have a GitHub account, that you are running on Linux, and that Rust, Cargo and git installed.**_
+_**Note: This example assumes have a GitHub account, that you are running on Linux, and that Rust, Cargo and git are installed.**_
 
 For the packaging process to work we need simple Hello World Cargo project to package, and a bare minimum of package metadata, let's create that and verify that it compiles and runs:
 
