@@ -980,7 +980,9 @@ jobs:
             echo "Generated changelog:"
             cat target/debian/changelog
 
-            sed -i -e "s/\[package.metadata.deb\]/[package.metadata.deb]\nchangelog = \"target\/debian\/changelog\"/" Cargo.toml
+            #sed -i -e "s/\[package.metadata.deb\]/[package.metadata.deb]\nchangelog = \"target\/debian\/changelog\"/" Cargo.toml
+            cargo install toml-cli
+            toml set Cargo.toml package.metadata.deb.changelog target/debian/changelog
             cat Cargo.toml
             
             #
