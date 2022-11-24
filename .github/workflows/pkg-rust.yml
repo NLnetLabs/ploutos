@@ -769,13 +769,15 @@ jobs:
             yum install epel-release -y
             yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
 
+            # note: we also install python magic otherwise binaries are not identified as such and rpmlint outputs:
+            #   E: no-binary
             case ${OS_REL} in
               7)
-                yum install -y rpmlint
+                yum install -y python-magic rpmlint
                 ;;
 
               8)
-                yum install -y python3-pip
+                yum install -y python3-pip python3-magic
                 pip3 install rpmlint
                 ;;
             esac
