@@ -777,8 +777,8 @@ jobs:
                 ;;
 
               8)
-                yum install -y python3-pip python3-magic
-                pip3 install rpmlint
+                yum install -y cpio python3-pip
+                pip3 install python-magic rpmlint
                 ;;
             esac
             ;;
