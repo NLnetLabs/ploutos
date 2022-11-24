@@ -852,7 +852,7 @@ jobs:
     - name: Install TOML-CLI if needed
       if: ${{ steps.cache-toml-cli.outputs.cache-hit != 'true' }}
       run: |
-        cargo install toml-cli --version ${TOML_CLI_VER} --locked
+        cargo install toml-cli --version ${TOML_CLI_VER}
 
     - name: Download cross-compiled binaries
       if: ${{ matrix.target != 'x86_64' }}
