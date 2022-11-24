@@ -981,7 +981,8 @@ jobs:
             cat target/debian/changelog
 
             sed -i -e "s/\[package.metadata.deb\]/[package.metadata.deb]\nchangelog = \"target\/debian\/changelog\"/" Cargo.toml
-
+            cat Cargo.toml
+            
             #
             # End changelog generation
             #
