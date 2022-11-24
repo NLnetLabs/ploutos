@@ -1180,7 +1180,7 @@ jobs:
                 focal)
                   ;;
 
-                bionic|stretch|buster)
+                xenial|bionic|stretch|buster)
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
                   ;;
 
@@ -1190,7 +1190,7 @@ jobs:
               esac
             else
               case ${OS_REL} in
-                focal|bionic|stretch|buster)
+                focal|xenial|bionic|stretch|buster)
                   ;;
 
                 *)
