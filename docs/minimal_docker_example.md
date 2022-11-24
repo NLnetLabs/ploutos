@@ -1,4 +1,4 @@
-# Ploutos: Minimal useful example
+# Ploutos: Minimal Docker example
 
 This page shows a minimal example of using the Ploutos workflow to package a very simple Docker image. In fact it doesn't even package a Rust application!
 
