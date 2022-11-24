@@ -13,7 +13,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [How can I run the created packages?](#how-can-i-run-the-created-packages)
 - [How does it work?](#how-does-it-work)
 - [How can I use it?](#how-can-i-use-it)
-- [A simple example](#a-simple-example)
+- [Examples](#examples)
 - [Key concepts and general configuration](#key-concepts-and-general-configuration)
 - [Creating specific package types](#creating-specific-package-types)
 
@@ -105,22 +105,11 @@ The core parts of the workflow are not specific to GitHub but instead just invok
    - Docker images will have been published to Docker Hub.
 7. (optional) Publish your DEB and RPM packages to a repository somewhere.
 
-## A simple example
+## Examples
 
-A simple, but not very useful, invocation of the Ploutos workflow would be a file such as `.github/workflows/my_ploutos.yml` in your GitHub repository with the following content:
-
-```yaml
-on:
-  push:
-
-jobs:
-  my_pkg_job:
-    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
-```
-
-_**Note:** this will **NOT** actually build any packages as it doesn't indicate which types of package to build or provide the necessary supporting information!_
-
-For a more useful example complete with step-by-step explanation of all the pieces see [this page](./minimal_useful_example.md).
+- [Simple Docker example](./minimal_useful_example.md)
+- [Simple DEB example](./os_packaging.md#example)
+- [Real use cases](https://github.com/NLnetLabs/ploutos/network/dependents?dependent_type=REPOSITORY)
 
 ## Key concepts and general configuration
 
