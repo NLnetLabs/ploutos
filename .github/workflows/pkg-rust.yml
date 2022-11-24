@@ -747,7 +747,6 @@ jobs:
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
       run: |
-        if ! hash cargo; then
           case ${OS_NAME} in
             debian|ubuntu)
               apt-get update
@@ -757,8 +756,10 @@ jobs:
               ;;
           esac
 
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          if ! hash cargo; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
+            echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          fi
         fi
 
     - name: Install compilation and other dependencies
