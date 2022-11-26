@@ -807,21 +807,21 @@ jobs:
 
     # Speed up tooling installation by only re-downloading and re-building dependent crates if we change the version of
     # the tool that we are using.
-    - name: Cache Cargo Deb if available
+    - name: Fetch cargo-deb from cache
       id: cache-cargo-deb
       uses: actions/cache@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
 
-    - name: Cache Cargo Generate RPM if available
+    - name: Fetch cargo-generate-rpm from cache
       id: cache-cargo-generate-rpm
       uses: actions/cache@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
 
-    - name: Cache TOML-CLI if available
+    - name: Fetch toml-cli from cache
       id: cache-toml-cli
       uses: actions/cache@v3
       with:
@@ -829,7 +829,7 @@ jobs:
         key: ${{ matrix.image }}-toml-cli-${{ env.TOML_CLI_VER }}
 
     # Only install cargo-deb or cargo-generate-rpm if not already fetched from the cache.
-    - name: Install Cargo Deb if needed
+    - name: Install cargo-deb if needed
       if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
@@ -848,7 +848,7 @@ jobs:
             ;;
         esac
 
-    - name: Install Cargo Generate RPM if needed
+    - name: Install cargo-generate-rpm if needed
       if: ${{ steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
@@ -857,7 +857,7 @@ jobs:
             ;;
         esac
 
-    - name: Install TOML-CLI if needed
+    - name: Install toml-cli if needed
       if: ${{ steps.cache-toml-cli.outputs.cache-hit != 'true' }}
       run: |
         cargo install toml-cli --version ${TOML_CLI_VER}
