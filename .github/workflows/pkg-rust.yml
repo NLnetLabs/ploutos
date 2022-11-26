@@ -746,6 +746,7 @@ jobs:
 
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
+      id: rust
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -760,6 +761,13 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
         fi
+
+        # Hack to determine the cargo install root directory so that we can tell the correct paths to actions/cache
+        # install a very small cargo "plugin" then find out where it got installed. When using rustup to install Rust
+        # this is likely ~/.cargo/bin, but if using say the rust Docker image then it is a different path entirely.
+        cargo install cargo-list-cache
+        CARGO_BIN_DIR=$(dirname $(which cargo-list-cache))
+        echo "bin_dir=${CARGO_BIN_DIR}" >> $GITHUB_OUTPUT
 
     - name: Install compilation and other dependencies
       run: |
@@ -803,21 +811,21 @@ jobs:
       id: cache-cargo-deb
       uses: actions/cache@v3
       with:
-        path: ~/.cargo/bin/cargo-deb
+        path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
 
     - name: Cache Cargo Generate RPM if available
       id: cache-cargo-generate-rpm
       uses: actions/cache@v3
       with:
-        path: ~/.cargo/bin/cargo-generate-rpm
+        path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
 
     - name: Cache TOML-CLI if available
       id: cache-toml-cli
       uses: actions/cache@v3
       with:
-        path: ~/.cargo/bin/toml
+        path: ${{ steps.rust.outputs.bin_dir }}/toml
         key: ${{ matrix.image }}-toml-cli-${{ env.TOML_CLI_VER }}
 
     # Only install cargo-deb or cargo-generate-rpm if not already fetched from the cache.
