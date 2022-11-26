@@ -766,9 +766,11 @@ jobs:
           # Hack to determine the cargo install root directory so that we can tell the correct paths to actions/cache
           # install a very small cargo "plugin" then find out where it got installed. When using rustup to install Rust
           # this is likely ~/.cargo/bin, but if using say the rust Docker image then it is a different path entirely.
-          # Assume that the crates.io index is up-to-date.
-          cargo install --offline cargo-list-cache
-          CARGO_BIN_DIR=$(dirname $(which cargo-list-cache))
+          # The cargo command should already be installed so this should be almost a no-op. Ideally it would be possible
+          # to just ask cargo but I haven't found a way. The docs list a 5-step process for resolving the bin dir...
+          # (involves checking --root, CARGO_INSTALL_ROOT, install.root, CARGO_HOME and $HOME/.cargo...).
+          # See: https://doc.rust-lang.org/cargo/commands/cargo-install.html#description
+          CARGO_BIN_DIR=$(dirname $(which cargo))
           echo "bin_dir=${CARGO_BIN_DIR}" >> $GITHUB_OUTPUT
         fi
 
