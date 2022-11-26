@@ -760,14 +760,16 @@ jobs:
         if ! hash cargo; then
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+          echo "bin_dir=$HOME/.cargo/bin" >> $GITHUB_OUTPUT
+        else
+          # Hack to determine the cargo install root directory so that we can tell the correct paths to actions/cache
+          # install a very small cargo "plugin" then find out where it got installed. When using rustup to install Rust
+          # this is likely ~/.cargo/bin, but if using say the rust Docker image then it is a different path entirely.
+          cargo install cargo-list-cache
+          CARGO_BIN_DIR=$(dirname $(which cargo-list-cache))
+          echo "bin_dir=${CARGO_BIN_DIR}" >> $GITHUB_OUTPUT
         fi
-
-        # Hack to determine the cargo install root directory so that we can tell the correct paths to actions/cache
-        # install a very small cargo "plugin" then find out where it got installed. When using rustup to install Rust
-        # this is likely ~/.cargo/bin, but if using say the rust Docker image then it is a different path entirely.
-        cargo install cargo-list-cache
-        CARGO_BIN_DIR=$(dirname $(which cargo-list-cache))
-        echo "bin_dir=${CARGO_BIN_DIR}" >> $GITHUB_OUTPUT
 
     - name: Install compilation and other dependencies
       run: |
