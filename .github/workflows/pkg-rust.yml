@@ -745,6 +745,7 @@ jobs:
 
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
+      id: rust
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -755,8 +756,23 @@ jobs:
             ;;
         esac
 
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        if ! hash cargo; then
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          source "$HOME/.cargo/env"
+          echo "bin_dir=$HOME/.cargo/bin" >> $GITHUB_OUTPUT
+        else
+          # Hack to determine the cargo install root directory so that we can tell the correct paths to actions/cache.
+          # When using rustup to install Rust this is likely ~/.cargo/bin, but if using say the rust Docker image then
+          # it is a different path entirely. The cargo command should already be installed so this should be almost a
+          # no-op. Ideally it would be possible to just ask cargo but I haven't found a way. The docs list a 5-step
+          # process for resolving the bin dir... (which involves checking --root, CARGO_INSTALL_ROOT, install.root,
+          # CARGO_HOME and $HOME/.cargo...). Instead just find out where the cargo binary is installed and assume that
+          # `cargo install` installed binaries will go there too.
+          # See: https://doc.rust-lang.org/cargo/commands/cargo-install.html#description
+          CARGO_BIN_DIR=$(dirname $(which cargo))
+          echo "bin_dir=${CARGO_BIN_DIR}" >> $GITHUB_OUTPUT
+        fi
 
     - name: Install compilation and other dependencies
       run: |
@@ -800,14 +816,14 @@ jobs:
       id: cache-cargo-deb
       uses: actions/cache@v3
       with:
-        path: ~/.cargo/bin/cargo-deb
+        path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
 
     - name: Fetch cargo-generate-rpm from cache
       id: cache-cargo-generate-rpm
       uses: actions/cache@v3
       with:
-        path: ~/.cargo/bin/cargo-generate-rpm
+        path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
 
     # Only install cargo-deb or cargo-generate-rpm if not already fetched from the cache.
