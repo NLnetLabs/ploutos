@@ -982,8 +982,8 @@ jobs:
             GEN_CHANGELOG_PATH="target/debian/changelog"
             SET_CHANGELOG_PATH=$(toml get Cargo.toml ${CHANGELOG_KEY})
 
-            case "${SET_CHANGELOG_PATH}" in
-              null|${GEN_CHANGELOG_PATH})
+            case ${SET_CHANGELOG_PATH} in
+              null|'"'${GEN_CHANGELOG_PATH}'"')
                 #
                 # Generate the changelog file that Debian packages are required to have.
                 # See: https://www.debian.org/doc/manuals/maint-guide/dreq.en.html#changelog
