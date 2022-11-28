@@ -978,44 +978,52 @@ jobs:
               fi
             fi
 
-            #
-            # Generate the changelog file that Debian packages are required to have.
-            # See: https://www.debian.org/doc/manuals/maint-guide/dreq.en.html#changelog
-            #
+            CHANGELOG_KEY="package.metadata.deb.changelog"
+            GEN_CHANGELOG_PATH="target/debian/changelog"
+            SET_CHANGELOG_PATH=$(toml get Cargo.toml ${CHANGELOG_KEY})
 
-            # 1. Use the same logic as cargo-deb, i.e. take the maintainer from the package.metadata.deb.maintainer
-            #    key in Cargo.toml (for the selected variant) if defined, else use the first author instead.
-            #
-            # Note:
-            #    With jq 1.6: del(..|nulls)
-            #    With jq 1.5: del(recurse(.[]?;true)|select(. == null))
-            #    Older systems only have jq 1.5 so we have to use the more verbose construct.
-            V=${VARIANT:-null}
-            MAINTAINER=$(cargo read-manifest | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
+            case "${SET_CHANGELOG_PATH}" in
+              null|${GEN_CHANGELOG_PATH})
+                #
+                # Generate the changelog file that Debian packages are required to have.
+                # See: https://www.debian.org/doc/manuals/maint-guide/dreq.en.html#changelog
+                #
 
-            # 2. Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
-            #    exist on Ubuntu 16.04 and Debian 9
-            RFC5322_TS=$(LC_TIME=en_US.UTF-8 date +'%a, %d %b %Y %H:%M:%S %z')
+                # 1. Use the same logic as cargo-deb, i.e. take the maintainer from the package.metadata.deb.maintainer
+                #    key in Cargo.toml (for the selected variant) if defined, else use the first author instead.
+                #
+                # Note:
+                #    With jq 1.6: del(..|nulls)
+                #    With jq 1.5: del(recurse(.[]?;true)|select(. == null))
+                #    Older systems only have jq 1.5 so we have to use the more verbose construct.
+                V=${VARIANT:-null}
+                MAINTAINER=$(cargo read-manifest | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
 
-            # 3. Generate the changelog file that Debian packages are required to have.
-            if [ ! -d target/debian ]; then
-              mkdir -p target/debian
-            fi
-            echo "${MATRIX_PKG} (${PKG_APP_VER}) unstable; urgency=medium" >target/debian/changelog
-            echo "  * See: https://github.com/${{ github.repository }}/releases/tag/v${APP_NEW_VER}" >>target/debian/changelog
-            echo " -- maintainer ${MAINTAINER}  ${RFC5322_TS}" >>target/debian/changelog
+                # 2. Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
+                #    exist on Ubuntu 16.04 and Debian 9
+                RFC5322_TS=$(LC_TIME=en_US.UTF-8 date +'%a, %d %b %Y %H:%M:%S %z')
 
-            # 4. Print the generated changelog for diagnostic purposes
-            echo "Generated changelog:"
-            cat target/debian/changelog
+                # 3. Generate the changelog file that Debian packages are required to have.
+                if [ ! -d target/debian ]; then
+                  mkdir -p target/debian
+                fi
+                echo "${MATRIX_PKG} (${PKG_APP_VER}) unstable; urgency=medium" >target/debian/changelog
+                echo "  * See: https://github.com/${{ github.repository }}/releases/tag/v${APP_NEW_VER}" >>target/debian/changelog
+                echo " -- maintainer ${MAINTAINER}  ${RFC5322_TS}" >>target/debian/changelog
 
-            # 5. Configure cargo-deb to use the generated changelog file
-            mv Cargo.toml Cargo.toml.org
-            toml set Cargo.toml.org package.metadata.deb.changelog target/debian/changelog > Cargo.toml
-            
-            #
-            # End changelog generation
-            #
+                # 4. Print the generated changelog for diagnostic purposes
+                echo "Generated changelog:"
+                cat target/debian/changelog
+
+                # 5. Configure cargo-deb to use the generated changelog file
+                mv Cargo.toml Cargo.toml.org
+                toml set Cargo.toml.org package.metadata.deb.changelog target/debian/changelog > Cargo.toml
+              
+                #
+                # End changelog generation
+                #
+                ;;
+            esac
 
             DEB_VER="${PKG_APP_VER}-1${OS_REL}"
 
