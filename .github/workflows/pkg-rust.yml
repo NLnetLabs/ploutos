@@ -853,7 +853,7 @@ jobs:
       run: |
         case ${OS_NAME} in
           centos)
-            ./cargo-binstall cargo-generate-rpm -y --version ${CARGO_GENERATE_RPM_VER}
+            /tmp/cargo-binstall cargo-generate-rpm -y --version ${CARGO_GENERATE_RPM_VER}
             ;;
         esac
 
