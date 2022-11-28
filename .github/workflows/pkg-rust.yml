@@ -776,6 +776,9 @@ jobs:
 
     - name: Install compilation and other dependencies
       run: |
+        curl --proto '=https' --tlsv1.2 --fail --output /tmp/cargo-binstall.tgz https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+        tar -C /tmp/ -xvf /tmp/cargo-binstall.tgz
+
         case ${OS_NAME} in
           debian|ubuntu)
             apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
@@ -838,11 +841,10 @@ jobs:
               #   E: krill: malformed-deb-archive newer compressed control.tar.xz
               # Passing --fast to cargo-deb to disable use of XZ compression didn't help.
               # See: https://github.com/kornelski/cargo-deb/issues/12
-              EXTRA_CARGO_INSTALL_ARGS="--no-default-features"
+              cargo install cargo-deb --version ${CARGO_DEB_VER} --no-default-features
             else
-              EXTRA_CARGO_INSTALL_ARGS=""
+              /tmp/cargo-binstall cargo-deb -y --version ${CARGO_DEB_VER}
             fi
-            cargo install cargo-deb --version ${CARGO_DEB_VER} ${EXTRA_CARGO_INSTALL_ARGS}
             ;;
         esac
 
@@ -851,7 +853,7 @@ jobs:
       run: |
         case ${OS_NAME} in
           centos)
-            cargo install cargo-generate-rpm --version ${CARGO_GENERATE_RPM_VER}
+            ./cargo-binstall cargo-generate-rpm -y --version ${CARGO_GENERATE_RPM_VER}
             ;;
         esac
 
