@@ -134,6 +134,17 @@ on:
         required: false
         type: string
         default: ''
+      strict_mode:
+        description: "If true, certain types of potential spurious warning or error that are usually ignored will instead be considered fatal. Defaults to false."
+        required: false
+        type: boolean
+        default: false
+      unsafe_fast_mode:
+        description: "If true, in some cases go faster by using less trusted mechanisms, e.g. install pre-compiled tool binaries with binstall instead of from crates.io."
+        required: false
+        type: boolean
+        default: false
+
       cross_build_rules:
         description: "This input is deprecated. Cross build targets will be determined automatically."
         required: false
@@ -144,11 +155,6 @@ on:
         required: false
         type: string
         default: '10'
-      strict_mode:
-        description: "if true, certain types of potential spurious warning or error that are usually ignored will instead be considered fatal. Defaults to false."
-        required: false
-        type: boolean
-        default: false
 
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
@@ -776,8 +782,10 @@ jobs:
 
     - name: Install compilation and other dependencies
       run: |
-        curl -L --output /tmp/cargo-binstall.tgz https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
-        tar -C /tmp/ -zxvf /tmp/cargo-binstall.tgz
+        if [[ "${{ inputs.unsafe_fast_mode }}" == "true" ]]; then
+          curl -L --output /tmp/cargo-binstall.tgz https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+          tar -C /tmp/ -zxvf /tmp/cargo-binstall.tgz
+        fi
 
         case ${OS_NAME} in
           debian|ubuntu)
@@ -842,8 +850,10 @@ jobs:
               # Passing --fast to cargo-deb to disable use of XZ compression didn't help.
               # See: https://github.com/kornelski/cargo-deb/issues/12
               cargo install cargo-deb --version ${CARGO_DEB_VER} --no-default-features
-            else
+            elif [[ "${{ inputs.unsafe_fast_mode }}" == "true" ]]; then
               /tmp/cargo-binstall cargo-deb -y --version ${CARGO_DEB_VER}
+            else
+              cargo install cargo-deb --version ${CARGO_DEB_VER}
             fi
             ;;
         esac
@@ -853,7 +863,11 @@ jobs:
       run: |
         case ${OS_NAME} in
           centos)
-            /tmp/cargo-binstall cargo-generate-rpm -y --version ${CARGO_GENERATE_RPM_VER}
+            if [[ "${{ inputs.unsafe_fast_mode }}" == "true" ]]; then
+              /tmp/cargo-binstall cargo-generate-rpm -y --version ${CARGO_GENERATE_RPM_VER}
+            else
+              cargo install --version ${CARGO_GENERATE_RPM_VER}
+            fi
             ;;
         esac
 
