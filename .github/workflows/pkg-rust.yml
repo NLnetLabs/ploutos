@@ -776,7 +776,7 @@ jobs:
 
     - name: Install compilation and other dependencies
       run: |
-        curl --proto '=https' --tlsv1.2 --fail --output /tmp/cargo-binstall.tgz https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+        curl -L --output /tmp/cargo-binstall.tgz https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
         tar -C /tmp/ -zxvf /tmp/cargo-binstall.tgz
 
         case ${OS_NAME} in
