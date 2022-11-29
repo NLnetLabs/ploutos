@@ -1,48 +1,52 @@
 crate_type = "bin"
 
+# For Cargo the license must be an SPDX 2.1 license expression identifier. Here we let the user choose the SPDX 2.1
+# license identifier for one of the "popular licenses" listed on opensource.org, or "None".
+# See:
+#   - https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields
+#   - https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing
+#   - https://opensource.org/licenses 
 [license]
 type = "list"
 description = "Which license should your project have?"
-values = ["BSD-3-Clause", "None"]
+values = [
+  "Apache-2.0",
+  "BSD-3-Clause",
+  "BSD-2-Clause",
+  "GPL-2.0",
+  "GPL-3.0",
+  "LGPL-2.0",
+  "LGPL-2.1",
+  "LGPL-3.0",
+  "MIT",
+  "MPL-2.0",
+  "CDDL-1.0",
+  "EPL-2.0",
+  "None"
+]
 default = "BSD-3-Clause"
 
-[os_packages]
+[package_types]
 type = "multi_list"
-description = "Which O/S packages should be built?"
-values = [ "deb", "rpm" ]
-default = [ "deb", "rpm" ]
-
-[build_docker_images]
-type = "bool"
-description = "Build Docker image(s)?"
-default = true
+description = "Which package types should be built?"
+values = [ "deb", "rpm", "docker" ]
+default = [ "deb", "rpm", "docker" ]
 
 [docker_org]
 type = "string"
-description = "Your Docker username/organization"
-condition = '{{ build_docker_images == true }}'
+description = "Your Docker organization"
+condition = "{{ 'docker' in package_types }}"
 
 [docker_repo]
 type = "string"
 description = "Your Docker repository"
-condition = '{{ build_docker_images == true }}'
+condition = "{{ 'docker' in package_types }}"
 
-[publish_docker_images]
-type = "bool"
-description = "Publish Docker images(s) to Docker Hub?"
-default = true
-condition = '{{ build_docker_images == true }}'
-
-[docker_username]
+[docker_publish_user]
 type = "string"
-description = "Enter your Docker username (remember to create an access token for this user at https://hub.docker.com/settings/security)"
-condition = '{{ publish_docker_images == true }}'
-
-[docker_token_secret_name]
-type = "string"
-description = "Enter the name of the GitHub secret containing your Docker access token (remember to create this secret at https://github.com/<GITHUB_ORG>/<GITHUB_REPO>/settings/secrets/actions)"
-default = "DOCKER_HUB_TOKEN"
-condition = '{{ publish_docker_images == true }}'
+description = "Your Docker username for publishing (None to skip publishing, remember to set secret DOCKER_HUB_TOKEN to the access token from https://hub.docker.com/settings/security)"
+condition = "{{ 'docker' in package_types }}"
+default = "None"
 
 [cross_targets]
 type = "multi_list"
@@ -52,4 +56,4 @@ default = []
 
 [[ignore]]
 paths = ["Dockerfile"]
-condition = '{{ build_docker_images == false }}'
+condition = "{{ 'docker' not in package_types }}"

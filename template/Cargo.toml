@@ -6,22 +6,33 @@ authors = [ "{{ git_author }}" ]
 {%- if license != 'none' %}
 license = "{{ license }}"
 {%- endif %}
-{% if 'deb' in os_packages -%}
+{% if 'deb' in package_types -%}
 description = "The Rust {{ project_name }} tool."
 {%- endif %}
 
-{% if 'deb' in os_packages -%}
+{% if 'deb' in package_types -%}
 [package.metadata.deb]
 extended-description = "{{ project_name }}"
 {%- endif %}
 
-{% if 'rpm' in os_packages -%}
+{% if 'rpm' in package_types -%}
 [package.metadata.generate-rpm]
-{%- if license == 'BSD-3-Clause' %}
-# "BSD" is the 3-clause license. Inheriting "license" from above causes rpmlint to complain with "invalid-license".
-# See: https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing
-license = "BSD"
-{%- endif %}
+{#-
+Cargo.toml uses SPDX 2.1 license expression identifiers but RPMs must use a Short Name from the approved list. The user
+selects a license from a list of SPDX 2.1 licenses so here we handle any conversion necessary.
+See:
+  - https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields
+  - https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing
+-#}
+{%- if license == 'Apache-2.0' %}license = "ASL 2.0"{%- endif %}
+{%- if license == 'BSD-3-Clause' %}license = "BSD"{%- endif %}
+{%- if license == 'BSD-3-Clause' %}license = "BSD"{%- endif %}
+{%- if license == 'GPL-2.0' %}license = "GPLv2+"{%- endif %}
+{%- if license == 'GPL-3.0' %}license = "GPLv2+"{%- endif %}
+{%- if license == 'LGPL-2.0' %}license = "LGPLv2+"{%- endif %}
+{%- if license == 'LGPL-2.1' %}license = "LGPLv2+"{%- endif %}
+{%- if license == 'LGPL-3.0' %}license = "LGPLv2+"{%- endif %}
+{%- if license == 'MPL-2.0' %}license = "MPLv1.0"{%- endif %}
 assets = [
   { source = "target/release/{{ project_name }}", dest = "/usr/bin/{{ project_name }}", mode = "755" },
 ]

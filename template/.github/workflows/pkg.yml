@@ -7,16 +7,15 @@ on:
 jobs:
   pkg:
     uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
-    {%- if publish_docker_images == true %}
+    {%- if docker_publish_user | default(value='None') != 'None' %}
     secrets:
-      DOCKER_HUB_ID: {{ docker_username }}
-      DOCKER_HUB_TOKEN: {% raw -%}${{{%- endraw %} secrets.{{ docker_token_secret_name }} {% raw -%}}}{%- endraw -%}
+      DOCKER_HUB_ID: {{ docker_publish_user }}
+      DOCKER_HUB_TOKEN: {% raw -%}${{{%- endraw %} secrets.DOCKER_HUB_TOKEN }} {% raw -%}}}{%- endraw -%}
     {%- endif %}
     with:
-      {%- if build_docker_images == true %}
+      {%- if 'docker' in package_types %}
       docker_org: {{ docker_org }}
       docker_repo: {{ docker_repo }}
-
       docker_build_rules: |
         include:
           - platform:  "linux/amd64"
@@ -43,12 +42,12 @@ jobs:
             target:    "aarch64-unknown-linux-musl"
             mode:      "copy"
           {%- endif %}
-      {%- endif %}
+      {% endif %}
 
-      {%- if os_packages | length > 0 %}
+      {%- if 'deb' in package_types or 'rpm' in package_types %}
       package_build_rules: |
         image:
-          {%- if 'deb' in os_packages %}
+          {%- if 'deb' in package_types %}
           - "ubuntu:xenial"
           - "ubuntu:bionic"
           - "ubuntu:focal"
@@ -57,7 +56,7 @@ jobs:
           - "debian:buster"
           - "debian:bullseye"
           {%- endif %}
-          {%- if 'rpm' in os_packages %}
+          {%- if 'rpm' in package_types %}
           - "centos:7"
           - "centos:8"
           {%- endif %}
