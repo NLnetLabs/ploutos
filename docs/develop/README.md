@@ -10,6 +10,10 @@ This page is intended for people diagnosing, improving or fixing the reusable wo
 
 3. When you push a change to the `pkg-rust.yml` workflow in this repository, downstream workflows that call `pkg-rust.yml` (e.g. from the https://github.com/NLnetLabs/ploutos-testing/ repository) will not see the changes unless you either update the `@<git ref>` to match the new commit, or if using `@<tag>` if the tag is moved to the new commit, or if using `@<branch>` you will need to trigger a new run of the action or do "Re-run all jobs" on the workflow run. Doing "Re-run failed jobs" is **NOT ENOUGH** as then GitHub Actions will use the workflow at the exact same commit as it used before, it won't pick up the new commit to the branch.
 
+## Automated testing
+
+The https://github.com/NLnetLabs/ploutos-testing/ repository contains workflows that can be used to test Ploutos. The `ploutos-testing` repository is referred to below as the `TEST repo`.
+
 ## Release process
   
 To test and release changes to the workflow the recommended approach is as follows: _(an example of this release process in use can be seen [here](https://github.com/NLnetLabs/.github/pull/7#issuecomment-1246370906))_

@@ -8,6 +8,6 @@
 Plutos is a GitHub reusable workflow for packaging Rust Cargo projects as DEB & RPM packages and Docker images.
 
   - [User guide](docs/README.md)
-  - [Template repository](docs/template_repository.md)
+  - [Template repository](https://github.com/NLnetLabs/ploutos-template/)
   - [Contributing](docs/develop/)
 
