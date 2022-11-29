@@ -36,11 +36,13 @@ default = [ "deb", "rpm", "docker" ]
 type = "string"
 description = "Your Docker organization"
 condition = "{{ 'docker' in package_types }}"
+validator.regex = "^[a-z0-9]{2,}(?:[._-][a-z0-9]+)*$"
 
 [docker_repo]
 type = "string"
 description = "Your Docker repository"
 condition = "{{ 'docker' in package_types }}"
+validator.regex = "^[a-z0-9]{2,}(?:[._-][a-z0-9]+)*$"
 
 [docker_publish_user]
 type = "string"
