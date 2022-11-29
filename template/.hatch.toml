@@ -1,0 +1,55 @@
+crate_type = "bin"
+
+[license]
+type = "list"
+description = "Which license should your project have?"
+values = ["BSD-3-Clause", "None"]
+default = "BSD-3-Clause"
+
+[os_packages]
+type = "multi_list"
+description = "Which O/S packages should be built?"
+values = [ "deb", "rpm" ]
+default = [ "deb", "rpm" ]
+
+[build_docker_images]
+type = "bool"
+description = "Build Docker image(s)?"
+default = true
+
+[docker_org]
+type = "string"
+description = "Your Docker username/organization"
+condition = '{{ build_docker_images == true }}'
+
+[docker_repo]
+type = "string"
+description = "Your Docker repository"
+condition = '{{ build_docker_images == true }}'
+
+[publish_docker_images]
+type = "bool"
+description = "Publish Docker images(s) to Docker Hub?"
+default = true
+condition = '{{ build_docker_images == true }}'
+
+[docker_username]
+type = "string"
+description = "Enter your Docker username (remember to create an access token for this user at https://hub.docker.com/settings/security)"
+condition = '{{ publish_docker_images == true }}'
+
+[docker_token_secret_name]
+type = "string"
+description = "Enter the name of the GitHub secret containing your Docker access token (remember to create this secret at https://github.com/<GITHUB_ORG>/<GITHUB_REPO>/settings/secrets/actions)"
+default = "DOCKER_HUB_TOKEN"
+condition = '{{ publish_docker_images == true }}'
+
+[cross_targets]
+type = "multi_list"
+description = "Which targets (in addition to x86_64) should be compiled for?"
+values = ["Raspberry Pi 1b", "Raspberry Pi 4b", "Rock 64"]
+default = []
+
+[[ignore]]
+paths = ["Dockerfile"]
+condition = '{{ build_docker_images == false }}'

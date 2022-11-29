@@ -1,0 +1,28 @@
+[package]
+name = "{{ project_name }}"
+version = "0.0.1"
+edition = "2021"
+authors = [ "{{ git_author }}" ]
+{%- if license != 'none' %}
+license = "{{ license }}"
+{%- endif %}
+{% if 'deb' in os_packages -%}
+description = "The Rust {{ project_name }} tool."
+{%- endif %}
+
+{% if 'deb' in os_packages -%}
+[package.metadata.deb]
+extended-description = "{{ project_name }}"
+{%- endif %}
+
+{% if 'rpm' in os_packages -%}
+[package.metadata.generate-rpm]
+{%- if license == 'BSD-3-Clause' %}
+# "BSD" is the 3-clause license. Inheriting "license" from above causes rpmlint to complain with "invalid-license".
+# See: https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing
+license = "BSD"
+{%- endif %}
+assets = [
+  { source = "target/release/{{ project_name }}", dest = "/usr/bin/{{ project_name }}", mode = "755" },
+]
+{%- endif %}

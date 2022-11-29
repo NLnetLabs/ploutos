@@ -1,0 +1,83 @@
+name: "pkg"
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  pkg:
+    uses: NLnetLabs/ploutos/.github/workflows/pkg-rust.yml@v5
+    {%- if publish_docker_images == true %}
+    secrets:
+      DOCKER_HUB_ID: {{ docker_username }}
+      DOCKER_HUB_TOKEN: {% raw -%}${{{%- endraw %} secrets.{{ docker_token_secret_name }} {% raw -%}}}{%- endraw -%}
+    {%- endif %}
+    with:
+      {%- if build_docker_images == true %}
+      docker_org: {{ docker_org }}
+      docker_repo: {{ docker_repo }}
+
+      docker_build_rules: |
+        include:
+          - platform:  "linux/amd64"
+            shortname: "amd64"
+            mode: "build"
+          {%- if 'Raspberry Pi 1b' in cross_targets %}
+          # Raspberry Pi 1b
+          - platform:  "linux/arm/v6"
+            shortname: "armv6"
+            target:    "arm-unknown-linux-musleabihf"
+            mode:      "copy"
+          {%- endif %}
+          {%- if 'Raspberry Pi 4b' in cross_targets %}
+          # Raspberry Pi 4b
+          - platform:  "linux/arm/v7"
+            shortname: "armv7"
+            target:    "armv7-unknown-linux-musleabihf"
+            mode:      "copy"
+          {%- endif %}
+          {%- if 'Rock 64' in cross_targets %}
+          # Rock 64
+          - platform:  "linux/arm64"
+            shortname: "arm64"
+            target:    "aarch64-unknown-linux-musl"
+            mode:      "copy"
+          {%- endif %}
+      {%- endif %}
+
+      {%- if os_packages | length > 0 %}
+      package_build_rules: |
+        image:
+          {%- if 'deb' in os_packages %}
+          - "ubuntu:xenial"
+          - "ubuntu:bionic"
+          - "ubuntu:focal"
+          - "ubuntu:jammy"  
+          - "debian:stretch"
+          - "debian:buster"
+          - "debian:bullseye"
+          {%- endif %}
+          {%- if 'rpm' in os_packages %}
+          - "centos:7"
+          - "centos:8"
+          {%- endif %}
+        target: x86_64
+        {%- if cross_targets | length > 0 %}
+        include:
+        {%- endif -%}
+          {%- if 'Raspberry Pi 1b' in cross_targets %}
+          # Raspberry Pi 1b
+          - image: "debian:buster"
+            target: arm-unknown-linux-musleabihf
+          {%- endif %}
+          {%- if 'Raspberry Pi 4b' in cross_targets %}
+          # Raspberry Pi 4b
+          - image: "debian:bullseye"
+            target: armv7-unknown-linux-musleabihf
+          {%- endif %}
+          {%- if 'Rock 64' in cross_targets %}
+          # Rock 64
+          - image: "debian:buster"
+            target: aarch64-unknown-linux-musl
+          {%- endif %}
+      {%- endif %}
