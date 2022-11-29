@@ -20,7 +20,7 @@ jobs:
         include:
           - platform:  "linux/amd64"
             shortname: "amd64"
-            mode: "build"
+            mode:      "build"
           {%- if 'Raspberry Pi 1b' in cross_targets %}
           # Raspberry Pi 1b
           - platform:  "linux/arm/v6"
