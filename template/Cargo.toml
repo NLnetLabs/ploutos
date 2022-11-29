@@ -24,17 +24,17 @@ See:
 -#}
 {% if license == 'Apache-2.0' %}license = "ASL 2.0"
 {% endif -%}
-{% if license == 'BSD-2-Clause' %}license = "BSD
+{% if license == 'BSD-2-Clause' %}license = "BSD"
 {% endif -%}
-{% if license == 'BSD-3-Clause' %}license = "BSD
+{% if license == 'BSD-3-Clause' %}license = "BSD"
 {% endif -%}
-{% if license == 'GPL-2.0' %}license = "GPLv2+
+{% if license == 'GPL-2.0' %}license = "GPLv2+"
 {% endif -%}
-{% if license == 'GPL-3.0' %}license = "GPLv2+
+{% if license == 'GPL-3.0' %}license = "GPLv2+"
 {% endif -%}
-{% if license == 'LGPL-2.0' %}license = "LGPLv2+
+{% if license == 'LGPL-2.0' %}license = "LGPLv2+"
 {% endif -%}
-{% if license == 'LGPL-2.1' %}license = "LGPLv2+
+{% if license == 'LGPL-2.1' %}license = "LGPLv2+"
 {% endif -%}
 {% if license == 'LGPL-3.0' %}license = "LGPLv2+"
 {% endif -%}
