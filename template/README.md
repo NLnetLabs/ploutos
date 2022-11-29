@@ -1,14 +1,12 @@
 # Pluotos cargo-hatch template
 
-This repository is a cargo-hatch template for generating a demonstation Git repository intended to be pushed to GitHub where it will cause GitHub Actions to package a simple Hello World Rust application as DEB, RPM package(s) and/or Docker image(s) for x86_64 platforms and optionally also for other architectures.
+This directory contains a [cargo-hatch](https://crates.io/crates/cargo-hatch) template for generating a Ploutos enabled Git repository. When pushed to GitHub it will trigger GitHub Actions to package a simple Hello World Rust application as DEB, RPM package(s) and/or Docker image(s) for x86_64 platforms and optionally also for other architectures.
 
-[Ploutos](https://github.com/NLnetLabs/ploutos) is:
+## tl;dr
 
-> _a GitHub reusable workflow for packaging Rust Cargo projects as DEB & RPM packages and Docker images._
-
-[Cargo Hatch](https://crates.io/crates/cargo-hatch) is:
-
-> _a cargo init/cargo new on steroids, allowing complex templates thanks to the Tera engine. Additional template values can be configured and requested from the user during execution._
+```
+cargo hatch git https://github.com/NLnetLabs/ploutos --folder template <proj_name>
+```
 
 ## Usage
 
@@ -22,7 +20,7 @@ First install Cargo Hatch and invoke it using the template in this repository:
 
 ```shell
 cargo install cargo-hatch
-cargo hatch git https://github.com/NLnetLabs/ploutos-template <proj_name>
+cargo hatch git https://github.com/NLnetLabs/ploutos --folder template <proj_name>
 ```
 
 Now enter the project directory that was created, generate the `Cargo.lock` file and commit the files to Git:

@@ -28,7 +28,7 @@ The Ploutos workflow was originally written for use only by NLnet Labs. As such 
 
 - **The starter workflow:** If you already know how to use this workflow but just want to quickly add it to a new project you might find the [starter workflow](../starter_workflow.md) helpful _(**only** visible to NLnet Labs GitHub organization members unfortunately)_.
 
-- **The template repository:** The https://github.com/NLnetLabs/ploutos-template/ repository contains a template from which you can create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
+- **The demo template:** This [template](template/README.md) can be used to create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
 
 - **Examples of the workflow in use:** This documentation contains some limited examples but if you're looking for real world examples of how to invoke and configure the Ploutos workflow take a look at the [projects that are already using the Ploutos workflow](https://github.com/NLnetLabs/.github/network/dependents).
 
@@ -99,7 +99,7 @@ The core parts of the workflow are not specific to GitHub but instead just invok
 
 1. Decide which package types you want to create.
 2. Determine which [inputs](https://github.com/NLnetLabs/ploutos/blob/main/.github/workflows/pkg-rust.yml#L131) you need to provide to the Ploutos workflow.
-3. Create the files in your repository that will be referenced by the inputs _(perhaps start from the [template](https://github.com/NLnetLabs/ploutos-template/))_.
+3. Create the files in your repository that will be referenced by the inputs _(perhaps start from the [template](template/README.md))_.
 4. Call the Ploutos workflow from your own workflow with the chosen inputs _(by hand or via the [starter workflow](/.starter_workflow.md))_.
 5. Run your workflow _(e.g. triggered by a push, or use the GitHUb [`workflow_dispatch` manual trigger](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow))_.
 6. Use the created packages:
