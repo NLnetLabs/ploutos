@@ -10,7 +10,7 @@ jobs:
     {%- if docker_publish_user | default(value='None') != 'None' %}
     secrets:
       DOCKER_HUB_ID: {{ docker_publish_user }}
-      DOCKER_HUB_TOKEN: {% raw -%}${{{%- endraw %} secrets.DOCKER_HUB_TOKEN }} {% raw -%}}}{%- endraw -%}
+      DOCKER_HUB_TOKEN: {% raw -%}${{{%- endraw %} secrets.DOCKER_HUB_TOKEN {% raw -%}}}{%- endraw -%}
     {%- endif %}
     with:
       {%- if 'docker' in package_types %}
