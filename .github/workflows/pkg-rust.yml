@@ -1882,7 +1882,7 @@ jobs:
           path: artifacts
       
       - run: |
-          for ARTIFACT in $(find . -maxdepth 1 -type d -printf "%P\n" | sort); do
+          for ARTIFACT in $(find artifacts/ -maxdepth 1 -type d -printf "%P\n" | sort); do
             echo "Created artifact ${ARTIFACT}" >> ${GITHUB_STEP_SUMMARY}
           done
 
