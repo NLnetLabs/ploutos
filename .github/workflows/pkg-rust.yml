@@ -1336,6 +1336,11 @@ jobs:
         path: |
           target/debian/*.deb
           target/generate-rpm/*.rpm
+    
+    - name: Add to job summary
+      run: |
+        PKG_NAME="${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}"
+        echo "Created ${PKG_NAME}" >> ${GITHUB_STEP_SUMMARY}
 
   # -------------------------------------------------------------------------------------------------------------------
   # Job: 'pkg-test'
@@ -1782,6 +1787,11 @@ jobs:
         with:
           name: ${{ inputs.artifact_prefix }}tmp-docker-image-${{ matrix.shortname }}
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
+      
+      - name: Add to job summary
+        run: |
+          PKG_NAME="${{ inputs.artifact_prefix }}tmp-docker-image-${{ matrix.shortname }}"
+          echo "Created ${PKG_NAME}" >> ${GITHUB_STEP_SUMMARY}
 
       - name: Publish image to Docker Hub
         id: publish
@@ -1796,7 +1806,11 @@ jobs:
             MODE=${{ steps.verify.outputs.mode }}
             CARGO_ARGS=${{ matrix.cargo_args }}
           push: true
-
+      
+      - name: Add to job summary
+        if: ${{ steps.publish.conclusion == 'success' }}
+        run: |
+          echo "Published ${{ steps.gen.outputs.image_name }}" >> ${GITHUB_STEP_SUMMARY}
 
   # -------------------------------------------------------------------------------------------------------------------
   # Job: 'docker-manifest'
