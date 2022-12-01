@@ -1868,3 +1868,20 @@ jobs:
             echo "docker run ${LOWER_DOCKER_ORG}/${REPO_AND_TAG}" >> ${GITHUB_STEP_SUMMARY}
           done
           echo '```'
+
+  # -------------------------------------------------------------------------------------------------------------------
+  # Job: 'report'
+  # -------------------------------------------------------------------------------------------------------------------
+  report:
+    needs: [prepare, pkg, docker]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      
+      - run: |
+          for ARTIFACT in $(find artifacts/ -maxdepth 1 -type d | grep -Ev '^\.$' | cut -b 3-); do
+            echo "Created artifact ${ARTIFACT}" >> ${GITHUB_STEP_SUMMARY}
+          done
+
