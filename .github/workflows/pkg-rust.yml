@@ -1873,6 +1873,7 @@ jobs:
   # Job: 'report'
   # -------------------------------------------------------------------------------------------------------------------
   report:
+    if: ${{ always() }}
     needs: [prepare, pkg, docker]
     runs-on: ubuntu-latest
     steps:
