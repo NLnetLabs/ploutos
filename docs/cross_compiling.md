@@ -43,6 +43,8 @@ Cross compilation takes place inside a Docker container running on an x86_64 GH 
 
 Alternatives were explored but found lacking.
 
+`cargo-deb` supports cross-compilation [upto a point](https://github.com/kornelski/cargo-deb/issues/60#issuecomment-1333852148), `cargo-generate-rpm` does no compilation at all, so using `cargo-deb` cross support would be both incomplete and inconsistent with the approach required for RPMs.
+
 Docker buildx QEmu based cross-compilation for example is far too slow ([due to the emulated execution](https://github.com/multiarch/qemu-user-static/issues/176#issuecomment-1191078533)) and doesn't parallelize across multiple GitHub hosted runners.
 
 Native Rust Cargo support for cross-compilation requires you to know more about the required toolchain, to install the required tools yourself including the appropriate strip tool, set required environment variables, and to add a `.cargo/config.toml` file to your project with the paths to the tools to use (which may vary by build environment!).
