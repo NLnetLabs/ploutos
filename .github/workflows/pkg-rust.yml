@@ -854,6 +854,13 @@ jobs:
             ;;
         esac
 
+    - name: Force cache save
+      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@804322aab0a91b60917296129e3ea47efe37cb64
+      with:
+        path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
+        key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
+
     - name: Install cargo-generate-rpm if needed
       if: ${{ steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true' }}
       run: |
