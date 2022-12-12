@@ -185,7 +185,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 
 | Matrix Key | Required | Description |
 |---|---|---|
-| `pkg` | Yes | The package to build. Used in various places. See below. |
+| `pkg` | No | The package to build. Defaults to the value of the `name` key in the `[package]` table in `Cargo.toml`. Used in various places. See below. |
 | `image` | Yes | Specifies the Docker image used by GitHub Actions to run the job in which your application will be built (when not cross-compiled) and packaged. The package type to build is implied by `<os_name>`, e.g. DEBs for Ubuntu and Debian, RPMs for CentOS Has the form `<os_name>:<os_rel>` (e.g. `ubuntu:jammy`, `debian:buster`, `centos:7`, etc). Also see `os` below.  |
 | `target` | Yes | Should be `x86_64` If `x86_64` the Rust application will be compiled using `cargo-deb` (for DEB) or `cargo build` (for RPM) and stripped. Otherwise it will be used to determine the cross-compiled binary GitHub Actions artifact to compile and download. |
 | `os` | No | Overrides the value of `image` when determining `os_name` and `os_rel`. |
