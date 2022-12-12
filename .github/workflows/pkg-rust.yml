@@ -619,6 +619,15 @@ jobs:
       run: |
         cargo install cross
 
+    - name: Force cache save
+      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@804322aab0a91b60917296129e3ea47efe37cb64
+      with:
+        path: |
+          /home/runner/.cargo/bin/cross
+          /home/runner/.cargo/bin/cross-util
+        key: ${{ matrix.target }}-cargo-cross
+
     - name: Cross compile
       run: |
         cross build --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
@@ -870,10 +879,24 @@ jobs:
             ;;
         esac
 
+    - name: Force cache save
+      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@804322aab0a91b60917296129e3ea47efe37cb64
+      with:
+        path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
+        key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
+
     - name: Install toml-cli if needed
       if: ${{ steps.cache-toml-cli.outputs.cache-hit != 'true' }}
       run: |
         cargo install toml-cli --version ${TOML_CLI_VER}
+
+    - name: Force cache save
+      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@804322aab0a91b60917296129e3ea47efe37cb64
+      with:
+        path: ${{ steps.rust.outputs.bin_dir }}/toml
+        key: ${{ matrix.image }}-toml-cli-${{ env.TOML_CLI_VER }}
 
     - name: Download cross-compiled binaries
       if: ${{ matrix.target != 'x86_64' }}
