@@ -621,7 +621,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v3.2.0-beta.1
+      uses: actions/cache/save@v3
       with:
         path: |
           /home/runner/.cargo/bin/cross
@@ -865,7 +865,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v3.2.0-beta.1
+      uses: actions/cache/save@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
@@ -881,7 +881,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v3.2.0-beta.1
+      uses: actions/cache/save@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
@@ -893,7 +893,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v3.2.0-beta.1
+      uses: actions/cache/save@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/toml
         key: ${{ matrix.image }}-toml-cli-${{ env.TOML_CLI_VER }}
