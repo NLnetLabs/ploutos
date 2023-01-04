@@ -23,9 +23,9 @@ Release checklist:
 - [ ] 11. Create a release tag in the TEST repo with the same release tag as will be used in the RELEASE repo, e.g. v1.2.3. _**Note:** Remember to respect semantic versioning, i.e. if the changes being made are not backward compatible you will need to bump the MAJOR version (in MAJOR.MINOR.PATCH) **and** any workflows that invoke the reusable workflow will need to be **manually edited** to refer to the new MAJOR version._
 - [ ] 12. Verify that the automatically invoked run of the `Packaging` workflow in the TEST repo passes against the newly created release tag passes and behaves as desired. If not, delete the release tag **in the TEST repo** and repeat steps 4-11 until the new TEST PR passes and behaves as desired.
 - [ ] 13. Merge the RELEASE PR to the `main` branch.
-- [ ] 14. Change RPM_MACROS_URL in the workflow to point to vX.Y.Z tag (that you are about to create).
+- [ ] 14. Change RPM_MACROS_URL in the workflow to point to vX.Y.Z tag (if your release branch has a different name).
 - [ ] 15. Create the new release vX.Y.Z tag in the RELEASE repo.
-- [ ] 16. Update the vX tag in the RELEASE repo to point to the new vX.Y.Z tag.
+- [ ] 16. Update the vX tag in the RELEASE repo to point to the new vX.Y.Z tag ([howto](https://github.com/NLnetLabs/ploutos/blob/main/docs/develop/README.md#release-process)).
 - [ ] 17. Edit `.github/workflows/pkg.yml` in the `main` branch of the TEST repo to refer again to `@vX`.
 - [ ] 18. Verify that the `Packaging` action in the TEST repo against the `main` branch passes and works as desired.
 - [ ] 19. (optional) If the MAJOR version was changed, update affected repositories that use the reusable workflow to use the new MAJOR version, including adjusting to any breaking changes introduced by the MAJOR version change.
