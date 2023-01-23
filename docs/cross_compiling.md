@@ -20,7 +20,7 @@ The set of targets to cross-compile for is automatically determined from the uni
 
 | Input | Type | Required | Description |
 |---|---|---|---|
-| `cross_max_wait_mins` | string | No | The maximum number of minutes alowed for the `cross` job to complete the cross-compilation process and to upload the resulting binaries as workflow artifacts. After this permutations of the downstream `docker` and `pkg` workflow jobs will fail if the artifact has not yet become available to download. |
+| `cross_max_wait_mins` | string | No | The maximum number of minutes allowed for the `cross` job to complete the cross-compilation process and to upload the resulting binaries as workflow artifacts. After this permutations of the downstream `docker` and `pkg` workflow jobs will fail if the artifact has not yet become available to download. |
 
 ## Outputs
 
