@@ -36,7 +36,7 @@ Packaging and, if needed, compilation, take place inside a Docker container. DEB
 
 Package testing takes place inside [LXD container instances](https://linuxcontainers.org/lxd/docs/master/explanation/instances/) because, unlike Docker containers, they support systemd and other multi-process scenarios that you may wish to test.
 
-_**Note:** DEB and RPM packages support many different metadata fields and the native DEB and RPM tooling has many capabilities. We support only the limited subset of capabilities that we have thus far needed. If you need something that it is not yet supported please request it by creating an issue at https://github.com/NLnetLabs/.github/issues/, PRs are also welcome!_
+_**Note:** DEB and RPM packages support many different metadata fields and the native DEB and RPM tooling has many capabilities. We support only the limited subset of capabilities that we have thus far needed. If you need something that it is not yet supported please request it by creating an issue at https://github.com/NLnetLabs/ploutos/issues/, PRs are also welcome!_
 
 ## Example
 
@@ -85,7 +85,7 @@ Assuming that you have just created an empty GitHub repository, let's setup Git 
 ```shell
 $ git remote add origin git@github.com:<YOUR_GH_USER>/<YOUR_GH_REPO>.git
 $ git branch -M main
-$ git add .github src/ Cargo.toml Cargo.lock
+$ git add  src/ Cargo.toml Cargo.lock
 $ git commit -m "Initial commit."
 $ git push -u origin main
 ```
@@ -326,7 +326,7 @@ Debian packages implement such capabilities via so-called [maintainer scripts](h
 
 Both DEB and RPM support so-called "macros" within the maintainer scripts. `cargo-deb` has built-in support for a [subset](https://github.com/kornelski/cargo-deb/blob/main/autoscripts/) of the RPM macros, mostly for working with systemd units, which can be incorporated automatically by adding a `#DEBHELPER#` line to your maintainer script file. This will take care of activating any systemd units that were detected during package creation.
 
-`cargo-generate-rpm` has no equivalent but, Ploutos is able to [emulate](https://github.com/NLnetLabs/.github/blob/main/fragments/macros.systemd.sh) systemd unit related macros by replacing a `#RPM_SYSTEMD_MACROS#` line in your maintainer scripts. You are responsible for invoking the macros yourself however from your scriptlets, just including `#RPM_SYSTEMD_MACROS#` is not enough.
+`cargo-generate-rpm` has no equivalent but, Ploutos is able to [emulate](https://github.com/NLnetLabs/ploutos/blob/main/fragments/macros.systemd.sh) systemd unit related macros by replacing a `#RPM_SYSTEMD_MACROS#` line in your maintainer scripts. You are responsible for invoking the macros yourself however from your scriptlets, just including `#RPM_SYSTEMD_MACROS#` is not enough. For an example see [this file in the Ploutos self-test suite](https://github.com/NLnetLabs/ploutos-testing/blob/main/pkg/rpm/scriptlets.toml).
 
 For RPMs, do not set `xxx_script` settings in `[package.metadata.generate-rpm]` to a command to execute a script at its installed location as set in the `[package.metadata.generate-rpm]` TOML table `assets` array. While this may work in some cases, it will not in others. For example it will NOT work for post-uninstall scripts as the script file will be deleted before it can be executed. Instead, if you do not wish to include entire shell scripts in your `Cargo.toml` file, Ploutos supports defining the `xxx_script` setting values in a separate TOML file via the `rpm_scriptlets_path` workflow input.
 
