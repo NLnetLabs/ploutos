@@ -1127,7 +1127,7 @@ jobs:
             # can be executed (hence post-uninstall rather than pre-uninstall...). So instead embed the entire
             # uninstall script in the TOML settings using the cargo-generate-rpm --set-metadata (aka -s)
             # command line argument.
-            if [ ! -f "${RPM_SCRIPTLETS_PATH}" ]; then
+            if [ -f "${RPM_SCRIPTLETS_PATH}" ]; then
               # Download the RPM systemd macros shell functions file fragment
               SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.2.0/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
