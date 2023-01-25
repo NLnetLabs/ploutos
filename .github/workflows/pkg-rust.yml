@@ -571,17 +571,23 @@ jobs:
       # warning "Skip output '...' since it may contain secret.". This can happen if the docker_org value contains the
       # DOCKER_HUB_ID value. E.g. if docker_org were 'nlnetlabs' and the user to login to Docker Hub as is also
       # 'nlnetlabs' then Docker thinks the latter, a secret, is being leaked via the workflow output defined above.
+      # We disable output wrapping by the base64 command because the entire value of a key=value pair in the output
+      # file must be on a single line, otherwise it results in an "Invalid format" error from GitHub Actions.
       - name: Encode outputs for passing safely to downstream jobs
         id: encode
         run: |
-          ENCODED_ALL_REPO_AND_TAG_PAIRS=$(echo "${{ steps.meta.outputs.tags }}" | base64)
+          ENCODED_ALL_REPO_AND_TAG_PAIRS=$(echo "${{ steps.meta.outputs.tags }}" | base64 --wrap=0)
           echo "all_repo_and_tag_pairs=${ENCODED_ALL_REPO_AND_TAG_PAIRS}" >> $GITHUB_OUTPUT
 
-          ENCODED_FIRST_REPO_AND_TAG_PAIR=$(echo "${{ fromJSON(steps.meta.outputs.json).tags[0] }}" | base64)
+          ENCODED_FIRST_REPO_AND_TAG_PAIR=$(echo "${{ fromJSON(steps.meta.outputs.json).tags[0] }}" | base64 --wrap=0)
           echo "first_repo_and_tag_pair=${ENCODED_FIRST_REPO_AND_TAG_PAIR}" >> $GITHUB_OUTPUT
 
-          ENCODED_LOWER_DOCKER_ORG=$(echo "${{ inputs.docker_org }}" | tr '[:upper:]' '[:lower:]' | base64)
+          ENCODED_LOWER_DOCKER_ORG=$(echo "${{ inputs.docker_org }}" | tr '[:upper:]' '[:lower:]' | base64 --wrap=0)
           echo "lower_docker_org=${ENCODED_LOWER_DOCKER_ORG}" >> $GITHUB_OUTPUT
+
+          echo "DEBUG START"
+          cat $GITHUB_OUTPUT
+          echo "DEBUG END"
 
 
   # -------------------------------------------------------------------------------------------------------------------
@@ -1125,7 +1131,7 @@ jobs:
             # command line argument.
             if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.2.0/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.3.0/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
@@ -1739,6 +1745,8 @@ jobs:
           platforms: ${{ matrix.platform }}
 
       - uses: docker/setup-buildx-action@v2
+        with:
+          version: v0.9.1 # See: https://github.com/docker/build-push-action/issues/755
 
       - name: Download cross-compiled binaries
         if: ${{ steps.verify.outputs.mode == 'copy' }}
