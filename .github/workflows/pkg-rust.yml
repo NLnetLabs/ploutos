@@ -571,16 +571,18 @@ jobs:
       # warning "Skip output '...' since it may contain secret.". This can happen if the docker_org value contains the
       # DOCKER_HUB_ID value. E.g. if docker_org were 'nlnetlabs' and the user to login to Docker Hub as is also
       # 'nlnetlabs' then Docker thinks the latter, a secret, is being leaked via the workflow output defined above.
+      # We disable output wrapping by the base64 command because the entire value of a key=value pair in the output
+      # file must be on a single line, otherwise it results in an "Invalid format" error from GitHub Actions.
       - name: Encode outputs for passing safely to downstream jobs
         id: encode
         run: |
-          ENCODED_ALL_REPO_AND_TAG_PAIRS=$(echo "${{ steps.meta.outputs.tags }}" | base64)
+          ENCODED_ALL_REPO_AND_TAG_PAIRS=$(echo "${{ steps.meta.outputs.tags }}" | base64 --wrap=0)
           echo "all_repo_and_tag_pairs=${ENCODED_ALL_REPO_AND_TAG_PAIRS}" >> $GITHUB_OUTPUT
 
-          ENCODED_FIRST_REPO_AND_TAG_PAIR=$(echo "${{ fromJSON(steps.meta.outputs.json).tags[0] }}" | base64)
+          ENCODED_FIRST_REPO_AND_TAG_PAIR=$(echo "${{ fromJSON(steps.meta.outputs.json).tags[0] }}" | base64 --wrap=0)
           echo "first_repo_and_tag_pair=${ENCODED_FIRST_REPO_AND_TAG_PAIR}" >> $GITHUB_OUTPUT
 
-          ENCODED_LOWER_DOCKER_ORG=$(echo "${{ inputs.docker_org }}" | tr '[:upper:]' '[:lower:]' | base64)
+          ENCODED_LOWER_DOCKER_ORG=$(echo "${{ inputs.docker_org }}" | tr '[:upper:]' '[:lower:]' | base64 --wrap=0)
           echo "lower_docker_org=${ENCODED_LOWER_DOCKER_ORG}" >> $GITHUB_OUTPUT
 
 
