@@ -166,7 +166,7 @@ Both `cargo-deb` and `cargo-generate-rpm` have a `variant` feature. Ploutos will
 | `deb_apt_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `deb_apt_source`. Defaults to the NLnet Labs package repository key URL. |
 | `deb_apt_source` | string | No* | A line or lines to write to an APT `/etc/apt/sources.list.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 | `rpm_extra_build_packages` | string | No | A space separated set of additional RPM packages to install in the build host when (not cross) compiling. |
-| `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of the `pre_install_script`, `pre_uninstall_script`, `post_install_script` and/or `post_uninstall_script` `cargo-generate-rpm` settings. |
+| `rpm_scriptlets_path` | string | No | The path to a TOML file defining one or more of the `pre_install_script`, `pre_uninstall_script`, `post_install_script` and/or `post_uninstall_script` `cargo-generate-rpm` settings. Note: Since Ploutos v6, when building an "alternate" package (see multi-packaging below) the file will actually be looked for at `<rpm_scriptlets_path>-<pkg>`. |
 | `rpm_yum_key_url` | string | No* | The URL of the public key that can be used to verify a signed package if installing using `rpm_yum_repo`. Defaults to the NLnet Labs package repository key URL. |
 | `rpm_yum_source` | string | No* | A line or lines to write to a YUM `/etc/yum.repos.d/` file, or the relative path to such a file to install. Used when `mode` of `package_test_rules` is `upgrade-from-published`. Defaults to the NLnet Labs package installation settings. |
 
@@ -312,9 +312,9 @@ While both `cargo-deb` and `cargo-generate-rpm` take their core configuration fr
 
 For DEB packaging, Ploutos will look for and instruct `cargo-deb` to use a variant named `<os_name>-<os_rel>` (or `<os_name>-<os_rel>-<target>` when cross-compiling) if it exists, and assuming that the `minimal` or `minimal-cross` profiles don't also exist and have not been chosen (see 'Support for "old" O/S releases' above).
 
-For both DEB and RPM packaging, Ploutos has some limited support for defining packaging settings for more than one package in a single `Cargo.toml` file. If a `[package.metadata.deb_alt_base_<pkg>]` (for DEBs), or `[package.metadata.generate-rpm-alt-base-<pkg>]` (for RPMs), TOML table exists in `Cargo.toml` Ploutos will replace the proper `[package.metadata.deb]` or `[package.metadata.generate-rpm]` TOML table with the "alternate" table that was found.
+For both DEB and RPM packaging, Ploutos has some limited support for defining packaging settings for more than one package in a single `Cargo.toml` file. Prior to invoking `cargo-deb` or `cargo-generate-rpm`, Ploutos will look in `Cargo.toml` for an "alternate" table whose name matches that of the 'pkg' value from the build rules matrix for the current package being built. If a `[package.metadata.deb_alt_base_<pkg>]` (for DEBs), or `[package.metadata.generate-rpm-alt-base-<pkg>]` (for RPMs), TOML table exists in `Cargo.toml` Ploutos will look for such a replace the proper `[package.metadata.deb]` or `[package.metadata.generate-rpm]` TOML table with the "alternate" table that was found. Additionally, for RPMs only, this also affects the lookup of RPM scriptlets. When a matching "alternate" table is found, instead of looking for RPM scriptlets at `<rpm_scriptlets_path>` Ploutos will instead look for `<rpm_scriptlets_path>-<pkg>`.
 
-### Maintainer script(let)s
+## Maintainer script(let)s
 
 For some packages you may wish to take more action on install, upgrade or uninstall of your package than just adding files to the target system. For example you may wish to start/stop services, create user accounts, generate config files, etc.
 

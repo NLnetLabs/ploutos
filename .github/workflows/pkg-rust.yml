@@ -1114,7 +1114,11 @@ jobs:
             # Ugly hack to use an alternate base Cargo Generate RPM configuration so that the selected variant overrides
             # settings specified alternate base settings instead of the usual [package.metadata.generate-rpm] base
             # settings.
+            RPM_SCRIPTLETS_PATH="${{ inputs.rpm_scriptlets_path }}"
             if grep -Eq "^\[package\.metadata\.generate-rpm-alt-base-${MATRIX_PKG}\]$" Cargo.toml; then
+              if [[ "${RPM_SCRIPTLETS_PATH}" != "" ]]; then
+                RPM_SCRIPTLETS_PATH="${RPM_SCRIPTLETS_PATH}-${MATRIX_PKG}"
+              fi
               sed -i -e "s/^\[package\.metadata\.generate-rpm\]/[package.metadata.moved-generate-rpm]/" \
                      -e "s/^\[package\.metadata\.generate-rpm-alt-base-${MATRIX_PKG}\]/[package.metadata.generate-rpm]/" Cargo.toml
             fi
@@ -1125,9 +1129,9 @@ jobs:
             # can be executed (hence post-uninstall rather than pre-uninstall...). So instead embed the entire
             # uninstall script in the TOML settings using the cargo-generate-rpm --set-metadata (aka -s)
             # command line argument.
-            if [[ "${{ inputs.rpm_scriptlets_path }}" != "" ]]; then
+            if [ -f "${RPM_SCRIPTLETS_PATH}" ]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v5.3.1/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v6.0.0/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
