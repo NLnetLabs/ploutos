@@ -585,6 +585,10 @@ jobs:
           ENCODED_LOWER_DOCKER_ORG=$(echo "${{ inputs.docker_org }}" | tr '[:upper:]' '[:lower:]' | base64 --wrap=0)
           echo "lower_docker_org=${ENCODED_LOWER_DOCKER_ORG}" >> $GITHUB_OUTPUT
 
+          echo "DEBUG START"
+          cat $GITHUB_OUTPUT
+          echo "DEBUG END"
+
 
   # -------------------------------------------------------------------------------------------------------------------
   # Job: 'cross'
