@@ -1785,7 +1785,7 @@ jobs:
       # combined multi-arch image that lacks the architecture specific tag value extension and that will ONLY be
       # pushed if all architecture specific images build and (where supported) passt he sanity check below.
       - name: Build Docker image ${{ steps.gen.outputs.image_name }}
-        uses: docker/build-push-action@v3.2.0
+        uses: docker/build-push-action
         with:
           context: ${{ inputs.docker_context_path }}
           file: ${{ inputs.docker_file_path }}
@@ -1824,7 +1824,7 @@ jobs:
       - name: Publish image to Docker Hub
         id: publish
         if: ${{ fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
-        uses: docker/build-push-action@v3.2.0
+        uses: docker/build-push-action
         with:
           context: ${{ inputs.docker_context_path }}
           file: ${{ inputs.docker_file_path }}
