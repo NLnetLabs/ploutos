@@ -67,11 +67,11 @@ flowchart LR
   prepare --> cross
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
-  click cross href "https://github.com/NLnetLabs/ploutosblob/main/docs/ploutos/cross_compiling.md" "Cross-compilation"
-  click pkg href "https://github.com/NLnetLabs/ploutos/blob/main/docs/ploutos/os_packaging.md" "O/S Packaging"
-  click pkg-test href "https://github.com/NLnetLabs/ploutos/blob/main/docs/ploutos/os_package_testing.md" "O/S Package Testing"
-  click docker href "https://github.com/NLnetLabs/ploutos/blob/main/docs/ploutos/docker_packaging.md" "Docker Packaging"
-  click docker-manifest href "https://github.com/NLnetLabs/ploutos/blobmain/docs/ploutos/docker_multi_arch.md" "Docker Multi-Arch Packaging"
+  click cross href "https://github.com/NLnetLabs/ploutos/blob/main/docs/cross_compiling.md" "Cross-compilation"
+  click pkg href "https://github.com/NLnetLabs/ploutos/blob/main/docs/os_packaging.md" "O/S Packaging"
+  click pkg-test href "https://github.com/NLnetLabs/ploutos/blob/main/docs/os_package_testing.md" "O/S Package Testing"
+  click docker href "https://github.com/NLnetLabs/ploutos/blob/main/docs/docker_packaging.md" "Docker Packaging"
+  click docker-manifest href "https://github.com/NLnetLabs/ploutos/blob/main/docs/docker_multi_arch.md" "Docker Multi-Arch Packaging"
 ```
 
 All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
