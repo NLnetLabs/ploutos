@@ -22,7 +22,7 @@ Ploutos simplifies the creation of Debian, RPM and Docker packages for your Rust
 
 ## Known issues
 
-The Ploutos workflow was originally written for use only by NLnet Labs. As such not all behaviours are yet (fully) configurable. With time, sufficient interest and resource permitting these limitations can in principle be removed. For a list of open issues and ideas for improvement and to submit your own see https://github.com/NLnetLabs/.github/issues/.
+The Ploutos workflow was originally written for use only by NLnet Labs. As such not all behaviours are yet (fully) configurable. With time, sufficient interest and resource permitting these limitations can in principle be removed. For a list of open issues and ideas for improvement and to submit your own see https://github.com/NLnetLabs/ploutos/issues/.
 
 ## See also
 
@@ -30,7 +30,7 @@ The Ploutos workflow was originally written for use only by NLnet Labs. As such 
 
 - **The demo template:** This [template](template/README.md) can be used to create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
 
-- **Examples of the workflow in use:** This documentation contains some limited examples but if you're looking for real world examples of how to invoke and configure the Ploutos workflow take a look at the [projects that are already using the Ploutos workflow](https://github.com/NLnetLabs/.github/network/dependents).
+- **Examples of the workflow in use:** This documentation contains some limited examples but if you're looking for real world examples of how to invoke and configure the Ploutos workflow take a look at the [projects that are already using the Ploutos workflow](https://github.com/NLnetLabs/ploutos/network/dependents).
 
 - **The testing repository:** The https://github.com/NLnetLabs/ploutos-testing/ repository contains test data and workflow invocations for automated testing of as many features of Ploutos as possible.
 
@@ -67,11 +67,11 @@ flowchart LR
   prepare --> cross
   cross --> pkg --> pkg-test
   cross --> docker --> docker-manifest
-  click cross href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/cross_compiling.md" "Cross-compilation"
-  click pkg href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/os_packaging.md" "O/S Packaging"
-  click pkg-test href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/os_package_testing.md" "O/S Package Testing"
-  click docker href "https://github.com/NLnetLabs/.github/blob/main/docs/ploutos/docker_packaging.md" "Docker Packaging"
-  click docker-manifest href "https://github.com/NLnetLabs/.github/blobmain/docs/ploutos/docker_multi_arch.md" "Docker Multi-Arch Packaging"
+  click cross href "https://github.com/NLnetLabs/ploutosblob/main/docs/ploutos/cross_compiling.md" "Cross-compilation"
+  click pkg href "https://github.com/NLnetLabs/ploutos/blob/main/docs/ploutos/os_packaging.md" "O/S Packaging"
+  click pkg-test href "https://github.com/NLnetLabs/ploutos/blob/main/docs/ploutos/os_package_testing.md" "O/S Package Testing"
+  click docker href "https://github.com/NLnetLabs/ploutos/blob/main/docs/ploutos/docker_packaging.md" "Docker Packaging"
+  click docker-manifest href "https://github.com/NLnetLabs/ploutos/blobmain/docs/ploutos/docker_multi_arch.md" "Docker Multi-Arch Packaging"
 ```
 
 All of the jobs except `prepare` are matrix jobs, i.e. N instances of the job run in parallel where N is the number of relevant input matrix permutations.
