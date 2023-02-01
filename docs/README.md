@@ -5,6 +5,7 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 > _**WARNING:** Using Ploutos is free for public GitHub repositories, but is **NOT FREE** for **private GitHub repositories**. As Ploutos runs many jobs in parallel (if configured to build for multiple package types and/or targets) it can consume a LOT of GitHub Actions minutes. If you exceed the [free limits for GitHub private repositories](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions) it will cost money! For example a workflow that ran for ~11 minutes actually used ~141 minutes of GitHub Actions resources in total._
 
 **Contents:**
+- [What is Ploutos?](#what-is-plotos)
 - [Why use Ploutos?](#why-use-ploutos)
 - [Known issues](#known-issues)
 - [See also](#see-also)
@@ -17,7 +18,12 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 - [Key concepts and general configuration](#key-concepts-and-general-configuration)
 - [Creating specific package types](#creating-specific-package-types)
 
+## What is Ploutos?
+
+Ploutos is a GitHub Actions reusable workflow that provides a thin, easy to use, wrapper around parallel invocation of tools such as cross, cargo-deb and cargo-generare-rpm to package and test your Rust application for your chosen combination of package formats, target cpu architectures and operating system flavours.
+
 ## Why use Ploutos?
+
 Ploutos simplifies the creation of Debian, RPM and Docker packages for your Rust projects. You can call it in your project's workflow, by using [Github's reusable workflow feature](https://docs.github.com/en/actions/using-workflows/reusing-workflows). By reusing Ploutus, you can focus on the packaging specifics that matter for your project, instead of duplicating the foundation in every project.
 
 ## Known issues
