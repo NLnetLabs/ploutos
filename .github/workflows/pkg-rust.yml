@@ -617,12 +617,14 @@ jobs:
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Install cargo cross if needed
+      id: install-cargo-cross
       if: ${{ steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
       run: |
         cargo install cross
+        echo "installed=true" >> $GITHUB_OUTPUT
 
     - name: Force cache save
-      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      if: ${{ steps.install-cargo-cross.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: |
@@ -847,6 +849,7 @@ jobs:
 
     # Only install cargo-deb or cargo-generate-rpm if not already fetched from the cache.
     - name: Install cargo-deb if needed
+      id: install-cargo-deb
       if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
@@ -862,39 +865,44 @@ jobs:
               EXTRA_CARGO_INSTALL_ARGS=""
             fi
             cargo install cargo-deb --version ${CARGO_DEB_VER} ${EXTRA_CARGO_INSTALL_ARGS}
+            echo "installed=true" >> $GITHUB_OUTPUT
             ;;
         esac
 
     - name: Force cache save
-      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      if: ${{ steps.install-cargo-deb.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
 
     - name: Install cargo-generate-rpm if needed
+      id: install-cargo-generate-rpm
       if: ${{ steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
           centos)
             cargo install cargo-generate-rpm --version ${CARGO_GENERATE_RPM_VER}
+            echo "installed=true" >> $GITHUB_OUTPUT
             ;;
         esac
 
     - name: Force cache save
-      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      if: ${{ steps.install-cargo-generate-rpm.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
 
     - name: Install toml-cli if needed
+      id: install-toml-cli
       if: ${{ steps.cache-toml-cli.outputs.cache-hit != 'true' }}
       run: |
         cargo install toml-cli --version ${TOML_CLI_VER}
+        echo "installed=true" >> $GITHUB_OUTPUT
 
     - name: Force cache save
-      if: ${{ steps.cache-cargo-deb.outputs.cache-hit != 'true' }}
+      if: ${{ steps.install-toml-cli.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/toml
