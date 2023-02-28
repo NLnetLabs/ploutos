@@ -804,7 +804,8 @@ jobs:
                 yum install -y python-magic rpmlint
                 ;;
 
-              8)
+              *)
+                # assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
                 yum install -y cpio python3-pip
                 pip3 install python-magic rpmlint
                 ;;
