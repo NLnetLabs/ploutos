@@ -1469,7 +1469,13 @@ jobs:
         echo "OS_REL=${OS_REL}" >> $GITHUB_ENV
 
         if [[ '${{ matrix.test-image }}' != '' ]]; then
-          echo "LXC_IMAGE=images:${{ matrix.test-image }}/cloud" >> $GITHUB_ENV
+          # convert os_name:os_rel to os_name/os_rel. The colon form is consistent with the values the user must
+          # otherwise provide as input, e.g. via the 'image' matrix entry, but LXC images separate the image name
+          # from the image release using a forward slash rather than a colon so we have to convert.
+          TEST_IMAGE="${{ matrix.test-image }}"
+          LXC_IMAGE_NAME=${TEST_IMAGE%:*}
+          LXC_IMAGE_REL=${TEST_IMAGE#*:}
+          echo "LXC_IMAGE=images:${LXC_IMAGE_NAME}/${LXC_IMAGE_REL}/cloud" >> $GITHUB_ENV
         else
           case ${MATRIX_IMAGE} in
             centos:8)
