@@ -202,6 +202,7 @@ The `<image>` **MUST** be one of the following:
 
 - `centos:<os_rel>` where `<os_rel>` is one of: `7` or `8`
 - `debian:<os_rel>` where `<os_rel>` is one of: `stretch`, `buster` or `bullseye`
+- `rockylinux:<os_rel>` where `<os_rel>` is one of: `8` or `9`.
 - `ubuntu:<os_rel>` where `<os_rel>` is one of: `xenial`, `bionic`, `focal` or `jammy`
 
 Note the absence of RedHat, Fedora, Rocky Linux, Alma Linux, etc. which are all RPM compatible, and similarly no mention of other Debian derivatives such as Kali Linux or Raspbian.
