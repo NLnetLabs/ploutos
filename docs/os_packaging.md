@@ -197,6 +197,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 The following keys are special and only relate to the package testing phase when `package_test_rules` value has been supplied. These keys will be removed from `package_build_rules` before the package building phase, but will be preserved in `package_test_rules` for the package testing phase.
 
 | Matrix Key | Required | Description |
+|---|---|---|
 | `test-exclude` | No | Sets the GitHub Actions matrix `exclude` key in the `package_test_rules` matrix. |
 | `test-image` | No | Sets the `test-image` key in the `package_test_rules` matrix. See below for more information. |
 | `test-mode` | No | Sets the `mode` key in the `package_test_rules` matrix. See below for more information. |
