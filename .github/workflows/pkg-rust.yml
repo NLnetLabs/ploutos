@@ -345,7 +345,10 @@ jobs:
           # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
           # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
           # pkb job are identical and thus pointless waste and just plain confusing.
-          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_ARRAYS_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_ARRAYS_JSON} | jq -c 'del(."test-mode") | del(.include[]?."test-mode") | del(."test-exclude")')
+
+          # And now also for the older names for backward compatibility.
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
 
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
@@ -388,6 +391,13 @@ jobs:
               PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
             fi
           fi
+
+          # In the test rules, rename "test-mode" key to "mode" and "test-exclude" to "exclude".
+          # 'exclude' is used by GitHub Actions itself, while 'mode' has meaning for us. We're renaming them because
+          # prefixing them with 'test-' when used in the build rules makes it clearer that they relate to generated
+          # default test rules.
+          PACKAGE_TEST_RULES_PROCESSED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq '(.. | select(has("test-mode")?)) |= with_entries(if .key == "test-mode" then .key = "mode" else . end)')
+          PACKAGE_TEST_RULES_PROCESSED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq '(.. | select(has("test-exclude")?)) |= with_entries(if .key == "test-exclude" then .key = "exclude" else . end)')
 
           echo "package_test_rules<<END_OF_PACKAGE_TEST_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
@@ -739,10 +749,10 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             ;;
-          centos)
+          centos|rockylinux)
             ;;
           *)
-            echo "::error::This workflow only supports 'debian', 'ubuntu' or 'centos' operating systems: '${IMAGE}' is not supported."
+            echo "::error::This workflow only supports 'debian', 'ubuntu', 'centos' or 'rockylinux' operating systems: '${IMAGE}' is not supported."
             exit 1
             ;;
         esac
@@ -765,8 +775,6 @@ jobs:
           debian|ubuntu)
             apt-get update
             apt-get install -y curl
-            ;;
-          centos)
             ;;
         esac
 
@@ -794,7 +802,7 @@ jobs:
           debian|ubuntu)
             apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
             ;;
-          centos)
+          centos|rockylinux)
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum install epel-release -y
             yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
@@ -806,7 +814,8 @@ jobs:
                 yum install -y python-magic rpmlint
                 ;;
 
-              8)
+              *)
+                # assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
                 yum install -y cpio python3-pip
                 pip3 install python-magic rpmlint
                 ;;
@@ -881,7 +890,7 @@ jobs:
       if: ${{ steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
-          centos)
+          centos|rockylinux)
             cargo install cargo-generate-rpm --version ${CARGO_GENERATE_RPM_VER}
             echo "installed=true" >> $GITHUB_OUTPUT
             ;;
@@ -1073,7 +1082,7 @@ jobs:
             cargo deb --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
             ;;
 
-          centos)
+          centos|rockylinux)
             # Build and strip our app binaries as cargo generate-rpm doesn't do this for us
             cargo build --release --locked -v ${EXTRA_BUILD_ARGS}
             find target/release -maxdepth 1 -type f -executable | xargs strip -s -v
@@ -1090,12 +1099,9 @@ jobs:
                 # see: https://github.com/cat-in-136/cargo-generate-rpm/issues/30
                 EXTRA_CARGO_GENERATE_RPM_ARGS="--payload-compress gzip"
                 ;;
-              centos:8)
-                EXTRA_CARGO_GENERATE_RPM_ARGS=""
-                ;;
               *)
-                echo "::error::Unsupported matrix image value: '${OS_NAME}:${OS_REL}'"
-                exit 1
+                # assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
+                EXTRA_CARGO_GENERATE_RPM_ARGS=""
                 ;;
             esac
 
@@ -1139,7 +1145,7 @@ jobs:
             # command line argument.
             if [ -f "${RPM_SCRIPTLETS_PATH}" ]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v6.1.0/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/64-verify-add-support-for-rhel-9-and-derivatives/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
@@ -1217,7 +1223,7 @@ jobs:
             popd
             ;;
 
-          centos)
+          centos|rockylinux)
             ls -la target/generate-rpm/
 
             pushd target/generate-rpm
@@ -1290,7 +1296,7 @@ jobs:
             lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
             ;;
 
-          centos)
+          centos|rockylinux)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
 
@@ -1330,7 +1336,8 @@ jobs:
         EOF
                 ;;
 
-              8)
+              *)
+                # Assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
                 if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
                   EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
                 fi
@@ -1516,7 +1523,7 @@ jobs:
             sg lxd -c "lxc exec testcon -- apt-get update"
             sg lxd -c "lxc exec testcon -- apt-get install -y -o Dpkg::Options::=\"--force-confnew\" apt-transport-https ca-certificates man sudo wget"
             ;;
-          centos)
+          centos|rockylinux)
             if [[ "${MATRIX_IMAGE}" == "centos:8" ]]; then
               # allow CentOS 8 to continue working now that it is EOL
               # see: https://stackoverflow.com/a/70930049
@@ -1534,7 +1541,7 @@ jobs:
             sg lxd -c "lxc file push ${DEB_FILE} testcon/tmp/"
             echo "PKG_FILE=$(basename $DEB_FILE)" >> $GITHUB_ENV
             ;;
-          centos)
+          centos|rockylinux)
             RPM_FILE=$(ls -1 generate-rpm/*.rpm)
             sg lxd -c "lxc file push ${RPM_FILE} testcon/tmp/"
             echo "PKG_FILE=$(basename $RPM_FILE)" >> $GITHUB_ENV
@@ -1577,7 +1584,7 @@ jobs:
               sg lxd -c "lxc exec testcon -- rm -f ${SAVED_MD5SUMS}"
             fi
             ;;
-          centos)
+          centos|rockylinux)
             if [[ -f '${{ inputs.rpm_yum_repo }}' ]]; then
               sg lxd -c "lxc file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo"
             else
@@ -1597,7 +1604,7 @@ jobs:
           debian|ubuntu)
             sg lxd -c "lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}"
             ;;
-          centos)
+          centos|rockylinux)
             sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee install.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' install.log
@@ -1622,7 +1629,7 @@ jobs:
             # See https://github.com/NLnetLabs/.github/issues/17 regarding --force-confXXX
             sg lxd -c "lxc exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}"
             ;;
-          centos)
+          centos|rockylinux)
             sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee upgrade.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' upgrade.log
@@ -1644,8 +1651,6 @@ jobs:
             SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
             sg lxd -c "lxc exec testcon -- sh -c '[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}'"
             ;;
-          centos)
-            ;;
         esac
 
     - name: Test the upgraded package
@@ -1662,7 +1667,7 @@ jobs:
           debian|ubuntu)
             sg lxd -c "lxc exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}"
             ;;
-          centos)
+          centos|rockylinux)
             sg lxd -c "lxc exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }}" 2>&1 | tee remove.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' remove.log
@@ -1675,7 +1680,7 @@ jobs:
           debian|ubuntu)
             sg lxd -c "lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}"
             ;;
-          centos)
+          centos|rockylinux)
             sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee reinstall.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' reinstall.log

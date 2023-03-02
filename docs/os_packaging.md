@@ -218,9 +218,9 @@ Only packages that were built using `package_build_rules` can be tested. By defa
 
 Testing packages is optional. To disable testing of packages completely set `package_test_rules` to `none`.
 
-To test package upgrade you must also supply the `deb_apt_xxx` and/or `rpm_yum_xxx` workflow inputs as needed by your packages. To test upgrade of all built packages without supplying `package_test_rules`, add a `mode` key to the `package_build_rules` matrix with value `upgrade-from-published`.
+To test package upgrade you must also supply the `deb_apt_xxx` and/or `rpm_yum_xxx` workflow inputs as needed by your packages. To test upgrade of all built packages without supplying `package_test_rules`, add a `test-mode` key to the `package_build_rules` matrix with value `upgrade-from-published`.
 
-If you wish to test only a subset of the built packages and/or wish to test package upgrade with only a subset of the packages, then you will need to fully specify the `package_test_rules` input matrix.
+If you wish to test only a subset of the built packages and/or wish to test package upgrade with only a subset of the packages, then you will either need to fully specify the `package_test_rules` input matrix, or add a `test-exclude` key to the `package_build_rules` matrix with values in the form supported by the special GitHub Actions `exclude` key. E.g. you can exclude `test-mode` value `upgrade-from-published` only for a new O/S version which is being packaged for for the first time (and thus has no prior releases to do upgrade testing against) by speciying a subkey of `test-exclude` like `image: rockylinux:9`.
 
 The testing process looks like this:
 
