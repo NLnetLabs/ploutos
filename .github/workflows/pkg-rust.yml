@@ -1467,7 +1467,7 @@ jobs:
         echo "OS_NAME=${OS_NAME}" >> $GITHUB_ENV
         echo "OS_REL=${OS_REL}" >> $GITHUB_ENV
 
-        if [[ '${{ steps.verify.outputs.test_image }' != '' ]]; then
+        if [[ '${{ steps.verify.outputs.test_image }}' != '' ]]; then
           echo "LXC_IMAGE=images:${{ steps.verify.outputs.test_image }}/cloud" >> $GITHUB_ENV
         else
           case ${MATRIX_IMAGE} in
