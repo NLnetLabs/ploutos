@@ -345,7 +345,7 @@ jobs:
           # would be mostly identical to package_build_rules. If we don't remove this we end up causing duplicate Build
           # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
           # pkb job are identical and thus pointless waste and just plain confusing.
-          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_ARRAYS_JSON} | jq -c 'del(.test-mode) | del(.include[]?.test-mode) | del(.test-exclude)')
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_ARRAYS_JSON} | jq -c 'del(."test-mode") | del(.include[]?."test-mode") | del(."test-exclude")')
 
           # And now also for the older names for backward compatibility.
           PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
