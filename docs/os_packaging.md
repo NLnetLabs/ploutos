@@ -194,6 +194,12 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to inclde in an RPM package. See below for more info. |
 | `rpm_rpmlint_check_filters` | No | A space separated set of additional rpmlint checks to filter out. See https://fedoraproject.org/wiki/Common_Rpmlint_issues for some example check names, e.g. `no-documentation`. |
 
+The following keys are special and only relate to the package testing phase when `package_test_rules` value has been supplied. These keys will be removed from `package_build_rules` before the package building phase, but will be preserved in `package_test_rules` for the package testing phase.
+
+| `test-exclude` | No | Sets the GitHub Actions matrix `exclude` key in the `package_test_rules` matrix. |
+| `test-image` | No | Sets the `test-image` key in the `package_test_rules` matrix. See below for more information. |
+| `test-mode` | No | Sets the `mode` key in the `package_test_rules` matrix. See below for more information. |
+
 **Note:** When `package_test_rules` is not supplied the `package_build_rules` matrix is also used as the `package_test_rules` matrix, since normally you want to test every package that you build. When using `package_build_rules` this way you can also supply `package_test_rules` matrix keys in the `package_build_rules` input. These will be ignored by the package building workflow job.
 
 #### Permitted `<image>` values
@@ -213,9 +219,9 @@ It may not matter which O/S release the RPM or DEB package is built inside, exce
 
 ### Package test rules
 
-`package_test_rules` instructs Ploutos to test your packages (beyond the basic verification done post-build).
+`package_test_rules` instructs Ploutos to test your packages (beyond the basic verification done post-build). If not specified, and not disabled, `package_build_rules` will be used as the default input for `package_test_rules`.
 
-Only packages that were built using `package_build_rules` can be tested. By default the packages built according to  `package_build_rules` will be tested, minus any packages for which testing is not supported (e.g. missing LXC image or unsupported architecture).
+Only packages that were built using `package_build_rules` can be tested. By default the packages built according to `package_build_rules` will be tested, minus any packages for which testing is not supported (e.g. missing LXC image or unsupported architecture).
 
 Testing packages is optional. To disable testing of packages completely set `package_test_rules` to `none`.
 
@@ -253,6 +259,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `target` | Yes | The target the package was built for. Must match the value used with `package_build_rules`. |
 | `mode` | Yes | One of: `fresh-install` or `upgrade-from-published` _(assumes a previous version is available in the default package repositories)_. |
 | `ignore_upgrade_failure` | No | If package upgrade fails should this be ignored? (default: false). Ignoring an upgrade can be necessary when a prior release has a bug in the scripts that are run when the package is upgraded, otherwise the `pkg-test` job will fail. |
+| `test-image` | No | An LXC distribution and release pair separated by a colon ':' character. See http://images.linuxcontainers.org/ for possible values. Note that only 'cloud' variants are supported. The LXC container launched will run this image instead of `image`, thereby allowing you to test the package built for the `image` O/S in a different but assumed to be compatible O/S, e.g. test Rocky Linux 9 packages in Alma Linux 9 or CentOS 9 Stream. |
 
 ### Package test script inputs
 

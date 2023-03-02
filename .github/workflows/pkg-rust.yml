@@ -346,6 +346,7 @@ jobs:
           # jobs to be spawned for each different test mode (fresh-install vs upgrade-from-published) which for the
           # pkb job are identical and thus pointless waste and just plain confusing.
           PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_ARRAYS_JSON} | jq -c 'del(."test-mode") | del(.include[]?."test-mode") | del(."test-exclude")')
+          PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(."test-image") | del(.include[]?."test-image")')
 
           # And now also for the older names for backward compatibility.
           PACKAGE_BUILD_RULES_PROCESSED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.mode) | del(.include[]?.mode)')
@@ -1467,16 +1468,26 @@ jobs:
         echo "OS_NAME=${OS_NAME}" >> $GITHUB_ENV
         echo "OS_REL=${OS_REL}" >> $GITHUB_ENV
 
-        case ${MATRIX_IMAGE} in
-          centos:8)
-            # the CentOS 8 LXD image no longer exists since CentOS 8 hit EOL.
-            # use the Rocky Linux (a CentOS 8 compatible O/S) LXD image instead.
-            echo "LXC_IMAGE=images:rockylinux/8/cloud" >> $GITHUB_ENV
-            ;;
-          *)
-            echo "LXC_IMAGE=images:${OS_NAME}/${OS_REL}/cloud" >> $GITHUB_ENV
-            ;;
-        esac
+        if [[ '${{ matrix.test-image }}' != '' ]]; then
+          # convert os_name:os_rel to os_name/os_rel. The colon form is consistent with the values the user must
+          # otherwise provide as input, e.g. via the 'image' matrix entry, but LXC images separate the image name
+          # from the image release using a forward slash rather than a colon so we have to convert.
+          TEST_IMAGE="${{ matrix.test-image }}"
+          LXC_IMAGE_NAME=${TEST_IMAGE%:*}
+          LXC_IMAGE_REL=${TEST_IMAGE#*:}
+          echo "LXC_IMAGE=images:${LXC_IMAGE_NAME}/${LXC_IMAGE_REL}/cloud" >> $GITHUB_ENV
+        else
+          case ${MATRIX_IMAGE} in
+            centos:8)
+              # the CentOS 8 LXD image no longer exists since CentOS 8 hit EOL.
+              # use the Rocky Linux (a CentOS 8 compatible O/S) LXD image instead.
+              echo "LXC_IMAGE=images:rockylinux/8/cloud" >> $GITHUB_ENV
+              ;;
+            *)
+              echo "LXC_IMAGE=images:${OS_NAME}/${OS_REL}/cloud" >> $GITHUB_ENV
+              ;;
+          esac
+        fi
 
     - name: Download package
       uses: actions/download-artifact@v3
