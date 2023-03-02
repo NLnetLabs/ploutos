@@ -194,7 +194,7 @@ A rules [matrix](./key_concepts_and_config.md#matrix-rules) with the following k
 | `rpm_systemd_service_unit_file` | No | Relative path to the systemd file, or files (if it ends with `*`) to inclde in an RPM package. See below for more info. |
 | `rpm_rpmlint_check_filters` | No | A space separated set of additional rpmlint checks to filter out. See https://fedoraproject.org/wiki/Common_Rpmlint_issues for some example check names, e.g. `no-documentation`. |
 
-The following keys are special and only relate to the package testing phase when `package_test_rules` value has been supplied. These keys will be removed from `package_build_rules` before the package building phase, but will be preserved in `package_test_rules` for the package testing phase.
+The following keys are special and only relate to the package testing phase when no `package_test_rules` value has been supplied. These keys will be removed from `package_build_rules` before the package building phase, but will be preserved in `package_test_rules` for the package testing phase.
 
 | Matrix Key | Required | Description |
 |---|---|---|
