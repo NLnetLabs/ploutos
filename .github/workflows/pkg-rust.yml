@@ -149,11 +149,16 @@ on:
         required: false
         type: boolean
         default: false
-      manifest_path:
-        description: "If provided, use the Cargo.toml file at the specified path instead of the Cargo.toml in the root directory of the Git clone."
+      manifest_dir:
+        description: "The path to a directory containing the Cargo.toml file to use instead of the Cargo.toml in the root directory of the Git clone."
         required: false
         type: string
-        default:
+        default: ''
+      workspace_package:
+        description: "If provided, take [package] settings from the Cargo.toml of this member of the workspace (rooted at manifest_dir, if specified)."
+        required: false
+        type: string
+        default: ''
 
       package_build_rules:
         description: "A relative path to a YAML file, or a YAML string, containing a GitHub Actions matrix with 'pkg' (your app name), Docker 'image' (image <os>:<rel>), 'target' (x86_64, or a Rust target triple), 'extra_build_args' (optional), 'os' (optional) fields. See also: https://doc.rust-lang.org/nightly/rustc/platform-support.html"
@@ -290,7 +295,9 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       cargo_name: ${{ steps.verify_inputs.outputs.cargo_name }}
-      cargo_extra_args: ${{ steps.verify_inputs.outputs.cargo_extra_args }}
+      cargo_manifest_path_arg: ${{ steps.verify_inputs.outputs.cargo_manifest_path_arg }}
+      cargo_read_manifest_path_arg: ${{ steps.verify_inputs.outputs.cargo_read_manifest_path_arg }}
+      cargo_workspace_package_arg: ${{ steps.verify_inputs.outputs.cargo_workspace_package_arg }}
       has_docker_secrets: ${{ steps.verify_inputs.outputs.has_docker_secrets }}
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
@@ -518,11 +525,27 @@ jobs:
           CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
           echo "cargo_name=${CARGO_NAME}" >> $GITHUB_OUTPUT
 
-          CARGO_EXTRA_ARGS=""
-          if [[ "${{ inputs.manifest_path}}" != '' ]]; then
-            CARGO_EXTRA_ARGS="--manifest-path ${{ inputs.manifest_path }}"
+          CARGO_MANIFEST_PATH_ARG=""
+          if [[ "${{ inputs.manifest_dir}}" != '' ]]; then
+            CARGO_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_path }}/Cargo.toml"
           fi
-          echo "cargo_extra_args=${CARGO_EXTRA_ARGS}" >> $GITHUB_OUTPUT
+          echo "cargo_manifest_path_arg=${CARGO_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
+
+          CARGO_WORKSPACE_PACKAGE_ARG=""
+          if [[ "${{ inputs.workspace_package}}" != '' ]]; then
+            CARGO_WORKSPACE_PACKAGE_ARG="--package ${{ inputs.workspace_package }}"
+          fi
+          echo "cargo_workspace_package_arg=${CARGO_WORKSPACE_PACKAGE_ARG}" >> $GITHUB_OUTPUT
+
+          CARGO_READ_MANIFEST_PATH_ARG=""
+          if [[ '${{ inputs.manifest_dir}}' != '' ]]; then
+            CARGO_READ_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_dir }}"
+            if [[ '${{ inputs.workspace_package}}' != '' ]]; then
+              CARGO_READ_MANIFEST_PATH_ARG="${CARGO_READ_MANIFEST_PATH_ARG}/${{ inputs.workspace_package}}"
+            fi
+            CARGO_READ_MANIFEST_PATH_ARG="${CARGO_READ_MANIFEST_PATH_ARG}/Cargo.toml"
+          fi
+          echo "cargo_read_manifest_path_arg=${CARGO_READ_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
 
       - name: Verify Docker credentials
         if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && fromJSON(steps.verify_inputs.outputs.has_docker_secrets) == true }}
@@ -657,7 +680,7 @@ jobs:
 
     - name: Cross compile
       run: |
-        cross build ${{needs.prepare.outputs.cargo_extra_args}} --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
+        cross build ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
       run: |
@@ -991,7 +1014,7 @@ jobs:
           exit 1
         fi
 
-        APP_VER=$(cargo read-manifest ${{needs.prepare.outputs.cargo_extra_args}} | jq -r '.version')
+        APP_VER=$(cargo read-manifest ${{ needs.prepare.outputs.cargo_read_manifest_path_arg }} | jq -r '.version')
         APP_NEW_VER=$(echo $APP_VER | tr '-' '~')
         NEXT_VER_LABEL="${{ inputs.next_ver_label }}"
         PKG_APP_VER=$(echo $APP_NEW_VER | sed -e "s/~$NEXT_VER_LABEL/-$NEXT_VER_LABEL/")
@@ -1059,7 +1082,7 @@ jobs:
                 #    With jq 1.5: del(recurse(.[]?;true)|select(. == null))
                 #    Older systems only have jq 1.5 so we have to use the more verbose construct.
                 V=${VARIANT:-null}
-                MAINTAINER=$(cargo read-manifest ${{needs.prepare.outputs.cargo_extra_args}} | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
+                MAINTAINER=$(cargo read-manifest ${{needs.prepare.outputs.cargo_read_manifest_path_arg}} | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
 
                 # 2. Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
                 #    exist on Ubuntu 16.04 and Debian 9
@@ -1092,12 +1115,12 @@ jobs:
             # This shouldn't be necessary...
             rm -f target/debian/*.deb
 
-            cargo deb ${{needs.prepare.outputs.cargo_extra_args}} --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
+            cargo deb ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
             ;;
 
           centos|rockylinux)
             # Build and strip our app binaries as cargo generate-rpm doesn't do this for us
-            cargo build ${{needs.prepare.outputs.cargo_extra_args}} --release --locked -v ${EXTRA_BUILD_ARGS}
+            cargo build ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --release --locked -v ${EXTRA_BUILD_ARGS}
             find target/release -maxdepth 1 -type f -executable | xargs strip -s -v
 
             # TODO: It might be possible to replace the hacky copying of the service file below with some clever use of
@@ -1177,11 +1200,19 @@ jobs:
             # This shouldn't be necessary...
             rm -f target/generate-rpm/*.rpm
 
-            cargo generate-rpm ${{needs.prepare.outputs.cargo_extra_args}} \
+            if [[ '${{inputs.manifest_dir}}' != '' ]]; then
+              pushd ${{inputs.manifest_dir}}
+            fi
+  
+            cargo generate-rpm ${{needs.prepare.outputs.cargo_package_arg}} \
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
                 ${SCRIPTLETS} \
                 ${EXTRA_CARGO_GENERATE_RPM_ARGS}
             ;;
+
+            if [[ '${{inputs.manifest_dir}}' != '' ]]; then
+              popd
+            fi
         esac
 
     - name: Post-process the package
