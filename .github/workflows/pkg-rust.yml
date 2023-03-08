@@ -295,6 +295,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       cargo_name: ${{ steps.verify_inputs.outputs.cargo_name }}
+      cargo_package_toml_path: ${{ steps.verify_inputs.outputs.cargo_package_toml_path }}
       cargo_manifest_path_arg: ${{ steps.verify_inputs.outputs.cargo_manifest_path_arg }}
       cargo_read_manifest_path_arg: ${{ steps.verify_inputs.outputs.cargo_read_manifest_path_arg }}
       cargo_workspace_package_arg: ${{ steps.verify_inputs.outputs.cargo_workspace_package_arg }}
@@ -492,6 +493,35 @@ jobs:
       - name: Verify inputs
         id: verify_inputs
         run: |
+          CARGO_MANIFEST_PATH_ARG=""
+          if [[ "${{ inputs.manifest_dir}}" != '' ]]; then
+            CARGO_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_dir }}/Cargo.toml"
+          fi
+          echo "cargo_manifest_path_arg=${CARGO_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
+
+          CARGO_WORKSPACE_PACKAGE_ARG=""
+          if [[ "${{ inputs.workspace_package}}" != '' ]]; then
+            CARGO_WORKSPACE_PACKAGE_ARG="--package ${{ inputs.workspace_package }}"
+          fi
+          echo "cargo_workspace_package_arg=${CARGO_WORKSPACE_PACKAGE_ARG}" >> $GITHUB_OUTPUT
+
+          CARGO_PACKAGE_TOML_PATH="Cargo.toml"
+          CARGO_READ_MANIFEST_PATH_ARG=""
+          if [[ '${{ inputs.manifest_dir}}' != '' ]]; then
+            CARGO_PACKAGE_TOML_PATH="${{ inputs.manifest_dir }}"
+            if [[ '${{ inputs.workspace_package}}' != '' ]]; then
+              CARGO_PACKAGE_TOML_PATH="${CARGO_PACKAGE_TOML_PATH}/${{ inputs.workspace_package}}"
+            fi
+            CARGO_PACKAGE_TOML_PATH="${CARGO_PACKAGE_TOML_PATH}/Cargo.toml"
+            CARGO_READ_MANIFEST_PATH_ARG="--manifest-path ${CARGO_PACKAGE_TOML_PATH}"
+          fi
+
+          echo "cargo_package_toml_path=${CARGO_PACKAGE_TOML_PATH}" >> $GITHUB_OUTPUT
+          echo "cargo_read_manifest_path_arg=${CARGO_READ_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
+
+          CARGO_NAME=$(cat ${CARGO_PACKAGE_TOML_PATH} | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
+          echo "cargo_name=${CARGO_NAME}" >> $GITHUB_OUTPUT
+
           if [[ '${{ inputs.next_ver_label }}' == '' ]]; then
             echo "::error::Workflow input 'next_ver_label' must be non-empty if set."
             exit 1
@@ -521,31 +551,6 @@ jobs:
           else
             echo "has_docker_secrets=false" >> $GITHUB_OUTPUT
           fi
-
-          CARGO_NAME=$(cat Cargo.toml | docker run --rm -i sclevine/yj -tj | jq -r .package.name)
-          echo "cargo_name=${CARGO_NAME}" >> $GITHUB_OUTPUT
-
-          CARGO_MANIFEST_PATH_ARG=""
-          if [[ "${{ inputs.manifest_dir}}" != '' ]]; then
-            CARGO_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_dir }}/Cargo.toml"
-          fi
-          echo "cargo_manifest_path_arg=${CARGO_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
-
-          CARGO_WORKSPACE_PACKAGE_ARG=""
-          if [[ "${{ inputs.workspace_package}}" != '' ]]; then
-            CARGO_WORKSPACE_PACKAGE_ARG="--package ${{ inputs.workspace_package }}"
-          fi
-          echo "cargo_workspace_package_arg=${CARGO_WORKSPACE_PACKAGE_ARG}" >> $GITHUB_OUTPUT
-
-          CARGO_READ_MANIFEST_PATH_ARG=""
-          if [[ '${{ inputs.manifest_dir}}' != '' ]]; then
-            CARGO_READ_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_dir }}"
-            if [[ '${{ inputs.workspace_package}}' != '' ]]; then
-              CARGO_READ_MANIFEST_PATH_ARG="${CARGO_READ_MANIFEST_PATH_ARG}/${{ inputs.workspace_package}}"
-            fi
-            CARGO_READ_MANIFEST_PATH_ARG="${CARGO_READ_MANIFEST_PATH_ARG}/Cargo.toml"
-          fi
-          echo "cargo_read_manifest_path_arg=${CARGO_READ_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
 
       - name: Verify Docker credentials
         if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && fromJSON(steps.verify_inputs.outputs.has_docker_secrets) == true }}
@@ -1056,7 +1061,7 @@ jobs:
 
             OPT_VARIANT_ARG=""
             if [[ "${VARIANT}" != "" ]]; then
-              if grep -qF "[package.metadata.deb.variants.${VARIANT}]" Cargo.toml; then
+              if grep -qF "[package.metadata.deb.variants.${VARIANT}]" ${{ needs.prepare.outputs.cargo_package_toml_path }} then
                 OPT_VARIANT_ARG="--variant ${VARIANT}"
               else
                 echo "::notice file=Cargo.toml::Cargo deb variant '${VARIANT}' not found, using defaults instead."
@@ -1065,7 +1070,7 @@ jobs:
 
             CHANGELOG_KEY="package.metadata.deb.changelog"
             GEN_CHANGELOG_PATH="target/debian/changelog"
-            SET_CHANGELOG_PATH=$(toml get Cargo.toml ${CHANGELOG_KEY})
+            SET_CHANGELOG_PATH=$(toml get ${{ needs.prepare.outputs.cargo_package_toml_path }} ${CHANGELOG_KEY})
 
             case ${SET_CHANGELOG_PATH} in
               null|'"'${GEN_CHANGELOG_PATH}'"')
@@ -1101,9 +1106,9 @@ jobs:
                 cat target/debian/changelog
 
                 # 5. Configure cargo-deb to use the generated changelog file
-                mv Cargo.toml Cargo.toml.org
-                toml set Cargo.toml.org package.metadata.deb.changelog target/debian/changelog > Cargo.toml
-              
+                mv ${{ needs.prepare.outputs.cargo_package_toml_path }}  ${{ needs.prepare.outputs.cargo_package_toml_path }}.org
+                toml set ${{ needs.prepare.outputs.cargo_package_toml_path }}.org package.metadata.deb.changelog target/debian/changelog > ${{ needs.prepare.outputs.cargo_package_toml_path }}
+
                 #
                 # End changelog generation
                 #
@@ -1164,12 +1169,13 @@ jobs:
             # settings specified alternate base settings instead of the usual [package.metadata.generate-rpm] base
             # settings.
             RPM_SCRIPTLETS_PATH="${{ inputs.rpm_scriptlets_path }}"
-            if grep -Eq "^\[package\.metadata\.generate-rpm-alt-base-${MATRIX_PKG}\]$" Cargo.toml; then
+            if grep -Eq "^\[package\.metadata\.generate-rpm-alt-base-${MATRIX_PKG}\]$" ${{ needs.prepare.outputs.cargo_package_toml_path }}; then
               if [[ "${RPM_SCRIPTLETS_PATH}" != "" ]]; then
                 RPM_SCRIPTLETS_PATH="${RPM_SCRIPTLETS_PATH}-${MATRIX_PKG}"
               fi
               sed -i -e "s/^\[package\.metadata\.generate-rpm\]/[package.metadata.moved-generate-rpm]/" \
-                     -e "s/^\[package\.metadata\.generate-rpm-alt-base-${MATRIX_PKG}\]/[package.metadata.generate-rpm]/" Cargo.toml
+                     -e "s/^\[package\.metadata\.generate-rpm-alt-base-${MATRIX_PKG}\]/[package.metadata.generate-rpm]/" \
+                     ${{ needs.prepare.outputs.cargo_package_toml_path }}
             fi
 
             # https://github.com/NLnetLabs/krill/issues/907
