@@ -1061,7 +1061,7 @@ jobs:
 
             OPT_VARIANT_ARG=""
             if [[ "${VARIANT}" != "" ]]; then
-              if grep -qF "[package.metadata.deb.variants.${VARIANT}]" ${{ needs.prepare.outputs.cargo_package_toml_path }} then
+              if grep -qF "[package.metadata.deb.variants.${VARIANT}]" ${{ needs.prepare.outputs.cargo_package_toml_path }}; then
                 OPT_VARIANT_ARG="--variant ${VARIANT}"
               else
                 echo "::notice file=Cargo.toml::Cargo deb variant '${VARIANT}' not found, using defaults instead."
@@ -1106,7 +1106,7 @@ jobs:
                 cat target/debian/changelog
 
                 # 5. Configure cargo-deb to use the generated changelog file
-                mv ${{ needs.prepare.outputs.cargo_package_toml_path }}  ${{ needs.prepare.outputs.cargo_package_toml_path }}.org
+                mv ${{ needs.prepare.outputs.cargo_package_toml_path }} ${{ needs.prepare.outputs.cargo_package_toml_path }}.org
                 toml set ${{ needs.prepare.outputs.cargo_package_toml_path }}.org package.metadata.deb.changelog target/debian/changelog > ${{ needs.prepare.outputs.cargo_package_toml_path }}
 
                 #
