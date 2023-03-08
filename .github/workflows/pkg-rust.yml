@@ -1082,7 +1082,7 @@ jobs:
             CHANGELOG_KEY="package.metadata.deb.changelog"
             GEN_CHANGELOG_NAME="debian/changelog"
             GEN_CHANGELOG_PATH="${TARGET_DIR}/${GEN_CHANGELOG_NAME}"
-            SET_CHANGELOG_PATH=$(toml get ${{ needs.prepare.outputs.cargo_package_toml_path }} ${CHANGELOG_KEY})
+            SET_CHANGELOG_PATH=$(toml get ${{ needs.prepare.outputs.cargo_package_toml_path }} ${CHANGELOG_KEY || echo null})
 
             case ${SET_CHANGELOG_PATH} in
               null|'"'${GEN_CHANGELOG_PATH}'"')
