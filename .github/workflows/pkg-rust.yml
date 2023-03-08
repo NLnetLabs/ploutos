@@ -974,6 +974,7 @@ jobs:
     # Instruct cargo-deb or cargo-generate-rpm to build the package based on Cargo.toml settings and command line
     # arguments.
     - name: Create the package
+      id: create
       env:
         MATRIX_PKG: ${{ steps.verify.outputs.pkg }}
         EXTRA_BUILD_ARGS: ${{ matrix.extra_build_args }}
@@ -1024,13 +1025,20 @@ jobs:
         NEXT_VER_LABEL="${{ inputs.next_ver_label }}"
         PKG_APP_VER=$(echo $APP_NEW_VER | sed -e "s/~$NEXT_VER_LABEL/-$NEXT_VER_LABEL/")
 
+        TARGET_DIR="target"
+        if [[ '${{ inputs.manifest_dir }}' != '' ]]; then
+          TARGET_DIR="${{ inputs.manifest_dir }}/target"
+        fi
+        echo "target_dir=${TARGET_DIR}" >> $GITHUB_OUTPUT
+
         case ${OS_NAME} in
           debian|ubuntu)
             # Ugly hack to use an alternate base Cargo Deb configuration so that the selected variant overrides settings
             # in the specified alternate base settings instead of the usual [package.metadata.deb] base settings.
-            if grep -Eq "^\[package\.metadata\.deb_alt_base_${MATRIX_PKG}\]$" Cargo.toml; then
+            if grep -Eq "^\[package\.metadata\.deb_alt_base_${MATRIX_PKG}\]$" ${{ needs.prepare.outputs.cargo_package_toml_path }}; then
               sed -i -e "s/^\[package\.metadata\.deb\]/[package.metadata.moved-deb]/" \
-                     -e "s/^\[package\.metadata\.deb_alt_base_${MATRIX_PKG}\]/[package.metadata.deb]/" Cargo.toml
+                     -e "s/^\[package\.metadata\.deb_alt_base_${MATRIX_PKG}\]/[package.metadata.deb]/" \
+                     ${{ needs.prepare.outputs.cargo_package_toml_path }}
             fi
 
             EXTRA_CARGO_DEB_ARGS=
@@ -1047,13 +1055,13 @@ jobs:
             # manually. The project being packaged can either define a cross-target specific `cargo-deb` profile, or a 
             # "minimal" profile suitable for cross-compiled targets.
             if [[ "${CROSS_TARGET}" != "x86_64" ]]; then
-              EXTRA_CARGO_DEB_ARGS="--no-build --no-strip --target ${CROSS_TARGET} --output target/debian"
+              EXTRA_CARGO_DEB_ARGS="--no-build --no-strip --target ${CROSS_TARGET} --output ${TARGET_DIR}/debian"
               MINIMAL_VARIANT="minimal-cross"
               VARIANT="${OS_NAME}-${OS_REL}-${CROSS_TARGET}"
             fi
 
             # Prefer the "minimal" cargo-deb profile, if one exists in `Cargo.toml`:
-            if grep -qF "[package.metadata.deb.variants.${MINIMAL_VARIANT}]" Cargo.toml; then
+            if grep -qF "[package.metadata.deb.variants.${MINIMAL_VARIANT}]" ${{ needs.prepare.outputs.cargo_package_toml_path }}; then
                 case ${OS_REL} in
                   xenial|bionic|stretch) VARIANT="${MINIMAL_VARIANT}" ;;
                 esac
@@ -1069,7 +1077,7 @@ jobs:
             fi
 
             CHANGELOG_KEY="package.metadata.deb.changelog"
-            GEN_CHANGELOG_PATH="target/debian/changelog"
+            GEN_CHANGELOG_PATH="${TARGET_DIR}/debian/changelog"
             SET_CHANGELOG_PATH=$(toml get ${{ needs.prepare.outputs.cargo_package_toml_path }} ${CHANGELOG_KEY})
 
             case ${SET_CHANGELOG_PATH} in
@@ -1094,20 +1102,23 @@ jobs:
                 RFC5322_TS=$(LC_TIME=en_US.UTF-8 date +'%a, %d %b %Y %H:%M:%S %z')
 
                 # 3. Generate the changelog file that Debian packages are required to have.
-                if [ ! -d target/debian ]; then
-                  mkdir -p target/debian
+                if [ ! -d ${TARGET_DIR}/debian ]; then
+                  mkdir -p ${TARGET_DIR}/debian
                 fi
-                echo "${MATRIX_PKG} (${PKG_APP_VER}) unstable; urgency=medium" >target/debian/changelog
-                echo "  * See: https://github.com/${{ github.repository }}/releases/tag/v${APP_NEW_VER}" >>target/debian/changelog
-                echo " -- maintainer ${MAINTAINER}  ${RFC5322_TS}" >>target/debian/changelog
+                echo "${MATRIX_PKG} (${PKG_APP_VER}) unstable; urgency=medium" > ${GEN_CHANGELOG_PATH}
+                echo "  * See: https://github.com/${{ github.repository }}/releases/tag/v${APP_NEW_VER}" >> ${GEN_CHANGELOG_PATH}
+                echo " -- maintainer ${MAINTAINER}  ${RFC5322_TS}" >> ${GEN_CHANGELOG_PATH}
 
                 # 4. Print the generated changelog for diagnostic purposes
                 echo "Generated changelog:"
-                cat target/debian/changelog
+                cat ${GEN_CHANGELOG_PATH}
 
                 # 5. Configure cargo-deb to use the generated changelog file
                 mv ${{ needs.prepare.outputs.cargo_package_toml_path }} ${{ needs.prepare.outputs.cargo_package_toml_path }}.org
-                toml set ${{ needs.prepare.outputs.cargo_package_toml_path }}.org package.metadata.deb.changelog target/debian/changelog > ${{ needs.prepare.outputs.cargo_package_toml_path }}
+                toml set \
+                  ${{ needs.prepare.outputs.cargo_package_toml_path }}.org \
+                  package.metadata.deb.changelog ${GEN_CHANGELOG_PATH} > \
+                  ${{ needs.prepare.outputs.cargo_package_toml_path }}
 
                 #
                 # End changelog generation
@@ -1118,14 +1129,28 @@ jobs:
             DEB_VER="${PKG_APP_VER}-1${OS_REL}"
 
             # This shouldn't be necessary...
-            rm -f target/debian/*.deb
+            rm -f ${TARGET_DIR}/debian/*.deb
 
-            cargo deb ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
+            cargo deb \
+              ${{needs.prepare.outputs.cargo_manifest_path_arg}} \
+              ${{needs.prepare.outputs.cargo_workspace_package_arg}} \
+              --deb-version ${DEB_VER} \
+              ${OPT_VARIANT_ARG} \
+              -v ${EXTRA_CARGO_DEB_ARGS} \
+              -- \
+              --locked \
+              ${EXTRA_BUILD_ARGS}
             ;;
 
           centos|rockylinux)
             # Build and strip our app binaries as cargo generate-rpm doesn't do this for us
-            cargo build ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --release --locked -v ${EXTRA_BUILD_ARGS}
+            cargo build \
+              ${{needs.prepare.outputs.cargo_manifest_path_arg}} \
+              ${{needs.prepare.outputs.cargo_workspace_package_arg}} \
+              --release \
+              --locked \
+              -v \
+              ${EXTRA_BUILD_ARGS}
 
             # TODO: It might be possible to replace the hacky copying of the service file below with some clever use of
             # `--set-metadata` when invoking cargo generate-rpm. Of particular interest is the new `--variant` command
@@ -1158,11 +1183,11 @@ jobs:
             fi
 
             if [ -e "${SYSTEMD_SERVICE_UNIT_FILE}" ]; then
-                mkdir -p target/rpm/
-                cp ${SYSTEMD_SERVICE_UNIT_FILE} target/rpm/${MATRIX_PKG}.service
+                mkdir -p ${TARGET_DIR}/rpm/
+                cp ${SYSTEMD_SERVICE_UNIT_FILE} ${TARGET_DIR}/rpm/${MATRIX_PKG}.service
             elif [[ "${SYSTEMD_SERVICE_UNIT_FILE}" == *"*" ]]; then
-                mkdir -p target/rpm/
-                cp ${SYSTEMD_SERVICE_UNIT_FILE} target/rpm
+                mkdir -p ${TARGET_DIR}/rpm/
+                cp ${SYSTEMD_SERVICE_UNIT_FILE} ${TARGET_DIR}/rpm
             fi
 
             # Ugly hack to use an alternate base Cargo Generate RPM configuration so that the selected variant overrides
@@ -1202,14 +1227,14 @@ jobs:
               SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
             fi
 
+            find ${TARGET_DIR}/release -maxdepth 1 -type f -executable | xargs strip -s -v
+
+            # This shouldn't be necessary...
+            rm -f ${TARGET_DIR}/generate-rpm/*.rpm
+
             if [[ '${{inputs.manifest_dir}}' != '' ]]; then
               pushd ${{inputs.manifest_dir}}
             fi
-
-            find target/release -maxdepth 1 -type f -executable | xargs strip -s -v
-
-            # This shouldn't be necessary...
-            rm -f target/generate-rpm/*.rpm
   
             cargo generate-rpm ${{needs.prepare.outputs.cargo_workspace_package_arg}} \
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
@@ -1225,13 +1250,15 @@ jobs:
 
     - name: Post-process the package
       run: |
+        TARGET_DIR="${{ steps.create.outputs.target_dir}}"
+
         case ${OS_NAME} in
           debian|ubuntu)
             # https://github.com/NLnetLabs/routinator/issues/783
             # Patch the generated DEB to have ./ paths compatible with `unattended-upgrade`:
-            ls -la target/debian/
+            ls -la ${TARGET_DIR}/debian/
 
-            pushd target/debian
+            pushd ${TARGET_DIR}/debian
             DEB_FILE_NAME=$(ls -1 *.deb | head -n 1)
             DATA_ARCHIVE=$(ar t ${DEB_FILE_NAME} | grep -E '^data\.tar')
             ar x ${DEB_FILE_NAME} ${DATA_ARCHIVE}
@@ -1251,9 +1278,9 @@ jobs:
             ar r ${DEB_FILE_NAME} ${DATA_ARCHIVE}
             popd
 
-            ls -la target/debian/
+            ls -la ${TARGET_DIR}/debian/
 
-            pushd target/debian
+            pushd ${TARGET_DIR}/debian
             dpkg -e ${DEB_FILE_NAME} control_files
             dpkg -x ${DEB_FILE_NAME} data_files
 
@@ -1276,9 +1303,9 @@ jobs:
             ;;
 
           centos|rockylinux)
-            ls -la target/generate-rpm/
+            ls -la ${TARGET_DIR}/generate-rpm/
 
-            pushd target/generate-rpm
+            pushd ${TARGET_DIR}/generate-rpm
             for F in *.rpm; do
               echo $F
               mkdir t
@@ -1310,9 +1337,14 @@ jobs:
       env:
         CROSS_TARGET: ${{ matrix.target }}
       run: |
+        TARGET_DIR="${{ steps.create.outputs.target_dir}}"
+        if [[ '${{ inputs.manifest_dir }}' != '' ]]; then
+          TARGET_DIR="${{ inputs.manifest_dir }}/target"
+        fi
+
         case ${OS_NAME} in
           debian|ubuntu)
-            dpkg --info target/debian/*.deb
+            dpkg --info ${TARGET_DIR}/debian/*.deb
 
             EXTRA_LINTIAN_ARGS="${{ matrix.deb_extra_lintian_args }}"
 
@@ -1345,7 +1377,7 @@ jobs:
             fi
 
             lintian --version
-            lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} target/debian/*.deb
+            lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} ${TARGET_DIR}/debian/*.deb
             ;;
 
           centos|rockylinux)
@@ -1425,7 +1457,7 @@ jobs:
             cat ${LINTER_CONFIG_PATH}
 
             rpmlint --version
-            rpmlint ${EXTRA_RPMLINT_ARGS} target/generate-rpm/*.rpm
+            rpmlint ${EXTRA_RPMLINT_ARGS} ${TARGET_DIR}/generate-rpm/*.rpm
             ;;
         esac
 
@@ -1437,8 +1469,8 @@ jobs:
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
-          target/debian/*.deb
-          target/generate-rpm/*.rpm
+          ${{ steps.create.outputs.target_dir }}/debian/*.deb
+          ${{ steps.create.outputs.target_dir }}/generate-rpm/*.rpm
 
   # -------------------------------------------------------------------------------------------------------------------
   # Job: 'pkg-test'
