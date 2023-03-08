@@ -527,7 +527,7 @@ jobs:
 
           CARGO_MANIFEST_PATH_ARG=""
           if [[ "${{ inputs.manifest_dir}}" != '' ]]; then
-            CARGO_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_path }}/Cargo.toml"
+            CARGO_MANIFEST_PATH_ARG="--manifest-path ${{ inputs.manifest_dir }}/Cargo.toml"
           fi
           echo "cargo_manifest_path_arg=${CARGO_MANIFEST_PATH_ARG}" >> $GITHUB_OUTPUT
 
