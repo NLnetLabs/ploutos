@@ -1118,7 +1118,7 @@ jobs:
                 mv ${{ needs.prepare.outputs.cargo_package_toml_path }} ${{ needs.prepare.outputs.cargo_package_toml_path }}.org
                 toml set \
                   ${{ needs.prepare.outputs.cargo_package_toml_path }}.org \
-                  package.metadata.deb.changelog target/${GEN_CHANGELOG_NAME} > \
+                  package.metadata.deb.changelog ../target/${GEN_CHANGELOG_NAME} > \
                   ${{ needs.prepare.outputs.cargo_package_toml_path }}
 
                 #
