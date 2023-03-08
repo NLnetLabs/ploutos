@@ -505,14 +505,17 @@ jobs:
           fi
           echo "cargo_workspace_package_arg=${CARGO_WORKSPACE_PACKAGE_ARG}" >> $GITHUB_OUTPUT
 
-          CARGO_PACKAGE_TOML_PATH="Cargo.toml"
+          CARGO_PACKAGE_TOML_PATH=""
           CARGO_READ_MANIFEST_PATH_ARG=""
           if [[ '${{ inputs.manifest_dir}}' != '' ]]; then
-            CARGO_PACKAGE_TOML_PATH="${{ inputs.manifest_dir }}"
-            if [[ '${{ inputs.workspace_package}}' != '' ]]; then
-              CARGO_PACKAGE_TOML_PATH="${CARGO_PACKAGE_TOML_PATH}/${{ inputs.workspace_package}}"
-            fi
-            CARGO_PACKAGE_TOML_PATH="${CARGO_PACKAGE_TOML_PATH}/Cargo.toml"
+            CARGO_PACKAGE_TOML_PATH="${{ inputs.manifest_dir }}/"
+          fi
+          if [[ '${{ inputs.workspace_package}}' != '' ]]; then
+            CARGO_PACKAGE_TOML_PATH="${CARGO_PACKAGE_TOML_PATH}${{ inputs.workspace_package}}/"
+          fi
+          CARGO_PACKAGE_TOML_PATH="${CARGO_PACKAGE_TOML_PATH}Cargo.toml"
+
+          if [[ "${CARGO_PACKAGE_TOML_PATH}" != "Cargo.toml"]]; then
             CARGO_READ_MANIFEST_PATH_ARG="--manifest-path ${CARGO_PACKAGE_TOML_PATH}"
           fi
 
