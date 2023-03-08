@@ -1077,7 +1077,8 @@ jobs:
             fi
 
             CHANGELOG_KEY="package.metadata.deb.changelog"
-            GEN_CHANGELOG_PATH="${TARGET_DIR}/debian/changelog"
+            GEN_CHANGELOG_NAME="debian/changelog"
+            GEN_CHANGELOG_PATH="${TARGET_DIR}/${GEN_CHANGELOG_NAME}"
             SET_CHANGELOG_PATH=$(toml get ${{ needs.prepare.outputs.cargo_package_toml_path }} ${CHANGELOG_KEY})
 
             case ${SET_CHANGELOG_PATH} in
@@ -1117,7 +1118,7 @@ jobs:
                 mv ${{ needs.prepare.outputs.cargo_package_toml_path }} ${{ needs.prepare.outputs.cargo_package_toml_path }}.org
                 toml set \
                   ${{ needs.prepare.outputs.cargo_package_toml_path }}.org \
-                  package.metadata.deb.changelog ${GEN_CHANGELOG_PATH} > \
+                  package.metadata.deb.changelog target/${GEN_CHANGELOG_NAME} > \
                   ${{ needs.prepare.outputs.cargo_package_toml_path }}
 
                 #
