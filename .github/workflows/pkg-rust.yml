@@ -1121,7 +1121,6 @@ jobs:
           centos|rockylinux)
             # Build and strip our app binaries as cargo generate-rpm doesn't do this for us
             cargo build ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --release --locked -v ${EXTRA_BUILD_ARGS}
-            find target/release -maxdepth 1 -type f -executable | xargs strip -s -v
 
             # TODO: It might be possible to replace the hacky copying of the service file below with some clever use of
             # `--set-metadata` when invoking cargo generate-rpm. Of particular interest is the new `--variant` command
@@ -1197,12 +1196,14 @@ jobs:
               SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
             fi
 
-            # This shouldn't be necessary...
-            rm -f target/generate-rpm/*.rpm
-
             if [[ '${{inputs.manifest_dir}}' != '' ]]; then
               pushd ${{inputs.manifest_dir}}
             fi
+
+            find target/release -maxdepth 1 -type f -executable | xargs strip -s -v
+
+            # This shouldn't be necessary...
+            rm -f target/generate-rpm/*.rpm
   
             cargo generate-rpm ${{needs.prepare.outputs.cargo_package_arg}} \
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
