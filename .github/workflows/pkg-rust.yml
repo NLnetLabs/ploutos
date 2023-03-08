@@ -657,7 +657,7 @@ jobs:
 
     - name: Cross compile
       run: |
-        cross ${{needs.prepare.outputs.cargo_extra_args}} build --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
+        cross build ${{needs.prepare.outputs.cargo_extra_args}} --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
       run: |
@@ -991,7 +991,7 @@ jobs:
           exit 1
         fi
 
-        APP_VER=$(cargo ${{needs.prepare.outputs.cargo_extra_args}} read-manifest | jq -r '.version')
+        APP_VER=$(cargo read-manifest ${{needs.prepare.outputs.cargo_extra_args}} | jq -r '.version')
         APP_NEW_VER=$(echo $APP_VER | tr '-' '~')
         NEXT_VER_LABEL="${{ inputs.next_ver_label }}"
         PKG_APP_VER=$(echo $APP_NEW_VER | sed -e "s/~$NEXT_VER_LABEL/-$NEXT_VER_LABEL/")
@@ -1059,7 +1059,7 @@ jobs:
                 #    With jq 1.5: del(recurse(.[]?;true)|select(. == null))
                 #    Older systems only have jq 1.5 so we have to use the more verbose construct.
                 V=${VARIANT:-null}
-                MAINTAINER=$(cargo ${{needs.prepare.outputs.cargo_extra_args}} read-manifest | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
+                MAINTAINER=$(cargo read-manifest ${{needs.prepare.outputs.cargo_extra_args}} | jq -r '[.metadata.deb.variants."'$V'".maintainer, .metadata.deb.maintainer, .authors[0]] | del(recurse(.[]?;true)|select(. == null))[0]')
 
                 # 2. Generate the RFC 5322 format date by hand instead of using date --rfc-email because that option doesn't
                 #    exist on Ubuntu 16.04 and Debian 9
@@ -1092,12 +1092,12 @@ jobs:
             # This shouldn't be necessary...
             rm -f target/debian/*.deb
 
-            cargo ${{needs.prepare.outputs.cargo_extra_args}} deb --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
+            cargo deb ${{needs.prepare.outputs.cargo_extra_args}} --deb-version ${DEB_VER} ${OPT_VARIANT_ARG} -v ${EXTRA_CARGO_DEB_ARGS} -- --locked ${EXTRA_BUILD_ARGS}
             ;;
 
           centos|rockylinux)
             # Build and strip our app binaries as cargo generate-rpm doesn't do this for us
-            cargo ${{needs.prepare.outputs.cargo_extra_args}} build --release --locked -v ${EXTRA_BUILD_ARGS}
+            cargo build ${{needs.prepare.outputs.cargo_extra_args}} --release --locked -v ${EXTRA_BUILD_ARGS}
             find target/release -maxdepth 1 -type f -executable | xargs strip -s -v
 
             # TODO: It might be possible to replace the hacky copying of the service file below with some clever use of
@@ -1177,7 +1177,7 @@ jobs:
             # This shouldn't be necessary...
             rm -f target/generate-rpm/*.rpm
 
-            cargo ${{needs.prepare.outputs.cargo_extra_args}} generate-rpm \
+            cargo generate-rpm ${{needs.prepare.outputs.cargo_extra_args}} \
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
                 ${SCRIPTLETS} \
                 ${EXTRA_CARGO_GENERATE_RPM_ARGS}
