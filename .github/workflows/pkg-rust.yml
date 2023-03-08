@@ -1208,11 +1208,12 @@ jobs:
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
                 ${SCRIPTLETS} \
                 ${EXTRA_CARGO_GENERATE_RPM_ARGS}
-            ;;
 
             if [[ '${{inputs.manifest_dir}}' != '' ]]; then
               popd
             fi
+
+            ;;
         esac
 
     - name: Post-process the package
