@@ -8,6 +8,7 @@
 - [Next dev version](#next-dev-version)
 - [Matrix rules](#matrix-rules)
 - [Caching and performance](#caching-and-performance)
+- [Cargo workspace support](#cargo-workspace-support)
 
 ## Stability promise
 
@@ -132,8 +133,19 @@ _**Known issue:** [Inconsistent Rust compiler version](https://github.com/NLnetL
 
 By default temporary and final produced artifacts are named under the assumption that no other workflow jobs exist that also upload artifacts and thus may cause artifact name conflicts.
 
-If necessary the `artifact_prefix` worjflow string input can be used to specify a prefix that will be added to every GitHub actions artifact uploaded by Ploutos.
+If necessary the `artifact_prefix` workflow string input can be used to specify a prefix that will be added to every GitHub actions artifact uploaded by Ploutos.
 
 ## Strict mode
 
 Some actions performed by Ploutos can result in warnings or errors that are potentially spurious, that is to say that just because Lintian or rpmlint or some other tool reports a problem does not mean to say that we should consider it fatal. For such cases Ploutos by default includes the output of the tools in the log, and in some cases raises warnings in the workflow log, but won't fail the workflow run. If needed by setting the `strict_mode` workflow input to `true` you can force Ploutos to be stricter in some cases than it would normally be.
+
+## Cargo workspace support
+
+A Rust Cargo "workspace" (see [here](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html) and [here](https://doc.rust-lang.org/cargo/reference/workspaces.html)) is a _"set of packages that share the same Cargo.lock and output directory"_.
+
+When using the workspace feature without a root package, i.e. your root `Cargo.toml` lacks a `[package]` section, this is known as a "virtual" workspace or manifest. When using a virtual workspace the package tooling is unable to find the configuration it needs in the root `Cargo.toml` and so you need to provide additional Ploutos settings to guide the package tooling to the right place.
+
+Two string workflow inputs exist for this purpose:
+
+- `manifest_dir` - directs Ploutos to the directory containing the root `Cargo.toml`, if not actually in the root directory.
+- `workspace_package` - tells Ploutos which "workspace member" (child project directory) contains a `Cargo.toml` that includes the `[package]` section.
