@@ -1437,7 +1437,6 @@ jobs:
         addFilter(".: no-group-tag")
         addFilter(".: no-packager-tag")
         addFilter(".: no-signature")
-        addFilter(".: no-url-tag")
         EOF
 
                 # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
