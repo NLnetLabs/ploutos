@@ -1353,7 +1353,7 @@ jobs:
             EXTRA_LINTIAN_ARGS="${{ matrix.deb_extra_lintian_args }}"
 
             case ${OS_REL} in
-              bionic|buster|stretch)
+              bionic|xenial|buster|stretch)
                 ;;
 
               *)
