@@ -1351,6 +1351,7 @@ jobs:
             dpkg --info ${TARGET_DIR}/debian/*.deb
 
             EXTRA_LINTIAN_ARGS="${{ matrix.deb_extra_lintian_args }}"
+            EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --supress-tags manpage-not-compressed-with-max-compression"
 
             case ${OS_REL} in
               bionic|xenial|buster|stretch)
