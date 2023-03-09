@@ -1066,7 +1066,10 @@ jobs:
             # Prefer the "minimal" cargo-deb profile, if one exists in `Cargo.toml`:
             if grep -qF "[package.metadata.deb.variants.${MINIMAL_VARIANT}]" ${{ needs.prepare.outputs.cargo_package_toml_path }}; then
                 case ${OS_REL} in
-                  xenial|bionic|stretch) VARIANT="${MINIMAL_VARIANT}" ;;
+                  xenial|bionic)
+                  stretch)
+                    VARIANT="${MINIMAL_VARIANT}"
+                    ;;
                 esac
             fi
 
@@ -1354,7 +1357,8 @@ jobs:
             EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --suppress-tags manpage-not-compressed-with-max-compression"
 
             case ${OS_REL} in
-              bionic|xenial|buster|stretch)
+              xenial|bionic|focal)
+              stretch|buster)
                 ;;
 
               *)
@@ -1371,7 +1375,8 @@ jobs:
                 focal)
                   ;;
 
-                xenial|bionic|stretch|buster)
+                xenial|bionic)
+                stretch|buster)
                   EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --fail-on-warnings"
                   ;;
 
@@ -1381,7 +1386,8 @@ jobs:
               esac
             else
               case ${OS_REL} in
-                focal|xenial|bionic|stretch|buster)
+                xenial|bionic|focal)
+                stretch|buster)
                   ;;
 
                 *)
