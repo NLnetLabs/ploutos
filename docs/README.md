@@ -15,6 +15,8 @@ In this documentation we'll show you how to invoke the NLnet Labs Rust Cargo Pac
 
 - **FAQ:** If your question isn't answered here, or you'd just like to know more, checkout the [FAQ](./FAQ.md).
 
+- **Ploutos presentation:** Learn more about Ploutos and [see it in action](https://www.youtube.com/watch?v=ZZnLC0KmkHs) as presented at the November 30 2022 Rust Nederland meetup.
+
 - **The starter workflow:** If you already know how to use this workflow but just want to quickly add it to a new project you might find the [starter workflow](../starter_workflow.md) helpful _(**only** visible to NLnet Labs GitHub organization members unfortunately)_.
 
 - **The demo template:** This [template](template/README.md) can be used to create your own repository with sample input files and workflow invocation to get started with the Ploutos workflow.
