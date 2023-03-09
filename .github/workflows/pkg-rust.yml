@@ -1350,7 +1350,8 @@ jobs:
           debian|ubuntu)
             dpkg --info ${TARGET_DIR}/debian/*.deb
 
-            EXTRA_LINTIAN_ARGS="${{ matrix.deb_extra_lintian_args }}"
+            EXTRA_LINTIAN_ARGS="--suppress-tags poor-compression-in-manual-page" # since cargo-deb was upgraded from 1.38.4 to 1.42.2
+            EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} ${{ matrix.deb_extra_lintian_args }}"
 
             if [[ "${CROSS_TARGET}" != "x86_64" ]]; then
               EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --suppress-tags unstripped-binary-or-object,statically-linked-binary"
