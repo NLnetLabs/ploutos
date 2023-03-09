@@ -141,7 +141,7 @@ Some actions performed by Ploutos can result in warnings or errors that are pote
 
 ## Cargo workspace support
 
-A Rust Cargo "workspace" (see [here](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html) and [here](https://doc.rust-lang.org/cargo/reference/workspaces.html) is a _"set of packages that share the same Cargo.lock and output directory"_.
+A Rust Cargo "workspace" (see [here](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html) and [here](https://doc.rust-lang.org/cargo/reference/workspaces.html)) is a _"set of packages that share the same Cargo.lock and output directory"_.
 
 When using the workspace feature without a root package, i.e. your root `Cargo.toml` lacks a `[package]` section, this is known as a "virtual" workspace or manifest. When using a virtual workspace the package tooling is unable to find the configuration it needs in the root `Cargo.toml` and so you need to provide additional Ploutos settings to guide the package tooling to the right place.
 
