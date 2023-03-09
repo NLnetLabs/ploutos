@@ -1354,6 +1354,9 @@ jobs:
 
             case ${OS_REL} in
               stretch)
+                ;;
+
+              *)
                 EXTRA_LINTIAN_ARGS="${EXTRA_LINTIAN_ARGS} --suppress-tags poor-compression-in-manual-page"
                 ;;
             esac
