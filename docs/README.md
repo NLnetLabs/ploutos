@@ -53,4 +53,5 @@ To learn more about how to build a particular package type using the Ploutos wor
 
 - [Cross compiling](./cross_compiling.md)
 - [Creating O/S packages](./os_packaging.md)
-- [Creating Docker images](./docker_packaging.md)
+- [Publishing O/S packages](./os_publishing.md)
+- [Creating & publishing Docker images](./docker_packaging.md)
