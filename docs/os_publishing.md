@@ -8,6 +8,8 @@
 
 # Introduction
 
+Ploutos produces O/S packages such as DEB and RPM files (contained within ZIP archives attached to GitHub Actions workflow runs), but it doesn't "publish" them for you.
+
 Publishing of O/S packages is the process of making them available on a web server (your "online repository") somewhere in the correct directory structure with the correct accompanying metadata files such that standard O/S packaging tools like `apt` and `yum` can find and install packages from your "online repository".
 
 # Considerations
