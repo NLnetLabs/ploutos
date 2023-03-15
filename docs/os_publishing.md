@@ -18,6 +18,7 @@ Publishing of O/S packages is the process of making them available on a web serv
 - **What kind of availability guarantees do you want?** Does it matter if your repository is offline or slow or unreachable sometimes and/or to some clients?
 - **How long do you expect to keep the repository?** This can influence how much room you need for growth, or if you want the repository to also support additional package types later.
 - **How do you want to manage the metadata?** By invoking stock packaging tool commands manually, or by using some tooling to help you, or even by using a 3rd party service to do the work for you?
+- **Who should have access to your package signing key?**
 
 # Doing it yourself
 
