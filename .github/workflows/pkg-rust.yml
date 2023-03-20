@@ -1314,7 +1314,7 @@ jobs:
             pushd ${TARGET_DIR}/generate-rpm
             for F in *.rpm; do
               echo Printing package info
-              rpm -qi $F
+              rpm -qip $F
   
               echo $F
               mkdir t
