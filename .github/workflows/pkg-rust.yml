@@ -727,7 +727,7 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare.outputs.package_build_rules) }}
     env:
       CARGO_DEB_VER: 1.42.2
-      CARGO_GENERATE_RPM_VER: 0.10.1
+      CARGO_GENERATE_RPM_VER: 0.10.2
       TOML_CLI_VER: 0.2.3
     steps:
     - name: Checkout repository
@@ -1313,6 +1313,9 @@ jobs:
 
             pushd ${TARGET_DIR}/generate-rpm
             for F in *.rpm; do
+              echo Printing package info
+              rpm -qip $F
+  
               echo $F
               mkdir t
               pushd t
