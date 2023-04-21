@@ -708,7 +708,7 @@ jobs:
     # artifacts to be packaged by the scripts that upload to packages.nlnetlabs.nl we prefix the artifact name with
     # `tmp-` which will be ignored by packages.nlnetlabs.nl scripts.
     - name: Upload built binaries
-      uses: umutoz/upload-artifactd@fixing-unrecognized-if-no-files-found-input-error
+      uses: umutoz/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
       with:
         name: ${{ inputs.artifact_prefix }}tmp-cross-binaries-${{ matrix.target }}
         path: bins.tar
@@ -1489,7 +1489,7 @@ jobs:
     # but only to users logged in to GH with sufficient rights in this project. The uploaded artifact is also downloaded
     # by the next job (see below) to sanity check that it can be installed and results in a working Krill installation.
     - name: Upload package
-      uses: umutoz/upload-artifactd@fixing-unrecognized-if-no-files-found-input-error
+      uses: umutoz/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
@@ -1947,7 +1947,7 @@ jobs:
 
       # Upload the Docker image as a GitHub Actions artifact, handy when not publishing or investigating a problem
       - name: Upload built image to GitHub Actions
-        uses: umutoz/upload-artifactd@fixing-unrecognized-if-no-files-found-input-error
+        uses: umutoz/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
         with:
           name: ${{ inputs.artifact_prefix }}tmp-docker-image-${{ matrix.shortname }}
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
