@@ -298,7 +298,7 @@ jobs:
   # -------------------------------------------------------------------------------------------------------------------
   # Validate and pre-process inputs.
   prepare:
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     outputs:
       cargo_name: ${{ steps.verify_inputs.outputs.cargo_name }}
       cargo_package_toml_path: ${{ steps.verify_inputs.outputs.cargo_package_toml_path }}
@@ -660,7 +660,7 @@ jobs:
   cross:
     if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
@@ -724,7 +724,7 @@ jobs:
     # Use of always() here ensures that even if the cross job is skipped we will still run
     if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
     needs: prepare
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
     # Specifying container causes all of the steps in this job to run inside a Docker container (which is why the
     # cross-compilation needs to happen above in its own non-containerized job).
@@ -1508,7 +1508,7 @@ jobs:
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.package_test_rules) }}
@@ -1821,7 +1821,7 @@ jobs:
     needs: prepare
     outputs:
       published: ${{ steps.publish.conclusion == 'success' }}
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.docker_build_rules) }}
@@ -1980,7 +1980,7 @@ jobs:
     # Use of always() here ensures that even if the _cross_ job (note: not the 'docker' job) is skipped we will still run.
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.docker_build_rules != '{}' && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - name: Log into Docker Hub
         uses: docker/login-action@v2
