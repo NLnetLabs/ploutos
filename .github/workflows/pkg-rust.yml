@@ -683,6 +683,10 @@ jobs:
         cargo install cross
         echo "installed=true" >> $GITHUB_OUTPUT
 
+    - name: Ensure ~/.cargo/bin/ is in the path
+      run: |
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
     - name: Force cache save
       if: ${{ steps.install-cargo-cross.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
