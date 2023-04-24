@@ -672,8 +672,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          /home/runner/.cargo/bin/cross
-          /home/runner/.cargo/bin/cross-util
+          .cargo/bin/cross
+          .cargo/bin/cross-util
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Install cargo cross if needed
@@ -683,17 +683,17 @@ jobs:
         cargo install cross
         echo "installed=true" >> $GITHUB_OUTPUT
 
-    - name: Ensure ~/.cargo/bin/ is in the path
+    - name: Ensure .cargo/bin/ is in the path
       run: |
-        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        echo "$PWD/.cargo/bin" >> $GITHUB_PATH
 
     - name: Force cache save
       if: ${{ steps.install-cargo-cross.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: |
-          /home/runner/.cargo/bin/cross
-          /home/runner/.cargo/bin/cross-util
+          .cargo/bin/cross
+          .cargo/bin/cross-util
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Cross compile
