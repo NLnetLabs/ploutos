@@ -810,6 +810,14 @@ jobs:
       if: ${{ matrix.image == 'centos:8' }}
       run: |
         sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+    
+    # See: https://github.com/NLnetLabs/ploutos
+    # See: https://lists.debian.org/debian-devel-announce/2023/03/msg00006.html
+    # See: https://unix.stackexchange.com/a/743865
+    - name: Debian Stretch workaround
+      if: ${{ matrix.image == 'debian:stretch' }}
+      run: |
+        echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
 
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
