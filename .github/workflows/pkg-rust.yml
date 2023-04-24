@@ -818,6 +818,7 @@ jobs:
       if: ${{ matrix.image == 'debian:stretch' }}
       run: |
         echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
+        echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
 
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
