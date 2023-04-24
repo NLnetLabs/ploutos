@@ -672,8 +672,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          $HOME/.cargo/bin/cross
-          $HOME/.cargo/bin/cross-util
+          ~/.cargo/bin/cross
+          ~/.cargo/bin/cross-util
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Install cargo cross if needed
@@ -688,9 +688,13 @@ jobs:
       uses: actions/cache/save@v3
       with:
         path: |
-          $HOME/.cargo/bin/cross
-          $HOME/.cargo/bin/cross-util
+          ~/.cargo/bin/cross
+          ~/.cargo/bin/cross-util
         key: ${{ matrix.target }}-cargo-cross
+
+    - name: Ensure ~/.cargo/bin/ is in the path
+      run: |
+        echo $(realpath ~/.cargo/bin) >> $GITHUB_PATH
 
     - name: Cross compile
       run: |
