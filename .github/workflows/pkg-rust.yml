@@ -1675,7 +1675,7 @@ jobs:
             if [[ "${MATRIX_IMAGE}" == "centos:8" ]]; then
               # allow CentOS 8 to continue working now that it is EOL
               # see: https://stackoverflow.com/a/70930049
-              sudo lxc exec testcon -- sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+              sudo lxc exec testcon -- find /etc/yum.repos.d/ -name 'CentOS-Linux-*' -exec sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' {} \;
             fi
             sudo lxc exec testcon -- yum install -y man
             ;;
