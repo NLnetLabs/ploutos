@@ -130,7 +130,12 @@ on:
   workflow_call:
     inputs:
       runs_on:
-        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner."
+        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner. Defaults to ubuntu-latest."
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+      cross_runs_on:
+        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner from cross-compilation jobs. Defaults to the value of runs_on."
         required: false
         type: string
         default: ''
@@ -443,18 +448,18 @@ jobs:
           else
             RUNS_ON="\"${{ inputs.runs_on }}\""
           fi
+          
+          if [[ "${{ inputs.cross_runs_on }}" == '' ]; then
+            CROSS_RUNS_ON="${RUNS_ON}"
+          else
+            CROSS_RUNS_ON="\"${{ inputs.cross_runs_on }}\""
+          fi
 
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
             echo '{}' >> $GITHUB_OUTPUT
-            CROSS_RUNS_ON="${RUNS_ON}"
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
-            if [[ "${{ inputs.runs_on }}" == '' ]]; then
-              CROSS_RUNS_ON="${RUNS_ON}"
-            else
-              CROSS_RUNS_ON="\"ploutos-cross\", ${RUNS_ON}"
-            fi
           fi
           echo "END_OF_TARGETS" >> $GITHUB_OUTPUT
           
