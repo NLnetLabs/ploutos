@@ -677,7 +677,7 @@ jobs:
   cross:
     #if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
-    runs-on: ${{ needs.prepare.outputs.cross_runs_on }}
+    runs-on: ${{ fromJSON(needs.prepare.outputs.cross_runs_on) }}
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
