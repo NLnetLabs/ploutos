@@ -450,7 +450,7 @@ jobs:
             CROSS_RUNS_ON="{ \"labels\": [${{ inputs.runs_on }}] }"
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
-            RUNS_ON="{ \"labels\": [${{ inputs.runs_on }}] "
+            RUNS_ON="{ \"labels\": [${{ inputs.runs_on }}] }"
             if [[ "${{ inputs.runs_on}}" == '' ]]; then
               CROSS_RUNS_ON="${RUNS_ON}"
             else
