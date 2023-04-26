@@ -667,7 +667,7 @@ jobs:
     - name: Skip if no cross-compilation required
       id: skip
       run:
-        if [ "${{ matrix.target }}" == "skip" ]; then
+        if [[ "${{ matrix.target }}" == "skip" ]]; then
           echo "skip=true" >> $GITHUB_OUTPUT
         else
           echo "skip=false" >> $GITHUB_OUTPUT
