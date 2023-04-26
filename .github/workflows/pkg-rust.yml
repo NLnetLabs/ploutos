@@ -681,7 +681,7 @@ jobs:
   #
   # See: https://github.com/rust-embedded/cross#docker-in-docker
   cross:
-    #if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
+    if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
     runs-on: ${{ fromJSON(needs.prepare.outputs.cross_runs_on) }}
     strategy:
