@@ -883,6 +883,10 @@ jobs:
             ;;
         esac
 
+    - name: Diagnostics
+      run:
+        ls -la /var/cache/apt
+
     - name: Force cache save
       uses: actions/cache/save@v3
       with:
