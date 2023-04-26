@@ -447,14 +447,14 @@ jobs:
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
             echo '{}' >> $GITHUB_OUTPUT
-            CROSS_RUNS_ON="${{ inputs.runs_on }}"
+            CROSS_RUNS_ON="{ \"labels\": [${{ inputs.runs_on }}] }"
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
-            RUNS_ON="${{ inputs.runs_on }}"
+            RUNS_ON="{ \"labels\": [${{ inputs.runs_on }}] "
             if [[ "${{ inputs.runs_on}}" == '' ]]; then
               CROSS_RUNS_ON="${RUNS_ON}"
             else
-              CROSS_RUNS_ON="${{ format('[ploutos-cross, {0}]', inputs.runs_on) }}"
+              CROSS_RUNS_ON="{ \"labels\": ${{ format('[ploutos-cross, {0}]', inputs.runs_on) }} }"
             fi
           fi
           echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
