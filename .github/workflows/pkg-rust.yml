@@ -441,30 +441,35 @@ jobs:
           if [[ "${{ inputs.runs_on }}" == '' ]]; then
             RUNS_ON="ubuntu-latest"
           else
-            RUNS_ON="{ \"labels\": [\"${{ inputs.runs_on }}\"] }"
+            RUNS_ON="${{ inputs.runs_on }}"
           fi
 
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
             echo '{}' >> $GITHUB_OUTPUT
-            CROSS_RUNS_ON="{ \"labels\": [\"${{ inputs.runs_on }}\"] }"
+            CROSS_RUNS_ON="${RUNS_ON}"
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
-            RUNS_ON="{ \"labels\": [\"${{ inputs.runs_on }}\"] }"
             if [[ "${{ inputs.runs_on}}" == '' ]]; then
               CROSS_RUNS_ON="${RUNS_ON}"
             else
-              CROSS_RUNS_ON="{ \"labels\": ${{ format('["ploutos-cross", "{0}"]', inputs.runs_on) }} }"
+              CROSS_RUNS_ON="[\"ploutos-cross\", \"${RUNS_ON}\"]"
             fi
           fi
-          echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
+          echo "END_OF_TARGETS" >> $GITHUB_OUTPUT
+          
+          echo "runs_on<<END_OF_RUNS_ON" >> $GITHUB_OUTPUT
+          echo '{ "labels": ' ${RUNS_ON} '}' | jq >> $GITHUB_OUTPUT
+          echo "END_OF_RUNS_ON" >> $GITHUB_OUTPUT
+    
+          echo "cross_runs_on<<END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
+          echo '{ "labels": ' ${CROSS_RUNS_ON} '}' | jq >> $GITHUB_OUTPUT
+          echo "END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
 
           RETRY_DELAY_MS=30000
           MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
           echo "retry_delay_ms=${RETRY_DELAY_MS}" >> $GITHUB_OUTPUT
           echo "max_tries=${MAX_TRIES}" >> $GITHUB_OUTPUT
-          echo "runs_on=${RUNS_ON}" >> $GITHUB_OUTPUT
-          echo "cross_runs_on=${CROSS_RUNS_ON}" >> $GITHUB_OUTPUT
 
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
