@@ -9,6 +9,7 @@
 - [Matrix rules](#matrix-rules)
 - [Caching and performance](#caching-and-performance)
 - [Cargo workspace support](#cargo-workspace-support)
+- [Custom runner support](#custom-runner-support)
 
 ## Stability promise
 
@@ -149,3 +150,13 @@ Two string workflow inputs exist for this purpose:
 
 - `manifest_dir` - directs Ploutos to the directory containing the root `Cargo.toml`, if not actually in the root directory.
 - `workspace_package` - tells Ploutos which "workspace member" (child project directory) contains a `Cargo.toml` that includes the `[package]` section.
+
+## Custom runner support
+
+By default Ploutos is configured with a suitable [GitHub hosted runner type](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners) to run Ploutos jobs on.
+
+By specifing a `runs_on` workflow input you can cause Ploutos to run its jobs on a different runner type.
+
+The motivating use case for this option is to run Ploutos jobs on a [self-hosted runner](https://docs.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners) instead, e.g. to use a more powerful machine or to avoid having to install or copy slow or large applications or data in to the build environment, or to manage cost by using your own host instead of one that GitHub charges for.
+
+If using a self-hosted runner, Ploutos assumes that [software preinstalled in GitHub hosted runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-software) are available so you may also need to install additional tools on your self-hosted runner, e.g. at the time of writing recent versions of `jq`, `yq` and Rust are needed. You will also need to ensure that Docker and LXC/LXD are installed. These tools should be installed system-wide and the actions runner software should run as `root` (by installing it with `./svc.sh install root`) otherwise it will not be able to issue Docker commands (adding the user to the `docker` group isn't enough as it will later try to remove files and fail as they will be owned by `root`).

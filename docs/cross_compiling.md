@@ -7,6 +7,7 @@
 - [Outputs](#outputs)
 - [How it works](#how-it-works)
   - [Why is the cross tool used?](#why-is-the-cross-tool-used)
+- [Custom runner support](#custom-runner-support)
 
 ## Known issues
 
@@ -50,3 +51,7 @@ Docker buildx QEmu based cross-compilation for example is far too slow ([due to 
 Native Rust Cargo support for cross-compilation requires you to know more about the required toolchain, to install the required tools yourself including the appropriate strip tool, set required environment variables, and to add a `.cargo/config.toml` file to your project with the paths to the tools to use (which may vary by build environment!).
 
 As a Rust project, the fact that the `cross` tool was originally developed by the Rust Embedded Working Group Tools team makes it highly attractive for our use case.
+
+## Custom runner support
+
+When using the `runs_on` workflow input to assign a custom GitHub hosted or self-hosted runner for Ploutos to use, with cross-compiling there is a risk, if the pool of available runners is small, that the Ploutos workflow can become stuck waiting for a cross-compiled artifact while no runner exists to assign to the cross compilation job. As a work-around for this particular edge case you can also specify a `cross_runs_on` workflow input. The `cross_runs_on` label should be assigned to at least one GitHub runner which does **NOT** have the label specified in the `runs_on` workflow input. This ensures that there is always at least one runner available to carry out cross-compilation thereby unblocking the workflow.

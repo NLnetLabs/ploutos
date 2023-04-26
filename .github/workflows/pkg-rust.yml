@@ -129,6 +129,17 @@ name: Packaging
 on:
   workflow_call:
     inputs:
+      runs_on:
+        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner. Defaults to ubuntu-latest."
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+      cross_runs_on:
+        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner from cross-compilation jobs. Defaults to the value of runs_on."
+        required: false
+        type: string
+        default: ''
+
       artifact_prefix:
         description: "An optional prefix to apply to generated artifact names. Intended for internal testing."
         required: false
@@ -292,7 +303,7 @@ jobs:
   # -------------------------------------------------------------------------------------------------------------------
   # Validate and pre-process inputs.
   prepare:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ inputs.runs_on }}
     outputs:
       cargo_name: ${{ steps.verify_inputs.outputs.cargo_name }}
       cargo_package_toml_path: ${{ steps.verify_inputs.outputs.cargo_package_toml_path }}
@@ -303,9 +314,11 @@ jobs:
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
+      runs_on: ${{ steps.determine_cross_build_rules.outputs.runs_on }}
       cross_build_rules: ${{ steps.determine_cross_build_rules.outputs.matrix }}
       cross_max_tries: ${{ steps.determine_cross_build_rules.outputs.max_tries }}
       cross_retry_delay_ms: ${{ steps.determine_cross_build_rules.outputs.retry_delay_ms }}
+      cross_runs_on: ${{ steps.determine_cross_build_rules.outputs.cross_runs_on }}
       docker_build_rules: ${{ steps.pre_process_rules.outputs.docker_build_rules }}
       package_build_rules: ${{ steps.pre_process_rules.outputs.package_build_rules }}
       package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
@@ -430,13 +443,29 @@ jobs:
           # This is a bit ridiculous invoking jq three times... there must be an easier way
           ALL_TARGETS=$(echo ${DOCKER_TARGETS} ${PKG_TARGETS} | jq -s 'flatten | unique | .[] | select(. != "x86_64")' | jq -s)
 
+          RUNS_ON="\"${{ inputs.runs_on }}\""
+
+          if [ "${{ inputs.cross_runs_on }}" == '' ]; then
+            CROSS_RUNS_ON="${RUNS_ON}"
+          else
+            CROSS_RUNS_ON="\"${{ inputs.cross_runs_on }}\""
+          fi
+
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
             echo '{}' >> $GITHUB_OUTPUT
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
           fi
-          echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
+          echo "END_OF_TARGETS" >> $GITHUB_OUTPUT
+          
+          echo "runs_on<<END_OF_RUNS_ON" >> $GITHUB_OUTPUT
+          echo '{ "labels": [' ${RUNS_ON} '] }' | jq >> $GITHUB_OUTPUT
+          echo "END_OF_RUNS_ON" >> $GITHUB_OUTPUT
+    
+          echo "cross_runs_on<<END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
+          echo '{ "labels": [' ${CROSS_RUNS_ON} '] }' | jq >> $GITHUB_OUTPUT
+          echo "END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
 
           RETRY_DELAY_MS=30000
           MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
@@ -654,43 +683,79 @@ jobs:
   cross:
     if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
-    runs-on: ubuntu-20.04
+    runs-on: ${{ fromJSON(needs.prepare.outputs.cross_runs_on) }}
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
+    - name: Skip if no cross-compilation required
+      id: skip
+      run: |
+        if [[ "${{ matrix.target }}" == "skip" ]]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Checkout repository
+      if: ${{ steps.skip.skip != 'true' }}
       uses: actions/checkout@v3
 
+    # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
+    # Cargo cross "requires a rustup installation of Rust", an O/S package provided Rust won't
+    - name: Install Rust
+      if: ${{ steps.skip.skip != 'true' }}
+      id: rust
+      run: |
+        case ${OS_NAME} in
+          debian|ubuntu)
+            apt-get update
+            apt-get install -y curl
+            ;;
+        esac
+
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --profile minimal -y
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        source "$HOME/.cargo/env"
+        echo "bin_dir=$HOME/.cargo/bin" >> $GITHUB_OUTPUT
+
     - name: Fetch cargo cross if available
+      if: ${{ steps.skip.skip != 'true' }}
       id: cache-cargo-cross
       uses: actions/cache@v3
       with:
         path: |
-          /home/runner/.cargo/bin/cross
-          /home/runner/.cargo/bin/cross-util
+          ${{ steps.rust.outputs.bin_dir }}/cross
+          ${{ steps.rust.outputs.bin_dir }}/cross-util
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Install cargo cross if needed
       id: install-cargo-cross
-      if: ${{ steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
+      if: ${{ steps.skip.skip != 'true' && steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
       run: |
         cargo install cross
         echo "installed=true" >> $GITHUB_OUTPUT
 
     - name: Force cache save
-      if: ${{ steps.install-cargo-cross.outputs.installed == 'true' }}
+      if: ${{ steps.skip.skip != 'true' && steps.install-cargo-cross.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: |
-          /home/runner/.cargo/bin/cross
-          /home/runner/.cargo/bin/cross-util
+          ${{ steps.rust.outputs.bin_dir }}/cross
+          ${{ steps.rust.outputs.bin_dir }}/cross-util
         key: ${{ matrix.target }}-cargo-cross
 
+    - name: Ensure ~/.cargo/bin/ is in the path
+      if: ${{ steps.skip.skip != 'true' }}
+      run: |
+        echo $(realpath ~/.cargo/bin) >> $GITHUB_PATH
+
     - name: Cross compile
+      if: ${{ steps.skip.skip != 'true' }}
       run: |
         cross build ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
+      if: ${{ steps.skip.skip != 'true' }}
       run: |
         rm -f bins.tar
         find target/${{ matrix.target }}/release/ -maxdepth 1 -type f -executable | xargs tar vpcf bins.tar
@@ -702,7 +767,8 @@ jobs:
     # artifacts to be packaged by the scripts that upload to packages.nlnetlabs.nl we prefix the artifact name with
     # `tmp-` which will be ignored by packages.nlnetlabs.nl scripts.
     - name: Upload built binaries
-      uses: actions/upload-artifact@v3
+      if: ${{ steps.skip.skip != 'true' }}
+      uses: umutozd/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
       with:
         name: ${{ inputs.artifact_prefix }}tmp-cross-binaries-${{ matrix.target }}
         path: bins.tar
@@ -718,7 +784,7 @@ jobs:
     # Use of always() here ensures that even if the cross job is skipped we will still run
     if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
     needs: prepare
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.prepare.outputs.runs_on) }}
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
     # Specifying container causes all of the steps in this job to run inside a Docker container (which is why the
     # cross-compilation needs to happen above in its own non-containerized job).
@@ -1492,7 +1558,7 @@ jobs:
     # but only to users logged in to GH with sufficient rights in this project. The uploaded artifact is also downloaded
     # by the next job (see below) to sanity check that it can be installed and results in a working Krill installation.
     - name: Upload package
-      uses: actions/upload-artifact@v3
+      uses: umutozd/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
@@ -1511,7 +1577,7 @@ jobs:
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
-    runs-on: ubuntu-20.04
+    runs-on: ${{ inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.package_test_rules) }}
@@ -1614,18 +1680,18 @@ jobs:
 
     - name: Check LXD configuration
       run: |
-        sg lxd -c "lxc info"
+        sudo lxc info
 
     # Use of IPv6 sometimes prevents yum update being able to resolve mirrorlist.centos.org.
     - name: Disable LXD assignment of IPv6 addresses
       run: |
-        sg lxd -c "lxc network set lxdbr0 ipv6.address none"
+        sudo lxc network set lxdbr0 ipv6.address none
 
     - name: Launch LXC container
       run: |
         # security.nesting=true is needed to avoid error "Failed to set up mount namespacing: Permission denied" in a
         # Debian 10 container.
-        sg lxd -c "lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon"
+        sudo lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon
 
     # Run package update and install man and sudo support (missing in some LXC/LXD O/S images) but first wait for
     # cloud-init to finish otherwise the network isn't yet ready. Don't use cloud-init status --wait as that isn't
@@ -1641,16 +1707,16 @@ jobs:
 
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get update"
-            sg lxd -c "lxc exec testcon -- apt-get install -y -o Dpkg::Options::=\"--force-confnew\" apt-transport-https ca-certificates man sudo wget"
+            sudo lxc exec testcon -- apt-get update
+            sudo lxc exec testcon -- apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https ca-certificates man sudo wget
             ;;
           centos|rockylinux)
             if [[ "${MATRIX_IMAGE}" == "centos:8" ]]; then
               # allow CentOS 8 to continue working now that it is EOL
               # see: https://stackoverflow.com/a/70930049
-              sg lxd -c "lxc exec testcon -- sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*"
+              sudo lxc exec testcon -- find /etc/yum.repos.d/ -name 'CentOS-Linux-*' -exec sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' {} \;
             fi
-            sg lxd -c "lxc exec testcon -- yum install -y man"
+            sudo lxc exec testcon -- yum install -y man
             ;;
         esac
 
@@ -1659,12 +1725,12 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             DEB_FILE=$(ls -1 debian/*.deb)
-            sg lxd -c "lxc file push ${DEB_FILE} testcon/tmp/"
+            sudo lxc file push ${DEB_FILE} testcon/tmp/
             echo "PKG_FILE=$(basename $DEB_FILE)" >> $GITHUB_ENV
             ;;
           centos|rockylinux)
             RPM_FILE=$(ls -1 generate-rpm/*.rpm)
-            sg lxd -c "lxc file push ${RPM_FILE} testcon/tmp/"
+            sudo lxc file push ${RPM_FILE} testcon/tmp/
             echo "PKG_FILE=$(basename $RPM_FILE)" >> $GITHUB_ENV
             ;;
         esac
@@ -1676,16 +1742,16 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             if [[ -f '${{ inputs.deb_apt_source }}' ]]; then
-              sg lxd -c "lxc file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list"
+              sudo lxc file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
             else
               echo '${{ inputs.deb_apt_source }}' >$HOME/ploutos.list
-              sg lxd -c "lxc file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/"
+              sudo lxc file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/
             fi
-            sg lxd -c "lxc exec testcon -- sed -i -e 's/\${OS_NAME}/${OS_NAME}/g' -e 's/\${OS_REL}/${OS_REL}/g' /etc/apt/sources.list.d/ploutos.list"
-            sg lxd -c "lxc exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc"
-            sg lxd -c "lxc exec testcon -- apt-key add ./aptkey.asc"
-            sg lxd -c "lxc exec testcon -- apt-get -y update"
-            sg lxd -c "lxc exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}"
+            sudo lxc exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/apt/sources.list.d/ploutos.list
+            sudo lxc exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
+            sudo lxc exec testcon -- apt-key add ./aptkey.asc
+            sudo lxc exec testcon -- apt-get -y update
+            sudo lxc exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}
 
             # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
             # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
@@ -1693,28 +1759,28 @@ jobs:
             CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
 
             # append a line break to the conffile
-            for F in $(sg lxd -c "lxc exec testcon -- cat ${CONFIFILE_LIST_FILE}"); do
-              sg lxd -c "lxc exec testcon -- sh -c \"echo >> $F\""
+            for F in $(sudo lxc exec testcon -- cat ${CONFIFILE_LIST_FILE}); do
+              sudo lxc exec testcon -- sh -c "echo >> $F"
             done
 
             # save the md5 checksums for later comparison
-            if sg lxd -c "lxc exec testcon -- sh -c \"xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}\""; then
-              sg lxd -c "lxc exec testcon -- cat ${SAVED_MD5SUMS}"
+            if sudo lxc exec testcon -- sh -c "xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
+              sudo lxc exec testcon -- cat ${SAVED_MD5SUMS}
             else
               echo "Conffile change preservation checking will be skipped because no conffiles were detected."
-              sg lxd -c "lxc exec testcon -- rm -f ${SAVED_MD5SUMS}"
+              sudo lxc exec testcon -- rm -f ${SAVED_MD5SUMS}
             fi
             ;;
           centos|rockylinux)
             if [[ -f '${{ inputs.rpm_yum_repo }}' ]]; then
-              sg lxd -c "lxc file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo"
+              sudo lxc file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
             else
               echo '${{ inputs.rpm_yum_repo }}' >$HOME/ploutos.repo
-              sg lxd -c "lxc file push $HOME/ploutos.repo testcon/etc/yum.repos.d/"
+              sudo lxc file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
             fi
-            sg lxd -c "lxc exec testcon -- sed -i -e 's/\${OS_NAME}/${OS_NAME}/g' -e 's/\${OS_REL}/${OS_REL}/g' /etc/yum.repos.d/ploutos.repo"
-            sg lxd -c "lxc exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}"
-            sg lxd -c "lxc exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}"
+            sudo lxc exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
+            sudo lxc exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
+            sudo lxc exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}
             ;;
         esac
 
@@ -1723,10 +1789,10 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}"
+            sudo lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}
             ;;
           centos|rockylinux)
-            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee install.log
+            sudo lxc exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee install.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' install.log
             ;;
@@ -1736,9 +1802,9 @@ jobs:
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
-        sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh"
-        sg lxd -c "lxc exec testcon -- chmod +x /tmp/test.sh"
-        sg lxd -c "lxc exec testcon -- /tmp/test.sh post-install"
+        sudo lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh
+        sudo lxc exec testcon -- chmod +x /tmp/test.sh
+        sudo lxc exec testcon -- /tmp/test.sh post-install
 
     - name: Upgrade from the published package to the newly built package
       id: upgrade_package
@@ -1748,10 +1814,10 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             # See https://github.com/NLnetLabs/.github/issues/17 regarding --force-confXXX
-            sg lxd -c "lxc exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}"
+            sudo lxc exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}
             ;;
           centos|rockylinux)
-            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee upgrade.log
+            sudo lxc exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee upgrade.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' upgrade.log
             ;;
@@ -1770,7 +1836,7 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
-            sg lxd -c "lxc exec testcon -- sh -c '[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}'"
+            sudo lxc exec testcon -- sh -c "[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}"
             ;;
         esac
 
@@ -1778,18 +1844,18 @@ jobs:
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
-        sg lxd -c "lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh"
-        sg lxd -c "lxc exec testcon -- chmod +x /tmp/test2.sh"
-        sg lxd -c "lxc exec testcon -- /tmp/test2.sh post-upgrade"
+        sudo lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh
+        sudo lxc exec testcon -- chmod +x /tmp/test2.sh
+        sudo lxc exec testcon -- /tmp/test2.sh post-upgrade
 
     - name: Test uninstall (without purge)
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}"
+            sudo lxc exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}
             ;;
           centos|rockylinux)
-            sg lxd -c "lxc exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }}" 2>&1 | tee remove.log
+            sudo lxc exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }} 2>&1 | tee remove.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' remove.log
             ;;
@@ -1799,10 +1865,10 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sg lxd -c "lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}"
+            sudo lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}
             ;;
           centos|rockylinux)
-            sg lxd -c "lxc exec testcon -- yum install -y /tmp/${PKG_FILE}" 2>&1 | tee reinstall.log
+            sudo lxc exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee reinstall.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' reinstall.log
             ;;
@@ -1824,7 +1890,7 @@ jobs:
     needs: prepare
     outputs:
       published: ${{ steps.publish.conclusion == 'success' }}
-    runs-on: ubuntu-20.04
+    runs-on: ${{ inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.docker_build_rules) }}
@@ -1950,7 +2016,7 @@ jobs:
 
       # Upload the Docker image as a GitHub Actions artifact, handy when not publishing or investigating a problem
       - name: Upload built image to GitHub Actions
-        uses: actions/upload-artifact@v3
+        uses: umutozd/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
         with:
           name: ${{ inputs.artifact_prefix }}tmp-docker-image-${{ matrix.shortname }}
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
@@ -1983,7 +2049,7 @@ jobs:
     # Use of always() here ensures that even if the _cross_ job (note: not the 'docker' job) is skipped we will still run.
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.docker_build_rules != '{}' && fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
-    runs-on: ubuntu-20.04
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - name: Log into Docker Hub
         uses: docker/login-action@v2
