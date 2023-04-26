@@ -885,7 +885,7 @@ jobs:
 
     - name: Diagnostics
       run:
-        ls -la /var/cache/apt
+        du -sh /var/cache/apt/*
 
     - name: Force cache save
       uses: actions/cache/save@v3
