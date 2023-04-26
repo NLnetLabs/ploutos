@@ -833,7 +833,7 @@ jobs:
       run:
         case ${OS_NAME} in
           debian|ubuntu)
-            echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99-keep-downloads
+            echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/99-keep-downloads
             ;;
         esac
 
