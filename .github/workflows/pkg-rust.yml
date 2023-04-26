@@ -443,12 +443,8 @@ jobs:
           # This is a bit ridiculous invoking jq three times... there must be an easier way
           ALL_TARGETS=$(echo ${DOCKER_TARGETS} ${PKG_TARGETS} | jq -s 'flatten | unique | .[] | select(. != "x86_64")' | jq -s)
 
-          if [[ "${{ inputs.runs_on }}" == '' ]]; then
-            RUNS_ON="\"ubuntu-latest\""
-          else
-            RUNS_ON="\"${{ inputs.runs_on }}\""
-          fi
-          
+          RUNS_ON="\"${{ inputs.runs_on }}\""
+
           if [[ "${{ inputs.cross_runs_on }}" == '' ]; then
             CROSS_RUNS_ON="${RUNS_ON}"
           else
