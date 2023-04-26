@@ -827,6 +827,16 @@ jobs:
         path: /var/cache/apt
         key: ${{ matrix.target }}-apt
 
+    # Keep downloaded packages so that we can cache them.
+    # Newer versions of APT don't keep downloaded packages by default.
+    - name: Configure APT to keep downloaded packages
+      run:
+        case ${OS_NAME} in
+          debian|ubuntu)
+            echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee /etc/apt/apt.conf.d/99-keep-downloads
+            ;;
+        esac
+
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
       id: rust
