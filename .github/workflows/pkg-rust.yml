@@ -820,6 +820,13 @@ jobs:
         echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
         echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
 
+    - name: Fetch APT cache if available
+      id: cache-apt
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt
+        key: ${{ matrix.target }}-apt
+
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
       id: rust
@@ -875,6 +882,12 @@ jobs:
             esac
             ;;
         esac
+
+    - name: Force cache save
+      uses: actions/cache/save@v3
+      with:
+        path: /var/cache/apt
+        key: ${{ matrix.target }}-apt
 
     # Speed up Rust builds by caching unchanged built dependencies.
     # See: https://github.com/actions/cache/blob/master/examples.md#rust---cargo
