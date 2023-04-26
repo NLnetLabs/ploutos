@@ -133,7 +133,7 @@ on:
         description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner."
         required: false
         type: string
-        default: ubuntu-latest
+        default: ''
 
       artifact_prefix:
         description: "An optional prefix to apply to generated artifact names. Intended for internal testing."
@@ -309,9 +309,11 @@ jobs:
       all_repo_and_tag_pairs: ${{ steps.encode.outputs.all_repo_and_tag_pairs }}
       first_repo_and_tag_pair: ${{ steps.encode.outputs.first_repo_and_tag_pair }}
       lower_docker_org: ${{ steps.encode.outputs.lower_docker_org }}
+      runs_on: ${{ steps.determine_cross_build_rules.outputs.runs_on }}
       cross_build_rules: ${{ steps.determine_cross_build_rules.outputs.matrix }}
       cross_max_tries: ${{ steps.determine_cross_build_rules.outputs.max_tries }}
       cross_retry_delay_ms: ${{ steps.determine_cross_build_rules.outputs.retry_delay_ms }}
+      cross_runs_on: ${{ steps.determine_cross_build_rules.outputs.cross_runs_on }}
       docker_build_rules: ${{ steps.pre_process_rules.outputs.docker_build_rules }}
       package_build_rules: ${{ steps.pre_process_rules.outputs.package_build_rules }}
       package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
@@ -436,11 +438,24 @@ jobs:
           # This is a bit ridiculous invoking jq three times... there must be an easier way
           ALL_TARGETS=$(echo ${DOCKER_TARGETS} ${PKG_TARGETS} | jq -s 'flatten | unique | .[] | select(. != "x86_64")' | jq -s)
 
+          if [[ "${{ inputs.runs_on }}" == '' ]]; then
+            RUNS_ON="ubuntu-latest"
+          else
+            RUNS_ON="${{ inputs.runs_on }}"
+          fi
+
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
-            echo '{ "target": [ "skip"] }' >> $GITHUB_OUTPUT
+            echo '{}' >> $GITHUB_OUTPUT
+            CROSS_RUNS_ON="${{ inputs.runs_on }}"
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
+            RUNS_ON="${{ inputs.runs_on }}"
+            if [[ "${{ inputs.runs_on}}" == '' ]]; then
+              CROSS_RUNS_ON="${RUNS_ON}"
+            else
+              CROSS_RUNS_ON=${{ format('[ploutos-cross, {}]', inputs.runs_on) }}
+            fi
           fi
           echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
 
@@ -448,6 +463,8 @@ jobs:
           MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
           echo "retry_delay_ms=${RETRY_DELAY_MS}" >> $GITHUB_OUTPUT
           echo "max_tries=${MAX_TRIES}" >> $GITHUB_OUTPUT
+          echo "runs_on=${RUNS_ON}" >> $GITHUB_OUTPUT
+          echo "cross_runs_on=${CROSS_RUNS_ON}" >> $GITHUB_OUTPUT
 
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
@@ -660,7 +677,7 @@ jobs:
   cross:
     #if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
-    runs-on: ${{ inputs.runs_on }}
+    runs-on: ${{ needs.prepare.outputs.cross_runs_on }}
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
@@ -758,9 +775,10 @@ jobs:
   #   - https://github.com/mmstick/cargo-deb
   #   - https://github.com/cat-in-136/cargo-generate-rpm
   pkg:
-    if: ${{ needs.prepare.outputs.package_build_rules != '{}' }}
-    needs: [prepare, cross]
-    runs-on: ${{ inputs.runs_on }}
+    # Use of always() here ensures that even if the cross job is skipped we will still run
+    if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
+    needs: prepare
+    runs-on: ${{ fromJSON(inputs.runs_on) }}
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
     # Specifying container causes all of the steps in this job to run inside a Docker container (which is why the
     # cross-compilation needs to happen above in its own non-containerized job).
