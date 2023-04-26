@@ -438,7 +438,7 @@ jobs:
 
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
-            echo '{}' >> $GITHUB_OUTPUT
+            echo '{ "target": [ "skip"] }' >> $GITHUB_OUTPUT
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
           fi
@@ -658,18 +658,29 @@ jobs:
   #
   # See: https://github.com/rust-embedded/cross#docker-in-docker
   cross:
-    if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
+    #if: ${{ needs.prepare.outputs.cross_build_rules != '{}' }}
     needs: prepare
     runs-on: ${{ inputs.runs_on }}
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.cross_build_rules) }}
     steps:
+    - name: Skip if no cross-compilation required
+      id: skip
+      run:
+        if [ "${{ matrix.target }}" == "skip" ]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Checkout repository
+      if: ${{ steps.skip.skip != 'true' }}
       uses: actions/checkout@v3
 
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     # Cargo cross "requires a rustup installation of Rust", an O/S package provided Rust won't
     - name: Install Rust
+      if: ${{ steps.skip.skip != 'true' }}
       id: rust
       run: |
         case ${OS_NAME} in
@@ -685,6 +696,7 @@ jobs:
         echo "bin_dir=$HOME/.cargo/bin" >> $GITHUB_OUTPUT
 
     - name: Fetch cargo cross if available
+      if: ${{ steps.skip.skip != 'true' }}
       id: cache-cargo-cross
       uses: actions/cache@v3
       with:
@@ -695,13 +707,13 @@ jobs:
 
     - name: Install cargo cross if needed
       id: install-cargo-cross
-      if: ${{ steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
+      if: ${{ steps.skip.skip != 'true' && steps.cache-cargo-cross.outputs.cache-hit != 'true' }}
       run: |
         cargo install cross
         echo "installed=true" >> $GITHUB_OUTPUT
 
     - name: Force cache save
-      if: ${{ steps.install-cargo-cross.outputs.installed == 'true' }}
+      if: ${{ steps.skip.skip != 'true' && steps.install-cargo-cross.outputs.installed == 'true' }}
       uses: actions/cache/save@v3
       with:
         path: |
@@ -710,14 +722,17 @@ jobs:
         key: ${{ matrix.target }}-cargo-cross
 
     - name: Ensure ~/.cargo/bin/ is in the path
+      if: ${{ steps.skip.skip != 'true' }}
       run: |
         echo $(realpath ~/.cargo/bin) >> $GITHUB_PATH
 
     - name: Cross compile
+      if: ${{ steps.skip.skip != 'true' }}
       run: |
         cross build ${{needs.prepare.outputs.cargo_manifest_path_arg}} ${{needs.prepare.outputs.cargo_workspace_package_arg}} --locked --release -v --target ${{ matrix.target }} ${{ inputs.cross_build_args }}
 
     - name: Tar the set of created binaries to upload
+      if: ${{ steps.skip.skip != 'true' }}
       run: |
         rm -f bins.tar
         find target/${{ matrix.target }}/release/ -maxdepth 1 -type f -executable | xargs tar vpcf bins.tar
@@ -729,6 +744,7 @@ jobs:
     # artifacts to be packaged by the scripts that upload to packages.nlnetlabs.nl we prefix the artifact name with
     # `tmp-` which will be ignored by packages.nlnetlabs.nl scripts.
     - name: Upload built binaries
+      if: ${{ steps.skip.skip != 'true' }}
       uses: umutozd/upload-artifact@fixing-unrecognized-if-no-files-found-input-error
       with:
         name: ${{ inputs.artifact_prefix }}tmp-cross-binaries-${{ matrix.target }}
@@ -742,9 +758,8 @@ jobs:
   #   - https://github.com/mmstick/cargo-deb
   #   - https://github.com/cat-in-136/cargo-generate-rpm
   pkg:
-    # Use of always() here ensures that even if the cross job is skipped we will still run
-    if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
-    needs: prepare
+    if: ${{ needs.prepare.outputs.package_build_rules != '{}' }}
+    needs: [prepare, cross]
     runs-on: ${{ inputs.runs_on }}
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
     # Specifying container causes all of the steps in this job to run inside a Docker container (which is why the
