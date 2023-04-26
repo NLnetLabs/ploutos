@@ -453,17 +453,17 @@ jobs:
             if [[ "${{ inputs.runs_on}}" == '' ]]; then
               CROSS_RUNS_ON="${RUNS_ON}"
             else
-              CROSS_RUNS_ON="[\"ploutos-cross\", \"${RUNS_ON}\"]"
+              CROSS_RUNS_ON="\"ploutos-cross\", \"${RUNS_ON}\"]
             fi
           fi
           echo "END_OF_TARGETS" >> $GITHUB_OUTPUT
           
           echo "runs_on<<END_OF_RUNS_ON" >> $GITHUB_OUTPUT
-          echo '{ "labels": ' ${RUNS_ON} '}' | jq >> $GITHUB_OUTPUT
+          echo '{ "labels": [' ${RUNS_ON} '] }' | jq >> $GITHUB_OUTPUT
           echo "END_OF_RUNS_ON" >> $GITHUB_OUTPUT
     
           echo "cross_runs_on<<END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
-          echo '{ "labels": ' ${CROSS_RUNS_ON} '}' | jq >> $GITHUB_OUTPUT
+          echo '{ "labels": [' ${CROSS_RUNS_ON} '] }' | jq >> $GITHUB_OUTPUT
           echo "END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
 
           RETRY_DELAY_MS=30000
