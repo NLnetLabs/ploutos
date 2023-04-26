@@ -315,6 +315,7 @@ jobs:
       docker_build_rules: ${{ steps.pre_process_rules.outputs.docker_build_rules }}
       package_build_rules: ${{ steps.pre_process_rules.outputs.package_build_rules }}
       package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
+      pkg_needs: ${{ steps.determine_cross_build_rules.outputs.pkg_needs }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -439,8 +440,10 @@ jobs:
           echo "matrix<<END_OF_TARGETS" >> $GITHUB_OUTPUT
           if [ "${ALL_TARGETS}" == '[]' ]; then
             echo '{}' >> $GITHUB_OUTPUT
+            PKG_NEEDS="prepare"
           else
             echo '{ "target": ' ${ALL_TARGETS} '}' | jq >> $GITHUB_OUTPUT
+            PKG_NEEDS="[prepare, cross]"
           fi
           echo 'END_OF_TARGETS' >> $GITHUB_OUTPUT
 
@@ -448,6 +451,7 @@ jobs:
           MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
           echo "retry_delay_ms=${RETRY_DELAY_MS}" >> $GITHUB_OUTPUT
           echo "max_tries=${MAX_TRIES}" >> $GITHUB_OUTPUT
+          echo "pkg_needs=${PKG_NEEDS}" >> $GITHUB_OUTPUT
 
       - name: Print rules
         # Disable default use of bash -x for easier to read output in the log
@@ -744,7 +748,7 @@ jobs:
   pkg:
     # Use of always() here ensures that even if the cross job is skipped we will still run
     if: ${{ always() && needs.prepare.outputs.package_build_rules != '{}' }}
-    needs: prepare
+    needs: ${{ needs.prepare.outputs.pkg_needs }}
     runs-on: ${{ inputs.runs_on }}
     # Build on the platform we are targeting in order to avoid https://github.com/rust-lang/rust/issues/57497.
     # Specifying container causes all of the steps in this job to run inside a Docker container (which is why the
