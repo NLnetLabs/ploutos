@@ -1670,6 +1670,9 @@ jobs:
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
+    # Fix iptables so that LXC containers can connect out after Docker sets FORWARD to DROP by default
+    # https://discuss.linuxcontainers.org/t/lxd-losts-iptables-rules-with-docker/15045/6.
+    # This wasn't needed with Ubuntu 20.04 but is needed with Ubuntu 22.04.
     - name: Fix firewall for LXD
       run: |
         sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
