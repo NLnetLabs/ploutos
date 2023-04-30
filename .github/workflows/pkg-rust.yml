@@ -1672,8 +1672,8 @@ jobs:
 
     - name: Fix firewall for LXD
       run: |
-        sudo ufw allow out on lxdbr0
-        sudo ufw route allow out on lxdbr0
+        sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
+        sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
 
     - name: Add current user to LXD group
       run: |
