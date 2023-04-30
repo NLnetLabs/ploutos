@@ -1670,6 +1670,11 @@ jobs:
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
+    - name: Fix firewall for LXD
+      run: |
+        sudo ufw allow out on lxdbr0
+        sudo ufw route allow out on lxdbr0
+
     - name: Add current user to LXD group
       run: |
         sudo usermod --append --groups lxd $(whoami)
