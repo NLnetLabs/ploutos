@@ -1699,7 +1699,7 @@ jobs:
       run: |
         # security.nesting=true is needed to avoid error "Failed to set up mount namespacing: Permission denied" in a
         # Debian 10 container.
-        sudo lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon
+        sudo lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon --vm
 
     # Run package update and install man and sudo support (missing in some LXC/LXD O/S images) but first wait for
     # cloud-init to finish otherwise the network isn't yet ready. Don't use cloud-init status --wait as that isn't
