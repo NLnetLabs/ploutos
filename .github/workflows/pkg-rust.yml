@@ -1577,6 +1577,13 @@ jobs:
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
+    # If runs_on is not overridden by the user, and we are about to test a package in a CentOS 7 LXC container, force
+    # the host O/S to be the older Ubuntu 20.04 as Ubuntu 22.04 upgraded from CGroupV1 to CGroupV2 which is incompatible
+    # with the CentOS 7 LXC image. Use a sort-of ternary if syntax that GitHub Actions supports in expressions to effect
+    # this dynamically per matrix invocation of the `pkg-test` job.
+    # See:
+    #   - https://github.com/NLnetLabs/ploutos/issues/50
+    #   - https://github.com/actions/runner/issues/409#issuecomment-727565588
     runs-on: ${{ (inputs.runs_on == 'ubuntu-latest' && matrix.image == 'centos:7') && 'ubuntu-20.04' || inputs.runs_on }}
     strategy:
       fail-fast: false
@@ -1675,8 +1682,14 @@ jobs:
     # This wasn't needed with Ubuntu 20.04 but is needed with Ubuntu 22.04.
     - name: Fix firewall for LXD
       run: |
-        sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
-        sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
+        case ${OS_NAME} in
+          ubuntu)
+            # Assume it is harmless to do this on older Ubuntu's and needed on newer Ubuntu's so don't bother trying
+            # to do complex O/S version based logic.
+            sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
+            sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
+            ;;
+        esac
 
     - name: Add current user to LXD group
       run: |
