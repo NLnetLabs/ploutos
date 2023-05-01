@@ -1682,14 +1682,10 @@ jobs:
     # This wasn't needed with Ubuntu 20.04 but is needed with Ubuntu 22.04.
     - name: Fix firewall for LXD
       run: |
-        case ${OS_NAME} in
-          debian|ubuntu)
-            # Assume it is harmless to do this on older Ubuntu's and needed on newer Ubuntu's so don't bother trying
-            # to do complex O/S version based logic.
-            sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
-            sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
-            ;;
-        esac
+        # This issue seems to affect various newer O/S's and the fix seems to be harmless on older O/S's, so we don't
+        # bother trying to be clever about O/S version based logic but just do this for all hosts.
+        sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
+        sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
 
     - name: Add current user to LXD group
       run: |
