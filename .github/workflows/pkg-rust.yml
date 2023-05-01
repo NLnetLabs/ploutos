@@ -1586,7 +1586,7 @@ jobs:
     # See:
     #   - https://github.com/NLnetLabs/ploutos/issues/50
     #   - https://github.com/actions/runner/issues/409#issuecomment-727565588
-    runs-on: ${{ (inputs.runs_on == 'ubuntu-22.04' && matrix.image == 'centos:7') && 'ubuntu-20.04' || inputs.runs_on }}
+    runs-on: ${{ (inputs.runs_on == 'ubuntu-22.04' && (matrix.image == 'centos:7' || matrix.image == 'ubuntu:xenial')) && 'ubuntu-20.04' || inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.package_test_rules) }}
