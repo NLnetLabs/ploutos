@@ -130,10 +130,12 @@ on:
   workflow_call:
     inputs:
       runs_on:
-        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner. Defaults to ubuntu-latest."
+        description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner. Defaults to ubuntu-22.04."
         required: false
         type: string
-        default: 'ubuntu-latest'
+        # Don't use 'ubuntu-latest' as that could causes unexpected changes to occur when it is repointed at a newer
+        # O/S release.
+        default: 'ubuntu-22.04'
       cross_runs_on:
         description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner from cross-compilation jobs. Defaults to the value of runs_on."
         required: false
@@ -1577,7 +1579,14 @@ jobs:
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
-    runs-on: ${{ inputs.runs_on }}
+    # If runs_on is not overridden by the user, and we are about to test a package in a CentOS 7 LXC container, force
+    # the host O/S to be the older Ubuntu 20.04 as Ubuntu 22.04 upgraded from CGroupV1 to CGroupV2 which is incompatible
+    # with the CentOS 7 LXC image. Use a sort-of ternary if syntax that GitHub Actions supports in expressions to effect
+    # this dynamically per matrix invocation of the `pkg-test` job.
+    # See:
+    #   - https://github.com/NLnetLabs/ploutos/issues/50
+    #   - https://github.com/actions/runner/issues/409#issuecomment-727565588
+    runs-on: ${{ (inputs.runs_on == 'ubuntu-22.04' && (matrix.image == 'centos:7' || matrix.image == 'ubuntu:xenial')) && 'ubuntu-20.04' || inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.package_test_rules) }}
@@ -1675,6 +1684,8 @@ jobs:
     # This wasn't needed with Ubuntu 20.04 but is needed with Ubuntu 22.04.
     - name: Fix firewall for LXD
       run: |
+        # This issue seems to affect various newer O/S's and the fix seems to be harmless on older O/S's, so we don't
+        # bother trying to be clever about O/S version based logic but just do this for all hosts.
         sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
         sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
 
