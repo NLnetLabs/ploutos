@@ -1577,7 +1577,7 @@ jobs:
     # I wouldn't expect this to be needed but since the cross job was made conditional we seem to need this.
     if: ${{ always() && needs.prepare.outputs.package_test_rules != '{}' }}
     needs: [pkg, prepare]
-    runs-on: ${{ inputs.runs_on }}
+    runs-on: ${{ (inputs.runs_on == 'ubuntu-latest' && matrix.image == 'centos:7') && 'ubuntu-20.04' || inputs.runs_on }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.prepare.outputs.package_test_rules) }}
@@ -1699,7 +1699,7 @@ jobs:
       run: |
         # security.nesting=true is needed to avoid error "Failed to set up mount namespacing: Permission denied" in a
         # Debian 10 container.
-        sudo lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon --vm
+        sudo lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon
 
     # Run package update and install man and sudo support (missing in some LXC/LXD O/S images) but first wait for
     # cloud-init to finish otherwise the network isn't yet ready. Don't use cloud-init status --wait as that isn't
