@@ -1683,7 +1683,7 @@ jobs:
     - name: Fix firewall for LXD
       run: |
         case ${OS_NAME} in
-          ubuntu)
+          debian|ubuntu)
             # Assume it is harmless to do this on older Ubuntu's and needed on newer Ubuntu's so don't bother trying
             # to do complex O/S version based logic.
             sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
