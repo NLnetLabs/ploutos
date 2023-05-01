@@ -133,6 +133,8 @@ on:
         description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner. Defaults to ubuntu-22.04."
         required: false
         type: string
+        # Don't use 'ubuntu-latest' as that could causes unexpected changes to occur when it is repointed at a newer
+        # O/S release.
         default: 'ubuntu-22.04'
       cross_runs_on:
         description: "An optional runner label to direct GitHub Actions to your desired (e.g. self-hosted) runner from cross-compilation jobs. Defaults to the value of runs_on."
