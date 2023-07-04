@@ -69,21 +69,15 @@ jobs:
           # Raspberry Pi 1b
           - image: "debian:buster"
             target: arm-unknown-linux-musleabihf
-          - image: "debian:bookworm"
-            target: arm-unknown-linux-musleabihf
           {%- endif %}
           {%- if 'Raspberry Pi 4b' in cross_targets %}
           # Raspberry Pi 4b
           - image: "debian:bullseye"
             target: armv7-unknown-linux-musleabihf
-          - image: "debian:bookworm"
-            target: armv7-unknown-linux-musleabihf
           {%- endif %}
           {%- if 'Rock 64' in cross_targets %}
           # Rock 64
           - image: "debian:buster"
-            target: aarch64-unknown-linux-musl
-          - image: "debian:bookworm"
             target: aarch64-unknown-linux-musl
           {%- endif %}
       {%- endif %}
