@@ -209,7 +209,7 @@ The following keys are special and only relate to the package testing phase when
 The `<image>` **MUST** be one of the following:
 
 - `centos:<os_rel>` where `<os_rel>` is one of: `7` or `8`
-- `debian:<os_rel>` where `<os_rel>` is one of: `stretch`, `buster` or `bullseye`
+- `debian:<os_rel>` where `<os_rel>` is one of: `stretch`, `buster`, `bullseye` or `bookworm`
 - `rockylinux:<os_rel>` where `<os_rel>` is one of: `8` or `9`.
 - `ubuntu:<os_rel>` where `<os_rel>` is one of: `xenial`, `bionic`, `focal` or `jammy`
 
