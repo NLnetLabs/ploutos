@@ -833,6 +833,7 @@ jobs:
 
     - name: Set vars
       id: setvars
+      # Disable default use of bash -x for easier to read output in the log
       shell: bash
       env:
         MATRIX_IMAGE: ${{ matrix.image }}
@@ -1636,6 +1637,7 @@ jobs:
     # that will be available in GH Action step definitions below.
     - name: Set vars
       id: setvars
+      # Disable default use of bash -x for easier to read output in the log
       shell: bash
       env:
         MATRIX_IMAGE: ${{ steps.verify.outputs.image }}
@@ -1717,7 +1719,6 @@ jobs:
     # supported on older O/S's like Ubuntu 16.04 and Debian 9. Use the sudo package provided configuration files
     # otherwise when using sudo we get an error that the root user isn't allowed to use sudo.
     - name: Prepare container
-      shell: bash
       run: |
         echo "Waiting for cloud-init.."
         SUCCESS=0
