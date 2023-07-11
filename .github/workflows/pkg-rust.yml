@@ -1720,9 +1720,23 @@ jobs:
       shell: bash
       run: |
         echo "Waiting for cloud-init.."
-        while ! sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json; do
+        SUCCESS=0
+        for i in $(seq 1 60); do
+          if sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json; then
+            SUCCESS=1
+            break
+          else
           sleep 1s
+          fi
         done
+
+        if [ $SUCCESS -eq 0 ]; then
+          ls -la /var/lib/
+          systemctl status cloud-init
+          journalctl -u cloud-init
+          journalctl
+          exit 1
+        fi
 
         case ${OS_NAME} in
           debian|ubuntu)
