@@ -1731,10 +1731,12 @@ jobs:
         done
 
         if [ $SUCCESS -eq 0 ]; then
-          ls -la /var/lib/
-          systemctl status cloud-init
-          journalctl -u cloud-init
-          journalctl
+          ls -la /var/lib/ || true
+          ls -lR /var/lib/cloud || true
+          systemctl status cloud-init || true
+          cloud-init status || true
+          journalctl -u cloud-init || true
+          journalctl || true
           exit 1
         fi
 
