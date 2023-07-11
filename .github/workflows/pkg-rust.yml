@@ -1723,7 +1723,7 @@ jobs:
         echo "Waiting for cloud-init.."
         SUCCESS=0
         for i in $(seq 1 60); do
-          if sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json; then
+          if sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json || sudo lxc exec testcon -- cloud-init status | grep -F 'status: done'; then
             SUCCESS=1
             break
           else
