@@ -412,6 +412,17 @@ jobs:
             fi
           fi
 
+          # Exclude debian:buster because the LXC image has problems starting cloud-init
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:buster")) | del(.include[]? | select(.image == "debian:buster"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:buster"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:buster image from package_test_rules because the LXC image currently fails when running cloud-init. See: https://github.com/NLnetLabs/ploutos/issues/78"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
@@ -833,6 +844,7 @@ jobs:
 
     - name: Set vars
       id: setvars
+      # Disable default use of bash -x for easier to read output in the log
       shell: bash
       env:
         MATRIX_IMAGE: ${{ matrix.image }}
@@ -1636,6 +1648,7 @@ jobs:
     # that will be available in GH Action step definitions below.
     - name: Set vars
       id: setvars
+      # Disable default use of bash -x for easier to read output in the log
       shell: bash
       env:
         MATRIX_IMAGE: ${{ steps.verify.outputs.image }}
@@ -1717,12 +1730,36 @@ jobs:
     # supported on older O/S's like Ubuntu 16.04 and Debian 9. Use the sudo package provided configuration files
     # otherwise when using sudo we get an error that the root user isn't allowed to use sudo.
     - name: Prepare container
-      shell: bash
       run: |
         echo "Waiting for cloud-init.."
-        while ! sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json; do
+        SUCCESS=0
+        for i in $(seq 1 60); do
+          if sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json; then
+            SUCCESS=1
+            break
+          else
           sleep 1s
+          fi
         done
+
+        # Log the cloud-init result file for diagnostic purposes
+        sudo lxc exec testcon -- cat /var/lib/cloud/data/result.json || true
+
+        if [ $SUCCESS -eq 0 ]; then
+          sudo lxc exec testcon -- ls -la /var/lib/ || true
+          sudo lxc exec testcon -- ls -lR /var/lib/cloud || true
+          sudo lxc exec testcon -- ls -lR /usr/lib/systemd/system/ || true
+          sudo lxc exec testcon -- ls -lR /etc/cloud/ || true
+          sudo lxc exec testcon -- find /etc/cloud -type f -print -exec cat {} \; || true
+          sudo lxc exec testcon -- cloud-init status || true
+          sudo lxc exec testcon -- systemctl status cloud-init || true
+          sudo lxc exec testcon -- systemctl || true
+          sudo lxc exec testcon -- journalctl -u cloud-init || true
+          sudo lxc exec testcon -- journalctl || true
+          sudo lxc exec testcon -- find /var/log/ -type f -iname '*cloud*' -print -exec cat {} \;
+          # try and continue anyway...
+          echo "::warning::Unable to detect completion of cloud-init, subsequent steps may encounter unexpected failures. Check the logs just before this line."
+        fi
 
         case ${OS_NAME} in
           debian|ubuntu)
