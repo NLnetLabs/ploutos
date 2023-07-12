@@ -1744,7 +1744,7 @@ jobs:
           sudo lxc exec testcon -- journalctl || true
           sudo lxc exec testcon -- cat /var/log/cloud*
           # try and continue anyway...
-          echo "::warning::Unable to detect completion of cloud-init, subsequent steps may encounter unexpected failures"
+          echo "::warning::Unable to detect completion of cloud-init, subsequent steps may encounter unexpected failures. Check the logs just before this line."
         fi
 
         case ${OS_NAME} in
