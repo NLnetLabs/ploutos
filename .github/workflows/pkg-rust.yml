@@ -1734,8 +1734,12 @@ jobs:
         if [ $SUCCESS -eq 0 ]; then
           sudo lxc exec testcon -- ls -la /var/lib/ || true
           sudo lxc exec testcon -- ls -lR /var/lib/cloud || true
-          sudo lxc exec testcon -- systemctl status cloud-init || true
+          sudo lxc exec testcon -- ls -lR /usr/lib/systemd/system/ || true
+          sudo lxc exec testcon -- ls -lR /etc/cloud/ || true
+          sudo lxc exec testcon -- find /etc/cloud -type f -print -exec cat {} \; || true
           sudo lxc exec testcon -- cloud-init status || true
+          sudo lxc exec testcon -- systemctl status cloud-init || true
+          sudo lxc exec testcon -- systemctl || true
           sudo lxc exec testcon -- journalctl -u cloud-init || true
           sudo lxc exec testcon -- journalctl || true
           exit 1
