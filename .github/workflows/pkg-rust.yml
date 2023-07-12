@@ -415,8 +415,8 @@ jobs:
           # Exclude debian:buster because the LXC image has problems starting cloud-init
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:stretch")) | del(.include[]? | select(.image == "debian:stretch"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:buster")) | del(.include[]? | select(.image == "debian:buster"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:buster"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed debian:buster image from package_test_rules because the LXC image currently fails when running cloud-init"
               PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
