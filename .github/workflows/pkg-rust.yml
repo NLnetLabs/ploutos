@@ -1731,6 +1731,9 @@ jobs:
           fi
         done
 
+        # Log the cloud-init result file for diagnostic purposes
+        sudo lxc exec testcon -- cat /var/lib/cloud/data/result.json
+
         if [ $SUCCESS -eq 0 ]; then
           sudo lxc exec testcon -- ls -la /var/lib/ || true
           sudo lxc exec testcon -- ls -lR /var/lib/cloud || true
