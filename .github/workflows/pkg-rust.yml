@@ -1742,7 +1742,8 @@ jobs:
           sudo lxc exec testcon -- systemctl || true
           sudo lxc exec testcon -- journalctl -u cloud-init || true
           sudo lxc exec testcon -- journalctl || true
-          exit 1
+          # try and continue anyway...
+          echo "::warning::Unable to detect completion of cloud-init, subsequent steps may encounter unexpected failures"
         fi
 
         case ${OS_NAME} in
