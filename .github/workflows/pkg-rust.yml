@@ -412,17 +412,6 @@ jobs:
             fi
           fi
 
-          # Exclude debian:buster because the LXC image has problems starting cloud-init
-          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
-            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:buster")) | del(.include[]? | select(.image == "debian:buster"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:buster"))')
-            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
-              echo "::warning::Removed debian:buster image from package_test_rules because the LXC image currently fails when running cloud-init. See: https://github.com/NLnetLabs/ploutos/issues/78"
-              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
-            fi
-          fi
-
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
