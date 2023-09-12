@@ -641,7 +641,7 @@ jobs:
       # tag.
       - name: Apply rules to Git metadata to generate potential Docker tags
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ inputs.docker_repo }}
           flavor: |
