@@ -588,7 +588,7 @@ jobs:
 
       - name: Verify Docker credentials
         if: ${{ steps.pre_process_rules.outputs.docker_build_rules != '{}' && fromJSON(steps.verify_inputs.outputs.has_docker_secrets) == true }}
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
@@ -2055,7 +2055,7 @@ jobs:
 
       - name: Log into Docker Hub
         if: ${{ fromJSON(needs.prepare.outputs.has_docker_secrets) == true }}
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
@@ -2098,7 +2098,7 @@ jobs:
     runs-on: ${{ inputs.runs_on }}
     steps:
       - name: Log into Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_HUB_ID }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
