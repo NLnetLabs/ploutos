@@ -949,7 +949,7 @@ jobs:
 
               *)
                 # assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
-                yum install -y cpio python3-pip
+                yum install -y cpio python3-pip-21.2.3-6
                 pip3 install python-magic rpmlint
                 ;;
             esac
