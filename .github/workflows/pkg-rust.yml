@@ -937,7 +937,7 @@ jobs:
             ;;
           centos|rockylinux)
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
-            yum update # See: https://github.com/NLnetLabs/ploutos/issues/90
+            yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
             yum install epel-release -y
             yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
 
