@@ -326,7 +326,7 @@ jobs:
       package_test_rules: ${{ steps.pre_process_rules.outputs.package_test_rules }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # TODO: extract common code into helper functions
       - name: Pre-process rules
@@ -700,7 +700,7 @@ jobs:
 
     - name: Checkout repository
       if: ${{ steps.skip.skip != 'true' }}
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     # Cargo cross "requires a rustup installation of Rust", an O/S package provided Rust won't
@@ -799,7 +799,7 @@ jobs:
       TOML_CLI_VER: 0.2.3
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Print matrix
       # Disable default use of bash -x for easier to read output in the log
@@ -1595,7 +1595,7 @@ jobs:
     steps:
     # Fetch the test scripts that we will run
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Print matrix
       # Disable default use of bash -x for easier to read output in the log
@@ -1942,7 +1942,7 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare.outputs.docker_build_rules) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Print matrix
         # Disable default use of bash -x for easier to read output in the log
