@@ -16,7 +16,7 @@ Release checklist:
 - [ ] 4. Create a matching branch in the TEST repo, let's call this the TEST branch.
 - [ ] 5. Make the desired changes to the RELEASE branch.
 - [ ] 6. In the TEST branch modify `.github/workflows/pkg.yml` so that instead of referring to `pkg-rust.yml@vX` it refers to `pkg-rust.yml@<Git ref of HEAD commit on the TEST branch>` or `pkg-rust.yml@<test branch name>`.
-- [ ] 7. Create a PR in the `.gihub-testing` repository from the TEST branch to `main`, let's call this the TEST PR.
+- [ ] 7. Create a PR in the `ploutos-testing` repository from the TEST branch to `main`, let's call this the TEST PR.
 - [ ] 8. Repeat steps 4 and 5 until the the `Packaging` workflow run in the TEST PR passes and behaves as desired.
 - [ ] 9. Merge the TEST PR to the `main` branch.
 - [ ] 10. Verify that the automatically invoked run of the `Packaging` workflow in the TEST repo against the `main` branch passes and behaves as desired. If not, repeat steps 4-9 until the new TEST PR passes and behaves as desired.
