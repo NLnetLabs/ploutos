@@ -799,7 +799,7 @@ jobs:
       TOML_CLI_VER: 0.2.3
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3 # v4 doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
 
     - name: Print matrix
       # Disable default use of bash -x for easier to read output in the log
@@ -1595,7 +1595,7 @@ jobs:
     steps:
     # Fetch the test scripts that we will run
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3 # v4 doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
 
     - name: Print matrix
       # Disable default use of bash -x for easier to read output in the log
