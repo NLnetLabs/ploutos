@@ -16,7 +16,7 @@
 
 ## Known issues
 
-- [The Docker repository to publish to is not configurable](https://github.com/NLnetLabs/.github/issues/37)
+- [The Docker registry to publish to is not configurable](https://github.com/NLnetLabs/.github/issues/37)
 - [Version number determination should be more robust](https://github.com/NLnetLabs/.github/issues/43)
 
 ## Terminology
