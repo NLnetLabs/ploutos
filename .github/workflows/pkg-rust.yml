@@ -1983,7 +1983,7 @@ jobs:
 
           echo "mode=${MODE}" >> $GITHUB_OUTPUT
 
-      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v3
         # Don't use QEmu for compiling, it's way too slow on GitHub Actions.
         # Only use it for making images that will contain prebuilt binaries.
         if: ${{ steps.verify.outputs.mode == 'copy' }}
