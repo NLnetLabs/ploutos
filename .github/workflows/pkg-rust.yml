@@ -1871,7 +1871,7 @@ jobs:
 
     - name: Require successful upgrade
       if: ${{ steps.upgrade_package.outcome == 'failure' && !matrix.ignore_upgrade_failure }}
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           core.setFailed("Package upgrade failed unexpectedly")
@@ -1983,7 +1983,7 @@ jobs:
 
           echo "mode=${MODE}" >> $GITHUB_OUTPUT
 
-      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v3
         # Don't use QEmu for compiling, it's way too slow on GitHub Actions.
         # Only use it for making images that will contain prebuilt binaries.
         if: ${{ steps.verify.outputs.mode == 'copy' }}
