@@ -20,13 +20,22 @@ To test and release changes to the workflow the recommended approach is to creat
 
 **How to update the vN tag:**
 
-At the time of writing the GitHub web interface does not offer a way to delete tags or update tags, only to delete the extra "release" details which can be associated with a tag. To update a tag one must do it locally and remotely from the command line.
+At the time of writing the GitHub web interface does not offer a way to delete tags or update tags, only to delete the extra "release" details which can be associated with a tag. To update a tag one must do it locally and remotely from the command line using the `git tag` and `git push` commands.
 
-Assuming that you want to update the v1 tag to point not at the old v1.0.2 tag but at the new v1.0.3 tag, this is one way to do it:
-```shell
-$ NEW_REF=$(git rev-list -n 1 v1.0.3)
-$ git rev-list -n 1 v1
-$ git tag --force v1 ${NEW_REF}
-$ git rev-list -n 1 v1 # should point to ${NEW_REF} now
-$ git push --force --tags
+One way to update the latest vN tag to point to the latest vX.Y.Z tag using a **Bash** shell is:
+```bash
+$ cd path/to/ploutos/git/clone
+$ git fetch --tags
+$ NEW_VER=$(git tag --points-at HEAD)
+$ MAJOR_VER=$(echo $NEW_VER | grep -Eo '^v[0-9]+')
+$ NEW_REF=$(git rev-list -n 1 $NEW_VER)
+$ OLD_REF=$(git rev-list -n 1 $MAJOR_VER)
+$ git tag --force ${MAJOR_VER} ${NEW_REF}
+$ UPDATED_REF=$(git rev-list -n 1 ${MAJOR_VER})
+$ if [ "${UPDATED_REF}" != "${NEW_REF}" ]
+then
+    echo "ERROR: Major version tag ${MAJOR_VER} does not point at NEW_REF ${NEW_REF}"
+else
+    git push --force --tags
+fi
 ```
