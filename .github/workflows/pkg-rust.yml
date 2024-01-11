@@ -1061,6 +1061,7 @@ jobs:
       env:
         MATRIX_PKG: ${{ steps.verify.outputs.pkg }}
         EXTRA_BUILD_ARGS: ${{ matrix.extra_build_args }}
+        EXTRA_CARGO_DEB_ARGS: ${{ matrix.extra_cargo_deb_args }}
         CROSS_TARGET: ${{ matrix.target }}
       run: |
         # Debian
@@ -1124,7 +1125,6 @@ jobs:
                      ${{ needs.prepare.outputs.cargo_package_toml_path }}
             fi
 
-            EXTRA_CARGO_DEB_ARGS=
             VARIANT="${OS_NAME}-${OS_REL}"
 
             # Older O/S releases come with an older version of systemd which understands far fewer keys in the systemd
@@ -1138,7 +1138,7 @@ jobs:
             # manually. The project being packaged can either define a cross-target specific `cargo-deb` profile, or a 
             # "minimal" profile suitable for cross-compiled targets.
             if [[ "${CROSS_TARGET}" != "x86_64" ]]; then
-              EXTRA_CARGO_DEB_ARGS="--no-build --no-strip --target ${CROSS_TARGET} --output ${TARGET_DIR}/debian"
+              EXTRA_CARGO_DEB_ARGS="--no-build --no-strip --target ${CROSS_TARGET} --output ${TARGET_DIR}/debian ${EXTRA_CARGO_DEB_ARGS}"
               MINIMAL_VARIANT="minimal-cross"
               VARIANT="${OS_NAME}-${OS_REL}-${CROSS_TARGET}"
             fi
