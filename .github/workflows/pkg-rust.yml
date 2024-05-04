@@ -1683,6 +1683,24 @@ jobs:
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
+    - name: Install Incus
+      run: |
+        # pre ubuntu-24.04
+        sudo mkdir -p /etc/apt/keyrings/
+        sudo curl -fsSL https://pkgs.zabbly.com/key.asc -o /etc/apt/keyrings/zabbly.asc
+        sudo sh -c 'cat <<EOF > /etc/apt/sources.list.d/zabbly-incus-lts-6.0.sources
+        Enabled: yes
+        Types: deb
+        URIs: https://pkgs.zabbly.com/incus/lts-6.0
+        Suites: $(. /etc/os-release && echo ${VERSION_CODENAME})
+        Components: main
+        Architectures: $(dpkg --print-architecture)
+        Signed-By: /etc/apt/keyrings/zabbly.asc
+
+        EOF'
+        sudo apt-get update
+        sudo apt-get install -y incus
+
     # Fix iptables so that LXC containers can connect out after Docker sets FORWARD to DROP by default
     # https://discuss.linuxcontainers.org/t/lxd-losts-iptables-rules-with-docker/15045/6.
     # This wasn't needed with Ubuntu 20.04 but is needed with Ubuntu 22.04.
@@ -1690,31 +1708,31 @@ jobs:
       run: |
         # This issue seems to affect various newer O/S's and the fix seems to be harmless on older O/S's, so we don't
         # bother trying to be clever about O/S version based logic but just do this for all hosts.
-        sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
-        sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
+        sudo iptables -I DOCKER-USER -i incusbr0 -j ACCEPT
+        sudo iptables -I DOCKER-USER -o incusbr0 -j ACCEPT
 
     - name: Add current user to LXD group
       run: |
-        sudo usermod --append --groups lxd $(whoami)
+        sudo usermod --append --groups incus $(whoami)
 
     - name: Initialize LXD
       run: |
-        sudo lxd init --auto
+        sudo incus admin init --auto
 
     - name: Check LXD configuration
       run: |
-        sudo lxc info
+        sudo incus info
 
     # Use of IPv6 sometimes prevents yum update being able to resolve mirrorlist.centos.org.
     - name: Disable LXD assignment of IPv6 addresses
       run: |
-        sudo lxc network set lxdbr0 ipv6.address none
+        sudo incus network set incusbr0 ipv6.address none
 
     - name: Launch LXC container
       run: |
         # security.nesting=true is needed to avoid error "Failed to set up mount namespacing: Permission denied" in a
         # Debian 10 container.
-        sudo lxc launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon
+        sudo incus launch ${LXC_IMAGE} -c security.nesting=true -c environment.DEBIAN_FRONTEND=noninteractive testcon
 
     # Run package update and install man and sudo support (missing in some LXC/LXD O/S images) but first wait for
     # cloud-init to finish otherwise the network isn't yet ready. Don't use cloud-init status --wait as that isn't
@@ -1725,7 +1743,7 @@ jobs:
         echo "Waiting for cloud-init.."
         SUCCESS=0
         for i in $(seq 1 60); do
-          if sudo lxc exec testcon -- ls -la /var/lib/cloud/data/result.json; then
+          if sudo incus exec testcon -- ls -la /var/lib/cloud/data/result.json; then
             SUCCESS=1
             break
           else
@@ -1734,36 +1752,36 @@ jobs:
         done
 
         # Log the cloud-init result file for diagnostic purposes
-        sudo lxc exec testcon -- cat /var/lib/cloud/data/result.json || true
+        sudo incus exec testcon -- cat /var/lib/cloud/data/result.json || true
 
         if [ $SUCCESS -eq 0 ]; then
-          sudo lxc exec testcon -- ls -la /var/lib/ || true
-          sudo lxc exec testcon -- ls -lR /var/lib/cloud || true
-          sudo lxc exec testcon -- ls -lR /usr/lib/systemd/system/ || true
-          sudo lxc exec testcon -- ls -lR /etc/cloud/ || true
-          sudo lxc exec testcon -- find /etc/cloud -type f -print -exec cat {} \; || true
-          sudo lxc exec testcon -- cloud-init status || true
-          sudo lxc exec testcon -- systemctl status cloud-init || true
-          sudo lxc exec testcon -- systemctl || true
-          sudo lxc exec testcon -- journalctl -u cloud-init || true
-          sudo lxc exec testcon -- journalctl || true
-          sudo lxc exec testcon -- find /var/log/ -type f -iname '*cloud*' -print -exec cat {} \;
+          sudo incus exec testcon -- ls -la /var/lib/ || true
+          sudo incus exec testcon -- ls -lR /var/lib/cloud || true
+          sudo incus exec testcon -- ls -lR /usr/lib/systemd/system/ || true
+          sudo incus exec testcon -- ls -lR /etc/cloud/ || true
+          sudo incus exec testcon -- find /etc/cloud -type f -print -exec cat {} \; || true
+          sudo incus exec testcon -- cloud-init status || true
+          sudo incus exec testcon -- systemctl status cloud-init || true
+          sudo incus exec testcon -- systemctl || true
+          sudo incus exec testcon -- journalctl -u cloud-init || true
+          sudo incus exec testcon -- journalctl || true
+          sudo incus exec testcon -- find /var/log/ -type f -iname '*cloud*' -print -exec cat {} \;
           # try and continue anyway...
           echo "::warning::Unable to detect completion of cloud-init, subsequent steps may encounter unexpected failures. Check the logs just before this line."
         fi
 
         case ${OS_NAME} in
           debian|ubuntu)
-            sudo lxc exec testcon -- apt-get update
-            sudo lxc exec testcon -- apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https ca-certificates man sudo wget
+            sudo incus exec testcon -- apt-get update
+            sudo incus exec testcon -- apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https ca-certificates man sudo wget
             ;;
           centos|rockylinux)
             if [[ "${MATRIX_IMAGE}" == "centos:8" ]]; then
               # allow CentOS 8 to continue working now that it is EOL
               # see: https://stackoverflow.com/a/70930049
-              sudo lxc exec testcon -- find /etc/yum.repos.d/ -name 'CentOS-Linux-*' -exec sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' {} \;
+              sudo incus exec testcon -- find /etc/yum.repos.d/ -name 'CentOS-Linux-*' -exec sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' {} \;
             fi
-            sudo lxc exec testcon -- yum install -y man
+            sudo incus exec testcon -- yum install -y man
             ;;
         esac
 
@@ -1772,12 +1790,12 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             DEB_FILE=$(ls -1 debian/*.deb)
-            sudo lxc file push ${DEB_FILE} testcon/tmp/
+            sudo incus file push ${DEB_FILE} testcon/tmp/
             echo "PKG_FILE=$(basename $DEB_FILE)" >> $GITHUB_ENV
             ;;
           centos|rockylinux)
             RPM_FILE=$(ls -1 generate-rpm/*.rpm)
-            sudo lxc file push ${RPM_FILE} testcon/tmp/
+            sudo incus file push ${RPM_FILE} testcon/tmp/
             echo "PKG_FILE=$(basename $RPM_FILE)" >> $GITHUB_ENV
             ;;
         esac
@@ -1789,16 +1807,16 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             if [[ -f '${{ inputs.deb_apt_source }}' ]]; then
-              sudo lxc file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
+              sudo incus file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
             else
               echo '${{ inputs.deb_apt_source }}' >$HOME/ploutos.list
-              sudo lxc file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/
+              sudo incus file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/
             fi
-            sudo lxc exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/apt/sources.list.d/ploutos.list
-            sudo lxc exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
-            sudo lxc exec testcon -- apt-key add ./aptkey.asc
-            sudo lxc exec testcon -- apt-get -y update
-            sudo lxc exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/apt/sources.list.d/ploutos.list
+            sudo incus exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
+            sudo incus exec testcon -- apt-key add ./aptkey.asc
+            sudo incus exec testcon -- apt-get -y update
+            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}
 
             # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
             # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
@@ -1806,28 +1824,28 @@ jobs:
             CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
 
             # append a line break to the conffile
-            for F in $(sudo lxc exec testcon -- cat ${CONFIFILE_LIST_FILE}); do
-              sudo lxc exec testcon -- sh -c "echo >> $F"
+            for F in $(sudo incus exec testcon -- cat ${CONFIFILE_LIST_FILE}); do
+              sudo incus exec testcon -- sh -c "echo >> $F"
             done
 
             # save the md5 checksums for later comparison
-            if sudo lxc exec testcon -- sh -c "xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
-              sudo lxc exec testcon -- cat ${SAVED_MD5SUMS}
+            if sudo incus exec testcon -- sh -c "xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
+              sudo incus exec testcon -- cat ${SAVED_MD5SUMS}
             else
               echo "Conffile change preservation checking will be skipped because no conffiles were detected."
-              sudo lxc exec testcon -- rm -f ${SAVED_MD5SUMS}
+              sudo incus exec testcon -- rm -f ${SAVED_MD5SUMS}
             fi
             ;;
           centos|rockylinux)
             if [[ -f '${{ inputs.rpm_yum_repo }}' ]]; then
-              sudo lxc file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
+              sudo incus file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
             else
               echo '${{ inputs.rpm_yum_repo }}' >$HOME/ploutos.repo
-              sudo lxc file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
+              sudo incus file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
             fi
-            sudo lxc exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
-            sudo lxc exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
-            sudo lxc exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
+            sudo incus exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
+            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}
             ;;
         esac
 
@@ -1836,10 +1854,10 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sudo lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}
+            sudo incus exec testcon -- apt-get -y install /tmp/${PKG_FILE}
             ;;
           centos|rockylinux)
-            sudo lxc exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee install.log
+            sudo incus exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee install.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' install.log
             ;;
@@ -1849,9 +1867,9 @@ jobs:
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'fresh-install' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
-        sudo lxc file push ${TEST_SCRIPT} testcon/tmp/test.sh
-        sudo lxc exec testcon -- chmod +x /tmp/test.sh
-        sudo lxc exec testcon -- /tmp/test.sh post-install
+        sudo incus file push ${TEST_SCRIPT} testcon/tmp/test.sh
+        sudo incus exec testcon -- chmod +x /tmp/test.sh
+        sudo incus exec testcon -- /tmp/test.sh post-install
 
     - name: Upgrade from the published package to the newly built package
       id: upgrade_package
@@ -1861,10 +1879,10 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             # See https://github.com/NLnetLabs/.github/issues/17 regarding --force-confXXX
-            sudo lxc exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}
+            sudo incus exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}
             ;;
           centos|rockylinux)
-            sudo lxc exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee upgrade.log
+            sudo incus exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee upgrade.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' upgrade.log
             ;;
@@ -1883,7 +1901,7 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
-            sudo lxc exec testcon -- sh -c "[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}"
+            sudo incus exec testcon -- sh -c "[ ! -f ${SAVED_MD5SUMS} ] || md5sum -c ${SAVED_MD5SUMS}"
             ;;
         esac
 
@@ -1891,18 +1909,18 @@ jobs:
       if: ${{ inputs.package_test_scripts_path != '' && steps.verify.outputs.mode == 'upgrade-from-published' }}
       run: |
         TEST_SCRIPT="$(echo '${{ inputs.package_test_scripts_path }}' | sed -e 's/<package>/${{ steps.verify.outputs.pkg }}/g')"
-        sudo lxc file push ${TEST_SCRIPT} testcon/tmp/test2.sh
-        sudo lxc exec testcon -- chmod +x /tmp/test2.sh
-        sudo lxc exec testcon -- /tmp/test2.sh post-upgrade
+        sudo incus file push ${TEST_SCRIPT} testcon/tmp/test2.sh
+        sudo incus exec testcon -- chmod +x /tmp/test2.sh
+        sudo incus exec testcon -- /tmp/test2.sh post-upgrade
 
     - name: Test uninstall (without purge)
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sudo lxc exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}
             ;;
           centos|rockylinux)
-            sudo lxc exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }} 2>&1 | tee remove.log
+            sudo incus exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }} 2>&1 | tee remove.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' remove.log
             ;;
@@ -1912,10 +1930,10 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            sudo lxc exec testcon -- apt-get -y install /tmp/${PKG_FILE}
+            sudo incus exec testcon -- apt-get -y install /tmp/${PKG_FILE}
             ;;
           centos|rockylinux)
-            sudo lxc exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee reinstall.log
+            sudo incus exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee reinstall.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' reinstall.log
             ;;
