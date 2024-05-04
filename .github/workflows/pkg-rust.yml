@@ -1685,6 +1685,7 @@ jobs:
 
     - name: Install Incus
       run: |
+        apt-grt update
         apt-get install -y incus
 
     # Fix iptables so that LXC containers can connect out after Docker sets FORWARD to DROP by default
