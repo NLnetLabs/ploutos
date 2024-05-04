@@ -1683,6 +1683,10 @@ jobs:
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
 
+    - name: Install Incus
+      run: |
+        apt-get install -y incus
+
     # Fix iptables so that LXC containers can connect out after Docker sets FORWARD to DROP by default
     # https://discuss.linuxcontainers.org/t/lxd-losts-iptables-rules-with-docker/15045/6.
     # This wasn't needed with Ubuntu 20.04 but is needed with Ubuntu 22.04.
@@ -1690,8 +1694,8 @@ jobs:
       run: |
         # This issue seems to affect various newer O/S's and the fix seems to be harmless on older O/S's, so we don't
         # bother trying to be clever about O/S version based logic but just do this for all hosts.
-        sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
-        sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT
+        sudo iptables -I DOCKER-USER -i incusbr0 -j ACCEPT
+        sudo iptables -I DOCKER-USER -o incusbr0 -j ACCEPT
 
     - name: Add current user to LXD group
       run: |
