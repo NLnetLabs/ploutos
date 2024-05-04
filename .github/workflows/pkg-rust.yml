@@ -1685,8 +1685,8 @@ jobs:
 
     - name: Install Incus
       run: |
-        apt-get update
-        apt-get install -y incus
+        sudo apt-get update
+        sudo apt-get install -y incus
 
     # Fix iptables so that LXC containers can connect out after Docker sets FORWARD to DROP by default
     # https://discuss.linuxcontainers.org/t/lxd-losts-iptables-rules-with-docker/15045/6.
