@@ -392,7 +392,7 @@ jobs:
           if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
             MODIFIED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "centos:7")) | del(.include[]? | select(.image == "centos:7"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:centos7"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed centos:7 image from package_build_rules because mirrorlist.centos.org is no longer available"
               PACKAGE_BUILD_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
@@ -435,7 +435,7 @@ jobs:
           if [[ "${PACKAGE_TEST_RULES_RAW_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c)
             MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c 'del(.image[]? | select(. == "centos:7")) | del(.include[]? | select(.image == "centos:7"))')
-            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "centos:7"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed centos:7 image from package_test_rules because Ploutos no longer supports building for CentOS 7"
               PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
