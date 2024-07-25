@@ -414,6 +414,23 @@ jobs:
             fi
           fi
 
+          # Exclude centos:7 because the CentOS package mirror is no longer available
+          # Specifically:
+          #   $ yum update -y
+          #   Loaded plugins: fastestmirror, ovl
+          #   Determining fastest mirrors
+          #   Could not retrieve mirrorlist http://mirrorlist.centos.org/?release=7&arch=x86_64&repo=os&infra=container error was
+          #   14: curl#6 - "Could not resolve host: mirrorlist.centos.org; Unknown error"
+          if [[ "${PACKAGE_TEST_RULES_RAW_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_RAW_JSON} | jq -c 'del(.image[]? | select(. == "centos:7")) | del(.include[]? | select(.image == "centos:7"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed centos:7 image from package_test_rules because the CentOS package mirror is no longer available"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
@@ -1245,18 +1262,18 @@ jobs:
             # line argument which might enable us to work the same way as we do for cargo deb above.
             # See: https://github.com/cat-in-136/cargo-generate-rpm/issues/18
 
-            # Determine any additional arguments that need to be passed to cargo generate-rpm
-            case "${OS_NAME}:${OS_REL}" in
-              centos:7)
-                # yum install fails on older CentOS with the default LZMA compression used by cargo generate-rpm since v0.5.0
-                # see: https://github.com/cat-in-136/cargo-generate-rpm/issues/30
-                EXTRA_CARGO_GENERATE_RPM_ARGS="--payload-compress gzip"
-                ;;
-              *)
-                # assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
-                EXTRA_CARGO_GENERATE_RPM_ARGS=""
-                ;;
-            esac
+            ## Determine any additional arguments that need to be passed to cargo generate-rpm
+            #case "${OS_NAME}:${OS_REL}" in
+            #  centos:7)
+            #    # yum install fails on older CentOS with the default LZMA compression used by cargo generate-rpm since v0.5.0
+            #    # see: https://github.com/cat-in-136/cargo-generate-rpm/issues/30
+            #    EXTRA_CARGO_GENERATE_RPM_ARGS="--payload-compress gzip"
+            #    ;;
+            #  *)
+            #    # assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
+            #    EXTRA_CARGO_GENERATE_RPM_ARGS=""
+            #    ;;
+            #esac
 
             # Hack to use a different service file without having to duplicate almost the entire 
             # [package.metadata.generate-rpm.assets] setting with only one entry changed. We don't need this with
@@ -1505,23 +1522,23 @@ jobs:
             EXTRA_RPMLINT_ARGS=
             LINTER_CONFIG_PATH="$HOME/.config/rpmlint"
 
-            case ${OS_REL} in
-              7)
-                # On CentOS 7 we only have the older rpmlint 1.x available, which has a known issue with the
-                # `missing-call-to-chdir-with-chroot` check causing false positives, therefore we filter this error
-                # out. The false positive issue was fixed in rpmlint 2.x.
-                #
-                # See: https://github.com/rpm-software-management/rpmlint/issues/84
-                mkdir $HOME/.config
-                cat <<'EOF' >${LINTER_CONFIG_PATH}
-        from Config import *
-        addFilter(".: no-buildhost-tag")
-        addFilter(".: no-changelogname-tag")
-        addFilter(".: missing-call-to-chdir-with-chroot")
-        EOF
-                ;;
+            #case ${OS_REL} in
+            #  7)
+            #    # On CentOS 7 we only have the older rpmlint 1.x available, which has a known issue with the
+            #    # `missing-call-to-chdir-with-chroot` check causing false positives, therefore we filter this error
+            #    # out. The false positive issue was fixed in rpmlint 2.x.
+            #    #
+            #    # See: https://github.com/rpm-software-management/rpmlint/issues/84
+            #    mkdir $HOME/.config
+            #    cat <<'EOF' >${LINTER_CONFIG_PATH}
+            #    from Config import *
+            #    addFilter(".: no-buildhost-tag")
+            #    addFilter(".: no-changelogname-tag")
+            #    addFilter(".: missing-call-to-chdir-with-chroot")
+            #    EOF
+            #    ;;
 
-              *)
+            #  *)
                 # Assume we are only invoked with something newer than CentOS 7, e.g. not CentOS 6 ;-)
                 if [[ "${{ inputs.strict_mode }}" == "true" ]]; then
                   EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --strict"
@@ -1529,12 +1546,12 @@ jobs:
 
                 mkdir $HOME/.config
                 cat <<'EOF' >${LINTER_CONFIG_PATH}
-        addFilter(".: no-buildhost-tag")
-        addFilter(".: no-changelogname-tag")
-        addFilter(".: no-group-tag")
-        addFilter(".: no-packager-tag")
-        addFilter(".: no-signature")
-        EOF
+                addFilter(".: no-buildhost-tag")
+                addFilter(".: no-changelogname-tag")
+                addFilter(".: no-group-tag")
+                addFilter(".: no-packager-tag")
+                addFilter(".: no-signature")
+                EOF
 
                 # rpmlint 2.x requires that we explicitly tell it where the config file is, and the pip installed
                 # version doesn't come with any existing list of valid licenses so we have to install one ourselves.
@@ -1547,8 +1564,8 @@ jobs:
                 curl --proto '=https' --tlsv1.2 --fail --output ${LICENSES_CONF_PATH} ${LICENSES_CONF_URL}
 
                 EXTRA_RPMLINT_ARGS="${EXTRA_RPMLINT_ARGS} --rpmlintrc ${LINTER_CONFIG_PATH} --config ${LICENSES_CONF_PATH}"
-                ;;
-            esac
+            #    ;;
+            #esac
 
             for CHECK_NAME in ${{ matrix.rpm_rpmlint_check_filters }}; do
               echo 'addFilter(".: '${CHECK_NAME}'")' >> ${LINTER_CONFIG_PATH}
