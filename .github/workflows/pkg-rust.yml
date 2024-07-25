@@ -196,7 +196,7 @@ on:
       docker_repo:
         required: false
         type: string
-        default: false
+        default: ''
       docker_context_path:
         description: "Relative path to use as the Docker build context. Defaults to the root of the git clone, i.e. '.'."
         required: false
