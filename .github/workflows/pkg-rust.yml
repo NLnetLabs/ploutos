@@ -434,7 +434,7 @@ jobs:
           # Exclude ubuntu:bionic because the LXC image is no longer available.
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
-            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "ubuntu:bionic")) | del(.include[]? | select(.image == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "ubuntu:bionic")) | del(.include[]? | select(.image == "ubuntu:bionic"))')
             MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "ubuntu:bionic"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed ubuntu:bionic image from package_test_rules because the LXC/Incus image no longer exists"
@@ -449,6 +449,17 @@ jobs:
             MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "centos:7"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed centos:7 image from package_test_rules because Ploutos no longer supports building for CentOS 7"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
+          # Exclude ubuntu:xenial because the LXC image is no longer available.
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "ubuntu:xenial")) | del(.include[]? | select(.image == "ubuntu:xenial"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "ubuntu:xenial"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed ubuntu:xenial image from package_test_rules because the LXC/Incus image no longer exists"
               PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
             fi
           fi
