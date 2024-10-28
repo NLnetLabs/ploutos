@@ -25,6 +25,8 @@ At the time of writing the GitHub web interface does not offer a way to delete t
 One way to update the latest vN tag to point to the latest vX.Y.Z tag using a **Bash** shell is:
 ```bash
 $ cd path/to/ploutos/git/clone
+$ git checkout main
+$ git pull
 $ git fetch --tags
 $ NEW_VER=$(git tag --points-at HEAD)
 $ MAJOR_VER=$(echo $NEW_VER | grep -Eo '^v[0-9]+')
