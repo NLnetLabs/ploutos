@@ -1269,7 +1269,7 @@ jobs:
             # This shouldn't be necessary...
             rm -f ${TARGET_DIR}/debian/*.deb
 
-            cargo deb \
+            RUST_LOG=debug cargo deb \
               ${{needs.prepare.outputs.cargo_manifest_path_arg}} \
               ${{needs.prepare.outputs.cargo_workspace_package_arg}} \
               --deb-version ${DEB_VER} \
@@ -1277,6 +1277,7 @@ jobs:
               -v ${EXTRA_CARGO_DEB_ARGS} \
               -- \
               --locked \
+              --verbose \
               ${EXTRA_BUILD_ARGS}
             ;;
 
