@@ -1670,10 +1670,18 @@ jobs:
         fi
 
         if [[ '${{ matrix.pkg }}' == '' ]]; then
-          echo "pkg=${{ needs.prepare.outputs.cargo_name }}" >> $GITHUB_OUTPUT
+          PKG="${{ needs.prepare.outputs.cargo_name }}"
         else
-          echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
+          PKG="${{ matrix.pkg }}"
         fi
+        echo "pkg=$PKG" >> $GITHUB_OUTPUT
+
+        if [[ '${{ matrix.published_pkg }}' == '' ]]; then
+          PUBLISHED_PKG="${{ matrix.published_pkg }}"
+        else
+          PUBLISHED_PKG="$PKG"
+        fi
+        echo "published_pkg=$PUBLISHED_PKG" >> $GITHUB_OUTPUT
 
         if [[ '${{ matrix.mode }}' == '' ]]; then
           echo "mode=fresh-install" >> $GITHUB_OUTPUT
@@ -1868,12 +1876,12 @@ jobs:
             sudo incus exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
             sudo incus exec testcon -- apt-key add ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
-            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
             # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
             # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
-            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
-            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
+            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.published_pkg }}-conffiles.md5"
+            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.published_pkg }}.conffiles"
 
             # append a line break to the conffile
             for F in $(sudo incus exec testcon -- cat ${CONFIFILE_LIST_FILE}); do
@@ -1897,7 +1905,7 @@ jobs:
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
             sudo incus exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
-            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.published_pkg }}
             ;;
         esac
 
