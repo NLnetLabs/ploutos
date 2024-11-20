@@ -1685,9 +1685,9 @@ jobs:
         echo "pkg=$PKG" >> $GITHUB_OUTPUT
 
         if [[ '${{ matrix.published_pkg }}' == '' ]]; then
-          PUBLISHED_PKG="${{ matrix.published_pkg }}"
-        else
           PUBLISHED_PKG="$PKG"
+        else
+          PUBLISHED_PKG="${{ matrix.published_pkg }}"
         fi
         echo "published_pkg=$PUBLISHED_PKG" >> $GITHUB_OUTPUT
 
