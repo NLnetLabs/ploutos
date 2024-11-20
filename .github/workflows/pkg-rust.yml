@@ -1379,7 +1379,9 @@ jobs:
               pushd ${{inputs.manifest_dir}}
             fi
   
-            cargo generate-rpm ${{needs.prepare.outputs.cargo_workspace_package_arg}} \
+            cargo generate-rpm \
+                ${{needs.prepare.outputs.cargo_manifest_path_arg}} \
+                ${{needs.prepare.outputs.cargo_workspace_package_arg}} \
                 --set-metadata "version=\"${PKG_APP_VER}\"" \
                 ${SCRIPTLETS} \
                 ${EXTRA_CARGO_GENERATE_RPM_ARGS}
