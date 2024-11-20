@@ -1341,6 +1341,11 @@ jobs:
                      ${{ needs.prepare.outputs.cargo_package_toml_path }}
             fi
 
+            # TODO: The cargo-generate-rpm missing ability to set scripts to files may have been resolved in
+            # cargo-generate-rpm v0.13.0 which mentions this in the release notes:
+            #
+            #   - If the scripts happen to be paths that exist load them by @jtk18 in #93
+            # 
             # https://github.com/NLnetLabs/krill/issues/907
             # cargo-generate-rpm doesn't support setting scripts to files, and we can't refer to a file that 
             # installed such as /usr/share/krill/rpm/postuninst because 'yum remove' removes the file before it
