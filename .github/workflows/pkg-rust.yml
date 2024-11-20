@@ -1367,7 +1367,10 @@ jobs:
               echo "${templ//#RPM_SYSTEMD_MACROS#/$value}" > "$SCRIPTLET_FILE"
 
               # Configure ourselves to use the updated scriptlets file as input to cargo generate-rpm.
-              SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
+              # Make sure the path to the RPM scriptlets is absolute otherwise it will not be found if
+              # we do pushd below for when `inputs.manifest_dir` is set.
+              ABS_SCRIPTLETS_PATH=$(realpath ${{ inputs.rpm_scriptlets_path }})
+              SCRIPTLETS="--metadata-overwrite=$ABS_SCRIPTLETS_PATH"
             fi
 
             find ${TARGET_DIR}/release -maxdepth 1 -type f -executable | xargs strip -s -v
