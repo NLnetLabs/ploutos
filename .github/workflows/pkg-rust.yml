@@ -822,7 +822,7 @@ jobs:
     # `tmp-` which will be ignored by packages.nlnetlabs.nl scripts.
     - name: Upload built binaries
       if: ${{ steps.skip.skip != 'true' }}
-      uses: Koenvh1/upload-artifact@main
+      uses: NLnetLabs/upload-artifact@main
       with:
         name: ${{ inputs.artifact_prefix }}tmp-cross-binaries-${{ matrix.target }}
         path: bins.tar
@@ -1096,7 +1096,7 @@ jobs:
 
     - name: Download cross-compiled binaries
       if: ${{ matrix.target != 'x86_64' }}
-      uses: Koenvh1/download-artifact@main
+      uses: NLnetLabs/download-artifact@main
       with:
         name: ${{ inputs.artifact_prefix }}tmp-cross-binaries-${{ matrix.target }}
         path: .
@@ -1616,7 +1616,7 @@ jobs:
     # but only to users logged in to GH with sufficient rights in this project. The uploaded artifact is also downloaded
     # by the next job (see below) to sanity check that it can be installed and results in a working Krill installation.
     - name: Upload package
-      uses: Koenvh1/upload-artifact@main
+      uses: NLnetLabs/upload-artifact@main
       with:
         name: ${{ inputs.artifact_prefix }}${{ steps.verify.outputs.pkg }}_${{ env.OS_NAME }}_${{ env.OS_REL }}_${{ matrix.target }}
         path: |
@@ -2069,7 +2069,7 @@ jobs:
 
       - name: Download cross-compiled binaries
         if: ${{ steps.verify.outputs.mode == 'copy' }}
-        uses: Koenvh1/download-artifact@main
+        uses: NLnetLabs/download-artifact@main
         with:
           name: ${{ inputs.artifact_prefix }}tmp-cross-binaries-${{ matrix.target }}
           # The file downloaded to dockerbin/xxx will be used by the Dockerfile
@@ -2135,7 +2135,7 @@ jobs:
 
       # Upload the Docker image as a GitHub Actions artifact, handy when not publishing or investigating a problem
       - name: Upload built image to GitHub Actions
-        uses: Koenvh1/upload-artifact@main
+        uses: NLnetLabs/upload-artifact@main
         with:
           name: ${{ inputs.artifact_prefix }}tmp-docker-image-${{ matrix.shortname }}
           path: /tmp/docker-${{ matrix.shortname }}-img.tar
