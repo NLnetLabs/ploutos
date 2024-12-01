@@ -871,7 +871,7 @@ jobs:
       # actions use node v20 which doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
       #uses: actions/checkout@v3 
       run: |
-        if type apt-get &/dev/null; then
+        if type apt-get &>/dev/null; then
           apt-get update
           apt-get install -y git
         elif type yum &>/dev/null; then
