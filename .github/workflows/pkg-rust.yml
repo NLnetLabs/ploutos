@@ -879,7 +879,7 @@ jobs:
           yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
           yum install -y git
         fi
-        git clone https://${{ github.server_url }}/${{ github.repository }} --branch ${{ github.ref_name }} --single-branch $GITHUB_WORKSPACE
+        git clone ${{ github.server_url }}/${{ github.repository }} --branch ${{ github.ref_name }} --single-branch $GITHUB_WORKSPACE
 
     - name: Print matrix
       # Disable default use of bash -x for easier to read output in the log
