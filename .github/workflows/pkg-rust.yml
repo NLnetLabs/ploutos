@@ -851,8 +851,35 @@ jobs:
       CARGO_GENERATE_RPM_VER: 0.10.2
       TOML_CLI_VER: 0.2.3
     steps:
+    # Allow CentOS 8 to continue working now that it is EOL
+    # See: https://stackoverflow.com/a/70930049
+    - name: CentOS 8 EOL workaround
+      if: ${{ matrix.image == 'centos:8' }}
+      run: |
+        sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
+    
+    # See: https://github.com/NLnetLabs/ploutos
+    # See: https://lists.debian.org/debian-devel-announce/2023/03/msg00006.html
+    # See: https://unix.stackexchange.com/a/743865
+    - name: Debian Stretch workaround
+      if: ${{ matrix.image == 'debian:stretch' }}
+      run: |
+        echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
+        echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
+
     - name: Checkout repository
-      uses: actions/checkout@v3 # v4 doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
+      # actions use node v20 which doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
+      #uses: actions/checkout@v3 
+      run: |
+        if which apt >/dev/null; then
+          apt-get update
+          apt-get install -y git
+        elif which yum >/dev/null; then
+          #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
+          yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
+          yum install -y git
+        fi
+        git clone https://${{ github.server_url }}/${{ github.repository }} --branch ${{ github.ref_name }} --single-branch $GITHUB_WORKSPACE
 
     - name: Print matrix
       # Disable default use of bash -x for easier to read output in the log
@@ -926,29 +953,12 @@ jobs:
         echo "OS_NAME=${IMAGE%:*}" >> $GITHUB_ENV
         echo "OS_REL=${IMAGE#*:}" >> $GITHUB_ENV
 
-    # Allow CentOS 8 to continue working now that it is EOL
-    # See: https://stackoverflow.com/a/70930049
-    - name: CentOS 8 EOL workaround
-      if: ${{ matrix.image == 'centos:8' }}
-      run: |
-        sed -i -e 's|mirrorlist=|#mirrorlist=|g' -e 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-Linux-*
-    
-    # See: https://github.com/NLnetLabs/ploutos
-    # See: https://lists.debian.org/debian-devel-announce/2023/03/msg00006.html
-    # See: https://unix.stackexchange.com/a/743865
-    - name: Debian Stretch workaround
-      if: ${{ matrix.image == 'debian:stretch' }}
-      run: |
-        echo "deb http://archive.debian.org/debian stretch main" > /etc/apt/sources.list
-        echo "deb http://archive.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
-
     # Install Rust the hard way rather than using a GH Action because the action doesn't work inside a Docker container.
     - name: Install Rust
       id: rust
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            apt-get update
             apt-get install -y curl
             ;;
         esac
@@ -978,8 +988,6 @@ jobs:
             apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
             ;;
           centos|rockylinux)
-            #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
-            yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
             yum install epel-release -y
             yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
 
