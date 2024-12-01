@@ -871,10 +871,10 @@ jobs:
       # actions use node v20 which doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
       #uses: actions/checkout@v3 
       run: |
-        if which apt >/dev/null; then
+        if type apt-get &/dev/null; then
           apt-get update
           apt-get install -y git
-        elif which yum >/dev/null; then
+        elif type yum &>/dev/null; then
           #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
           yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
           yum install -y git
