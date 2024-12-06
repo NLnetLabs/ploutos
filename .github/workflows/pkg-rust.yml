@@ -399,6 +399,28 @@ jobs:
             fi
           fi
 
+          # Exclude ubuntu:bionic as its GLIBC is too old to support Node 20 now required to use GitHub Actions
+          if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "ubuntu:bionic")) | del(.include[]? | select(.image == "ubuntu:bionic"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "ubuntu:bionic"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed ubuntu:bionic image from package_build_rules because its GLIBC is too old to support Node 20 required by GitHub Actions"
+              PACKAGE_BUILD_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
+          # Exclude debian:stretch as its GLIBC is too old to support Node 20 now required to use GitHub Actions
+          if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:stretch")) | del(.include[]? | select(.image == "debian:stretch"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:stretch image from package_build_rules because its GLIBC is too old to support Node 20 required by GitHub Actions"
+              PACKAGE_BUILD_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
