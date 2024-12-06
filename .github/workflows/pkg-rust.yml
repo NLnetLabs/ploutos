@@ -399,6 +399,17 @@ jobs:
             fi
           fi
 
+          # Exclude ubuntu:xenial as its GLIBC is too old to support Node 20 now required to use GitHub Actions
+          if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "ubuntu:xenial")) | del(.include[]? | select(.image == "ubuntu:xenial"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "ubuntu:xenial"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed ubuntu:xenial image from package_build_rules because its GLIBC is too old to support Node 20 required by GitHub Actions"
+              PACKAGE_BUILD_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           # Exclude ubuntu:bionic as its GLIBC is too old to support Node 20 now required to use GitHub Actions
           if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
