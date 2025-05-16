@@ -1710,6 +1710,13 @@ jobs:
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
 
+        if [[ '${{ matrix.published_pkg }}' == '' ]]; then
+          PUBLISHED_PKG="$PKG"
+        else
+          PUBLISHED_PKG="${{ matrix.published_pkg }}"
+        fi
+        echo "published_pkg=$PUBLISHED_PKG" >> $GITHUB_OUTPUT
+
         if [[ '${{ matrix.mode }}' == '' ]]; then
           echo "mode=fresh-install" >> $GITHUB_OUTPUT
         else
@@ -1903,24 +1910,26 @@ jobs:
             sudo incus exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
             sudo incus exec testcon -- apt-key add ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
-            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
-            # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
-            # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
-            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
-            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
-
-            # append a line break to the conffile
-            for F in $(sudo incus exec testcon -- cat ${CONFIFILE_LIST_FILE}); do
-              sudo incus exec testcon -- sh -c "echo >> $F"
-            done
-
-            # save the md5 checksums for later comparison
-            if sudo incus exec testcon -- sh -c "xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
-              sudo incus exec testcon -- cat ${SAVED_MD5SUMS}
-            else
-              echo "Conffile change preservation checking will be skipped because no conffiles were detected."
-              sudo incus exec testcon -- rm -f ${SAVED_MD5SUMS}
+            if [[ "${{ steps.verify.outputs.pkg }}" != "${{ steps.verify.outputs.published_pkg }}" ]]; then
+              # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
+              # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
+              SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
+              CONFFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
+  
+              # append a line break to the conffile
+              for F in $(sudo incus exec testcon -- cat ${CONFFILE_LIST_FILE}); do
+                sudo incus exec testcon -- sh -c "echo >> $F"
+              done
+  
+              # save the md5 checksums for later comparison
+              if sudo incus exec testcon -- sh -c "xargs -a ${CONFFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
+                sudo incus exec testcon -- cat ${SAVED_MD5SUMS}
+              else
+                echo "Conffile change preservation checking will be skipped because no conffiles were detected."
+                sudo incus exec testcon -- rm -f ${SAVED_MD5SUMS}
+              fi
             fi
             ;;
           centos|rockylinux)
