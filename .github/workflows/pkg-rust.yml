@@ -1941,7 +1941,7 @@ jobs:
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
             sudo incus exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
-            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.published_pkg }}
             ;;
         esac
 
