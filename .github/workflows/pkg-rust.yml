@@ -1912,7 +1912,7 @@ jobs:
             sudo incus exec testcon -- apt-get -y update
             sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
-            if [[ "${{ steps.verify.outputs.pkg }}" != "${{ steps.verify.outputs.published_pkg }}" ]]; then
+            if [[ "${{ steps.verify.outputs.pkg }}" == "${{ steps.verify.outputs.published_pkg }}" ]]; then
               # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
               # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
               SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
