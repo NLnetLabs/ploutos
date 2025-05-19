@@ -1745,7 +1745,7 @@ jobs:
         echo EOF >> "$GITHUB_OUTPUT"
 
         if [[ '${{ matrix.rpm_yum_extra_args }}' != '' ]]; then
-          echo "rpm_yum_extra_args="${{ matrix.rpm_yum_extra_args }}"
+          echo 'rpm_yum_extra_args=${{ matrix.rpm_yum_extra_args }}' >> $GITHUB_OUTPUT
         fi
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
