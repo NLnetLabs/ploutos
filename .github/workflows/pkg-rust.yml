@@ -1733,10 +1733,11 @@ jobs:
         echo 'rpm_yum_repo<<EOF' >> "$GITHUB_OUTPUT"
         {
           if [[ '${{ matrix.rpm_yum_repo }}' == '' ]]; then
-            cat <<EOF
+            cat <<'EOF'
         [nlnetlabs]
         name=NLnet Labs
-        baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch\nenabled=1
+        baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
+        enabled=1
         EOF
           else
             echo '${{ matrix.rpm_yum_repo }}'
