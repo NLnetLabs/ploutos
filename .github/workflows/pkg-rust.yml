@@ -530,7 +530,7 @@ jobs:
           echo '{ "labels": [' ${CROSS_RUNS_ON} '] }' | jq >> $GITHUB_OUTPUT
           echo "END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
 
-          RETRY_DELAY_MS=30000
+          RETRY_DELAY_MS=10000
           MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
           echo "retry_delay_ms=${RETRY_DELAY_MS}" >> $GITHUB_OUTPUT
           echo "max_tries=${MAX_TRIES}" >> $GITHUB_OUTPUT
