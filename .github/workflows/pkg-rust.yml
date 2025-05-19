@@ -1731,6 +1731,7 @@ jobs:
         else
           RPM_YUM_REPO="${{ matrix.rpm_yum_repo }}"
         fi
+        # See: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings
         {
           echo "rpm_yum_repo<<EOF'
           echo $RPM_YUM_REPO"
