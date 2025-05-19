@@ -1734,9 +1734,9 @@ jobs:
         # See: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings
         {
           echo "rpm_yum_repo<<EOF'
-          echo $RPM_YUM_REPO"
-          echo 'EOF'
-        } >> $GITHUB_OUTPUT
+          echo $RPM_YUM_REPO
+          echo EOF
+        } >> "$GITHUB_OUTPUT"
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
     # that will be available in GH Action step definitions below.
