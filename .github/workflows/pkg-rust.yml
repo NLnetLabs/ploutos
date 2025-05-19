@@ -1742,7 +1742,10 @@ jobs:
             echo '${{ matrix.rpm_yum_repo }}'
           fi
         } >> "$GITHUB_OUTPUT"
-        echo EOF >> "$GITHUB_OUTPUT"
+
+        if [[ '${{ matrix.rpm_yum_extra_args }}' != '' ]]; then
+          echo "rpm_yum_extra_args="${{ matrix.rpm_yum_extra_args }}"
+        fi
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
     # that will be available in GH Action step definitions below.
@@ -1956,7 +1959,7 @@ jobs:
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
             sudo incus exec testcon -- rpm --import ${{ steps.verify.outputs.rpm_yum_key_url }}
-            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.published_pkg }}
+            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.rpm_yum_extra_args }} ${{ steps.verify.outputs.published_pkg }}
             ;;
         esac
 
