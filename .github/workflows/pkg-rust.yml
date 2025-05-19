@@ -1731,7 +1731,11 @@ jobs:
         else
           RPM_YUM_REPO="${{ matrix.rpm_yum_repo }}"
         fi
-        echo "rpm_yum_repo=$RPM_YUM_REPO" >> $GITHUB_OUTPUT
+        {
+          echo "rpm_yum_repo<<EOF'
+          echo $RPM_YUM_REPO"
+          echo 'EOF'
+        } >> $GITHUB_OUTPUT
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
     # that will be available in GH Action step definitions below.
