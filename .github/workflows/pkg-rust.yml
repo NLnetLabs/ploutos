@@ -1742,6 +1742,7 @@ jobs:
             echo '${{ matrix.rpm_yum_repo }}'
           fi
         } >> "$GITHUB_OUTPUT"
+        echo EOF >> "$GITHUB_OUTPUT"
 
         if [[ '${{ matrix.rpm_yum_extra_args }}' != '' ]]; then
           echo "rpm_yum_extra_args="${{ matrix.rpm_yum_extra_args }}"
