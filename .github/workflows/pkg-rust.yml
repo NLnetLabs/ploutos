@@ -1733,10 +1733,10 @@ jobs:
         {
           if [[ '${{ matrix.rpm_yum_repo }}' == '' ]]; then
             cat <<EOF
-[nlnetlabs]
-name=NLnet Labs
-baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch\nenabled=1
-EOF
+        [nlnetlabs]
+        name=NLnet Labs
+        baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch\nenabled=1
+        EOF
           else
             echo "${{ matrix.rpm_yum_repo }}"
           fi
