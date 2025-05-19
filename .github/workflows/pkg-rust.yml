@@ -223,16 +223,6 @@ on:
         required: false
         type: string
         default: ''
-      deb_apt_key_url:
-        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key."
-        required: false
-        type: string
-        default: 'https://packages.nlnetlabs.nl/aptkey.asc'
-      deb_apt_source:
-        description: "When upgrading from a previously published package, this is either lines of text to write to an APT sources file, or the relative path to an APT sources file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders."
-        required: false
-        type: string
-        default: 'deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
 
       cross_build_args:
         description: "Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`."
@@ -256,20 +246,6 @@ on:
         required: false
         type: string
         default: ''
-      rpm_yum_key_url:
-        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key."
-        required: false
-        type: string
-        default: 'https://packages.nlnetlabs.nl/aptkey.asc'
-      rpm_yum_repo:
-        description: "When upgrading from a previously published package, this is either lines of text to write to an RPM repo file, or the relative path to an RPM repo file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders."
-        required: false
-        type: string
-        default: |
-          [nlnetlabs]
-          name=NLnet Labs
-          baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
-          enabled=1
 
       package_test_scripts_path:
         description: "The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade."
@@ -1900,14 +1876,14 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            if [[ -f '${{ inputs.deb_apt_source }}' ]]; then
-              sudo incus file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
+            if [[ -f '${{ matrix.deb_apt_source }}' ]]; then
+              sudo incus file push ${{ matrix.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
             else
-              echo '${{ inputs.deb_apt_source }}' >$HOME/ploutos.list
+              echo '${{ matrix.deb_apt_source }}' >$HOME/ploutos.list
               sudo incus file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/apt/sources.list.d/ploutos.list
-            sudo incus exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
+            sudo incus exec testcon -- wget -q ${{ matrix.deb_apt_key_url }} -Oaptkey.asc
             sudo incus exec testcon -- apt-key add ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
             sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
@@ -1933,14 +1909,14 @@ jobs:
             fi
             ;;
           centos|rockylinux)
-            if [[ -f '${{ inputs.rpm_yum_repo }}' ]]; then
-              sudo incus file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
+            if [[ -f '${{ matrix.rpm_yum_repo }}' ]]; then
+              sudo incus file push ${{ matrix.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
             else
-              echo '${{ inputs.rpm_yum_repo }}' >$HOME/ploutos.repo
+              echo '${{ matrix.rpm_yum_repo }}' >$HOME/ploutos.repo
               sudo incus file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
-            sudo incus exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
+            sudo incus exec testcon -- rpm --import ${{ matrix.rpm_yum_key_url }}
             sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.published_pkg }}
             ;;
         esac
