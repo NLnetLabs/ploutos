@@ -223,6 +223,16 @@ on:
         required: false
         type: string
         default: ''
+      deb_apt_key_url:
+        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key.. Can also be specified per test case."
+        required: false
+        type: string
+        default: 'https://packages.nlnetlabs.nl/aptkey.asc'
+      deb_apt_source:
+        description: "When upgrading from a previously published package, this is either lines of text to write to an APT sources file, or the relative path to an APT sources file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders.. Can also be specified per test case."
+        required: false
+        type: string
+        default: 'deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
 
       cross_build_args:
         description: "Extra arguments to cargo build when cross-compiling, e.g. `--features static-openssl`."
@@ -243,6 +253,25 @@ on:
         default: ''
       rpm_scriptlets_path:
         description: "The path to a TOML file defining one or more of pre_install_script, post_install_script and/or post_uninstall_script."
+        required: false
+        type: string
+        default: ''
+      rpm_yum_key_url:
+        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key. Can also be specified per test case."
+        required: false
+        type: string
+        default: 'https://packages.nlnetlabs.nl/aptkey.asc'
+      rpm_yum_repo:
+        description: "When upgrading from a previously published package, this is either lines of text to write to an RPM repo file, or the relative path to an RPM repo file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders. Can also be specified per test case."
+        required: false
+        type: string
+        default: |
+          [nlnetlabs]
+          name=NLnet Labs
+          baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
+          enabled=1
+      rpm_yum_extra_args:
+        description: "When upgrading from a previously published package, pass these additional arguments to yum install. Can also be specified per test case."
         required: false
         type: string
         default: ''
@@ -1708,31 +1737,41 @@ jobs:
           echo "image=${{ matrix.os }}" >> $GITHUB_OUTPUT
         fi
 
-        if [[ '${{ matrix.deb_apt_key_url }}' == '' ]]; then
-          DEB_APT_KEY_URL='https://packages.nlnetlabs.nl/aptkey.asc'
-        else
+        if [[ '${{ matrix.deb_apt_key_url }}' != '' ]]; then
           DEB_APT_KEY_URL="${{ matrix.deb_apt_key_url }}"
+        elif [[ '${{ inputs.deb_apt_key_url }}' != '' ]]; then
+          DEB_APT_KEY_URL="${{ inputs.deb_apt_key_url }}";
+        else
+          DEB_APT_KEY_URL='https://packages.nlnetlabs.nl/aptkey.asc'
         fi
         echo "deb_apt_key_url=$DEB_APT_KEY_URL" >> $GITHUB_OUTPUT
 
-        if [[ '${{ matrix.deb_apt_source }}' == '' ]]; then
-          DEB_APT_SOURCE='deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
-        else
+        if [[ '${{ matrix.deb_apt_source }}' != '' ]]; then
           DEB_APT_SOURCE="${{ matrix.deb_apt_source }}"
+        elif [[ '${{ inputs.deb_apt_source }}' != '' ]]; then
+          DEB_APT_SOURCE="${{ inputs.deb_apt_source }}"
+        else
+          DEB_APT_SOURCE='deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
         fi
         echo "deb_apt_source=$DEB_APT_SOURCE" >> $GITHUB_OUTPUT
 
-        if [[ '${{ matrix.rpm_yum_key_url }}' == '' ]]; then
-          RPM_YUM_KEY_URL="https://packages.nlnetlabs.nl/aptkey.asc"
-        else
+        if [[ '${{ matrix.rpm_yum_key_url }}' != '' ]]; then
           RPM_YUM_KEY_URL="${{ matrix.rpm_yum_key_url }}"
+        elif [[ '${{ inputs.rpm_yum_key_url }}' != '' ]]; then
+          RPM_YUM_KEY_URL="${{ inputs.rpm_yum_key_url }}"
+        else
+          RPM_YUM_KEY_URL="https://packages.nlnetlabs.nl/aptkey.asc"
         fi
         echo "rpm_yum_key_url=$RPM_YUM_KEY_URL" >> $GITHUB_OUTPUT
 
         # See: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings
         echo 'rpm_yum_repo<<EOF' >> "$GITHUB_OUTPUT"
         {
-          if [[ '${{ matrix.rpm_yum_repo }}' == '' ]]; then
+          if [[ '${{ matrix.rpm_yum_repo }}' != '' ]]; then
+            echo '${{ matrix.rpm_yum_repo }}'
+          elif [[ '${{ inputs.rpm_yum_repo }}' != '' ]]; then
+            echo '${{ inputs.rpm_yum_repo }}'
+          else
             cat <<'EOF'
         [nlnetlabs]
         name=NLnet Labs
@@ -1740,13 +1779,14 @@ jobs:
         enabled=1
         EOF
           else
-            echo '${{ matrix.rpm_yum_repo }}'
           fi
         } >> "$GITHUB_OUTPUT"
         echo EOF >> "$GITHUB_OUTPUT"
 
         if [[ '${{ matrix.rpm_yum_extra_args }}' != '' ]]; then
           echo 'rpm_yum_extra_args=${{ matrix.rpm_yum_extra_args }}' >> $GITHUB_OUTPUT
+        elif [[ '${{ inputs.rpm_yum_extra_args }}' != '' ]]; then
+          echo 'rpm_yum_extra_args=${{ inputs.rpm_yum_extra_args }}' >> $GITHUB_OUTPUT
         fi
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
