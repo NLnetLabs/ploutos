@@ -1690,7 +1690,7 @@ jobs:
         fi
 
         if [[ '${{ matrix.published_pkg }}' == '' ]]; then
-          PUBLISHED_PKG="$PKG"
+          PUBLISHED_PKG="${{ matrix.pkg }}"
         else
           PUBLISHED_PKG="${{ matrix.published_pkg }}"
         fi
