@@ -1778,7 +1778,6 @@ jobs:
         baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
         enabled=1
         EOF
-          else
           fi
         } >> "$GITHUB_OUTPUT"
         echo EOF >> "$GITHUB_OUTPUT"
