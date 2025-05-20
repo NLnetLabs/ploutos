@@ -1738,27 +1738,27 @@ jobs:
         fi
 
         if [[ '${{ matrix.deb_apt_key_url }}' != '' ]]; then
-          DEB_APT_KEY_URL="${{ matrix.deb_apt_key_url }}"
+          DEB_APT_KEY_URL='${{ matrix.deb_apt_key_url }}'
         elif [[ '${{ inputs.deb_apt_key_url }}' != '' ]]; then
-          DEB_APT_KEY_URL="${{ inputs.deb_apt_key_url }}";
+          DEB_APT_KEY_URL='${{ inputs.deb_apt_key_url }}'
         else
           DEB_APT_KEY_URL='https://packages.nlnetlabs.nl/aptkey.asc'
         fi
         echo "deb_apt_key_url=$DEB_APT_KEY_URL" >> $GITHUB_OUTPUT
 
         if [[ '${{ matrix.deb_apt_source }}' != '' ]]; then
-          DEB_APT_SOURCE="${{ matrix.deb_apt_source }}"
+          DEB_APT_SOURCE='${{ matrix.deb_apt_source }}'
         elif [[ '${{ inputs.deb_apt_source }}' != '' ]]; then
-          DEB_APT_SOURCE="${{ inputs.deb_apt_source }}"
+          DEB_APT_SOURCE='${{ inputs.deb_apt_source }}'
         else
           DEB_APT_SOURCE='deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
         fi
         echo "deb_apt_source=$DEB_APT_SOURCE" >> $GITHUB_OUTPUT
 
         if [[ '${{ matrix.rpm_yum_key_url }}' != '' ]]; then
-          RPM_YUM_KEY_URL="${{ matrix.rpm_yum_key_url }}"
+          RPM_YUM_KEY_URL='${{ matrix.rpm_yum_key_url }}'
         elif [[ '${{ inputs.rpm_yum_key_url }}' != '' ]]; then
-          RPM_YUM_KEY_URL="${{ inputs.rpm_yum_key_url }}"
+          RPM_YUM_KEY_URL='${{ inputs.rpm_yum_key_url }}'
         else
           RPM_YUM_KEY_URL="https://packages.nlnetlabs.nl/aptkey.asc"
         fi
