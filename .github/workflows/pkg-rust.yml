@@ -224,12 +224,12 @@ on:
         type: string
         default: ''
       deb_apt_key_url:
-        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key."
+        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key.. Can also be specified per test case."
         required: false
         type: string
         default: 'https://packages.nlnetlabs.nl/aptkey.asc'
       deb_apt_source:
-        description: "When upgrading from a previously published package, this is either lines of text to write to an APT sources file, or the relative path to an APT sources file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders."
+        description: "When upgrading from a previously published package, this is either lines of text to write to an APT sources file, or the relative path to an APT sources file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders.. Can also be specified per test case."
         required: false
         type: string
         default: 'deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
@@ -257,12 +257,12 @@ on:
         type: string
         default: ''
       rpm_yum_key_url:
-        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key."
+        description: "When upgrading from a previously published package, this is the URL to the published repository key. Defaults to the NLnet Labs repository key. Can also be specified per test case."
         required: false
         type: string
         default: 'https://packages.nlnetlabs.nl/aptkey.asc'
       rpm_yum_repo:
-        description: "When upgrading from a previously published package, this is either lines of text to write to an RPM repo file, or the relative path to an RPM repo file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders."
+        description: "When upgrading from a previously published package, this is either lines of text to write to an RPM repo file, or the relative path to an RPM repo file to install. Defaults to the NLnet Labs repository. Can use ${OS_NAME} and ${OS_REL} placeholders. Can also be specified per test case."
         required: false
         type: string
         default: |
@@ -270,6 +270,11 @@ on:
           name=NLnet Labs
           baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
           enabled=1
+      rpm_yum_extra_args:
+        description: "When upgrading from a previously published package, pass these additional arguments to yum install. Can also be specified per test case."
+        required: false
+        type: string
+        default: ''
 
       package_test_scripts_path:
         description: "The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade."
@@ -554,6 +559,9 @@ jobs:
           echo '{ "labels": [' ${CROSS_RUNS_ON} '] }' | jq >> $GITHUB_OUTPUT
           echo "END_OF_CROSS_RUNS_ON" >> $GITHUB_OUTPUT
 
+          # While this delay may seem fairly high, reducing it greatly
+          # increases the chances of here or elsewhere in the workflow getting
+          # an HTTP 429 Too Many Requests error from the GH API.
           RETRY_DELAY_MS=30000
           MAX_TRIES=$(( ( ${{ inputs.cross_max_wait_mins }} * 60 * 1000 ) / ${RETRY_DELAY_MS} ))
           echo "retry_delay_ms=${RETRY_DELAY_MS}" >> $GITHUB_OUTPUT
@@ -881,7 +889,7 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare.outputs.package_build_rules) }}
     env:
       CARGO_DEB_VER: 1.42.2
-      CARGO_GENERATE_RPM_VER: 0.10.2
+      CARGO_GENERATE_RPM_VER: 0.16.1
       TOML_CLI_VER: 0.2.3
     steps:
     - name: Checkout repository
@@ -1710,6 +1718,13 @@ jobs:
           echo "pkg=${{ matrix.pkg }}" >> $GITHUB_OUTPUT
         fi
 
+        if [[ '${{ matrix.published_pkg }}' == '' ]]; then
+          PUBLISHED_PKG="${{ matrix.pkg }}"
+        else
+          PUBLISHED_PKG="${{ matrix.published_pkg }}"
+        fi
+        echo "published_pkg=$PUBLISHED_PKG" >> $GITHUB_OUTPUT
+
         if [[ '${{ matrix.mode }}' == '' ]]; then
           echo "mode=fresh-install" >> $GITHUB_OUTPUT
         else
@@ -1720,6 +1735,57 @@ jobs:
           echo "image=${{ matrix.image }}" >> $GITHUB_OUTPUT
         else
           echo "image=${{ matrix.os }}" >> $GITHUB_OUTPUT
+        fi
+
+        if [[ '${{ matrix.deb_apt_key_url }}' != '' ]]; then
+          DEB_APT_KEY_URL='${{ matrix.deb_apt_key_url }}'
+        elif [[ '${{ inputs.deb_apt_key_url }}' != '' ]]; then
+          DEB_APT_KEY_URL='${{ inputs.deb_apt_key_url }}'
+        else
+          DEB_APT_KEY_URL='https://packages.nlnetlabs.nl/aptkey.asc'
+        fi
+        echo "deb_apt_key_url=$DEB_APT_KEY_URL" >> $GITHUB_OUTPUT
+
+        if [[ '${{ matrix.deb_apt_source }}' != '' ]]; then
+          DEB_APT_SOURCE='${{ matrix.deb_apt_source }}'
+        elif [[ '${{ inputs.deb_apt_source }}' != '' ]]; then
+          DEB_APT_SOURCE='${{ inputs.deb_apt_source }}'
+        else
+          DEB_APT_SOURCE='deb [arch=amd64] https://packages.nlnetlabs.nl/linux/${OS_NAME}/ ${OS_REL} main'
+        fi
+        echo "deb_apt_source=$DEB_APT_SOURCE" >> $GITHUB_OUTPUT
+
+        if [[ '${{ matrix.rpm_yum_key_url }}' != '' ]]; then
+          RPM_YUM_KEY_URL='${{ matrix.rpm_yum_key_url }}'
+        elif [[ '${{ inputs.rpm_yum_key_url }}' != '' ]]; then
+          RPM_YUM_KEY_URL='${{ inputs.rpm_yum_key_url }}'
+        else
+          RPM_YUM_KEY_URL="https://packages.nlnetlabs.nl/aptkey.asc"
+        fi
+        echo "rpm_yum_key_url=$RPM_YUM_KEY_URL" >> $GITHUB_OUTPUT
+
+        # See: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#multiline-strings
+        echo 'rpm_yum_repo<<EOF' >> "$GITHUB_OUTPUT"
+        {
+          if [[ '${{ matrix.rpm_yum_repo }}' != '' ]]; then
+            echo '${{ matrix.rpm_yum_repo }}'
+          elif [[ '${{ inputs.rpm_yum_repo }}' != '' ]]; then
+            echo '${{ inputs.rpm_yum_repo }}'
+          else
+            cat <<'EOF'
+        [nlnetlabs]
+        name=NLnet Labs
+        baseurl=https://packages.nlnetlabs.nl/linux/centos/$releasever/main/$basearch
+        enabled=1
+        EOF
+          fi
+        } >> "$GITHUB_OUTPUT"
+        echo EOF >> "$GITHUB_OUTPUT"
+
+        if [[ '${{ matrix.rpm_yum_extra_args }}' != '' ]]; then
+          echo 'rpm_yum_extra_args=${{ matrix.rpm_yum_extra_args }}' >> $GITHUB_OUTPUT
+        elif [[ '${{ inputs.rpm_yum_extra_args }}' != '' ]]; then
+          echo 'rpm_yum_extra_args=${{ inputs.rpm_yum_extra_args }}' >> $GITHUB_OUTPUT
         fi
 
     # Set some environment variables that will be available to "run" steps below in this job, and some output variables
@@ -1893,46 +1959,48 @@ jobs:
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
-            if [[ -f '${{ inputs.deb_apt_source }}' ]]; then
-              sudo incus file push ${{ inputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
+            if [[ -f '${{ steps.verify.outputs.deb_apt_source }}' ]]; then
+              sudo incus file push ${{ steps.verify.outputs.deb_apt_source }} testcon/etc/apt/sources.list.d/ploutos.list
             else
-              echo '${{ inputs.deb_apt_source }}' >$HOME/ploutos.list
+              echo -e '${{ steps.verify.outputs.deb_apt_source }}' >$HOME/ploutos.list
               sudo incus file push $HOME/ploutos.list testcon/etc/apt/sources.list.d/
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/apt/sources.list.d/ploutos.list
-            sudo incus exec testcon -- wget -q ${{ inputs.deb_apt_key_url }} -Oaptkey.asc
+            sudo incus exec testcon -- wget -q ${{ steps.verify.outputs.deb_apt_key_url }} -Oaptkey.asc
             sudo incus exec testcon -- apt-key add ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
-            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
-            # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
-            # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
-            SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
-            CONFIFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
-
-            # append a line break to the conffile
-            for F in $(sudo incus exec testcon -- cat ${CONFIFILE_LIST_FILE}); do
-              sudo incus exec testcon -- sh -c "echo >> $F"
-            done
-
-            # save the md5 checksums for later comparison
-            if sudo incus exec testcon -- sh -c "xargs -a ${CONFIFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
-              sudo incus exec testcon -- cat ${SAVED_MD5SUMS}
-            else
-              echo "Conffile change preservation checking will be skipped because no conffiles were detected."
-              sudo incus exec testcon -- rm -f ${SAVED_MD5SUMS}
+            if [[ "${{ steps.verify.outputs.pkg }}" == "${{ steps.verify.outputs.published_pkg }}" ]]; then
+              # determine the conffiles, append a harmless line break to each one (so that they are modified) then save
+              # the md5sums of the modified files for comparison after upgrade to ensure our edits are not overwritten
+              SAVED_MD5SUMS="/tmp/${{ steps.verify.outputs.pkg }}-conffiles.md5"
+              CONFFILE_LIST_FILE="/var/lib/dpkg/info/${{ steps.verify.outputs.pkg }}.conffiles"
+  
+              # append a line break to the conffile
+              for F in $(sudo incus exec testcon -- cat ${CONFFILE_LIST_FILE}); do
+                sudo incus exec testcon -- sh -c "echo >> $F"
+              done
+  
+              # save the md5 checksums for later comparison
+              if sudo incus exec testcon -- sh -c "xargs -a ${CONFFILE_LIST_FILE} md5sum > ${SAVED_MD5SUMS}"; then
+                sudo incus exec testcon -- cat ${SAVED_MD5SUMS}
+              else
+                echo "Conffile change preservation checking will be skipped because no conffiles were detected."
+                sudo incus exec testcon -- rm -f ${SAVED_MD5SUMS}
+              fi
             fi
             ;;
           centos|rockylinux)
-            if [[ -f '${{ inputs.rpm_yum_repo }}' ]]; then
-              sudo incus file push ${{ inputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
+            if [[ -f '${{ steps.verify.outputs.rpm_yum_repo }}' ]]; then
+              sudo incus file push ${{ steps.verify.outputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
             else
-              echo '${{ inputs.rpm_yum_repo }}' >$HOME/ploutos.repo
+              echo -e '${{ steps.verify.outputs.rpm_yum_repo }}' >$HOME/ploutos.repo
               sudo incus file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
-            sudo incus exec testcon -- rpm --import ${{ inputs.rpm_yum_key_url }}
-            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.pkg }}
+            sudo incus exec testcon -- rpm --import ${{ steps.verify.outputs.rpm_yum_key_url }}
+            sudo incus exec testcon -- yum install -y ${{ steps.verify.outputs.rpm_yum_extra_args }} ${{ steps.verify.outputs.published_pkg }}
             ;;
         esac
 
