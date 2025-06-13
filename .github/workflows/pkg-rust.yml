@@ -888,7 +888,7 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.prepare.outputs.package_build_rules) }}
     env:
-      CARGO_DEB_VER: 1.42.2
+      CARGO_DEB_VER: 2.12.1
       CARGO_GENERATE_RPM_VER: 0.16.1
       TOML_CLI_VER: 0.2.3
     steps:
