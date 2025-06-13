@@ -1306,7 +1306,7 @@ jobs:
                 ;;
             esac
 
-            DEB_VER="${PKG_APP_VER}${OS_REL}"
+            DEB_VER="${PKG_APP_VER}-1${OS_REL}"
 
             # This shouldn't be necessary...
             rm -f ${TARGET_DIR}/debian/*.deb
