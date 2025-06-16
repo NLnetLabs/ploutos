@@ -945,11 +945,11 @@ jobs:
           exit 1
         fi
 
-        # Take the last part after the slash, for rockylinux/rockylinux
-        OS_NAME=${IMAGE#*/}
-
         OS_NAME=${IMAGE%:*}
         OS_REL=${IMAGE#*:}
+
+        # Take the last part after the slash, e.g. for rockylinux/rockylinux
+        OS_NAME=${OS_NAME#*/}
 
         if [[ "${OS_NAME}" == '' || "${OS_REL}" == '' ]]; then
           echo "::error::Matrix variable 'image' and/or 'os' must be of the form '<os name>:<os release>' in package_build_rules"
