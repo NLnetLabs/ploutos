@@ -945,6 +945,9 @@ jobs:
           exit 1
         fi
 
+        # Take the last part after the slash, for rockylinux/rockylinux
+        OS_NAME=${IMAGE#*/}
+
         OS_NAME=${IMAGE%:*}
         OS_REL=${IMAGE#*:}
 
