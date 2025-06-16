@@ -892,6 +892,12 @@ jobs:
       CARGO_GENERATE_RPM_VER: 0.16.1
       TOML_CLI_VER: 0.2.3
     steps:
+    - name: Alma Linux GZIP workaround
+      if: ${{ matrix.image == 'almalinux:10' }}
+      run: |
+        yum update -y
+        yum install gzip -y
+
     - name: Checkout repository
       uses: actions/checkout@v3 # v4 doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
 
