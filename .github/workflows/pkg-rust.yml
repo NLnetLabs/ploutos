@@ -979,7 +979,8 @@ jobs:
       run: |
           yum update -y
           yum install bash
-    
+          echo "PATH=$PATH:/bin" >> ~/.bashrc
+
     # See: https://github.com/NLnetLabs/ploutos
     # See: https://lists.debian.org/debian-devel-announce/2023/03/msg00006.html
     # See: https://unix.stackexchange.com/a/743865
