@@ -967,8 +967,8 @@ jobs:
             ;;
         esac
 
-        echo "OS_NAME=${IMAGE%:*}" >> $GITHUB_ENV
-        echo "OS_REL=${IMAGE#*:}" >> $GITHUB_ENV
+        echo "OS_NAME=${OS_NAME}" >> $GITHUB_ENV
+        echo "OS_REL=${OS_REL}" >> $GITHUB_ENV
 
     # Allow CentOS 8 to continue working now that it is EOL
     # See: https://stackoverflow.com/a/70930049
