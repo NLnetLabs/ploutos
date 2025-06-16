@@ -1022,7 +1022,7 @@ jobs:
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
             yum install epel-release -y
-            yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
+            yum install -y findutils gcc jq bash ${{ inputs.rpm_extra_build_packages }}
 
             # note: we also install python magic otherwise binaries are not identified as such and rpmlint outputs:
             #   E: no-binary
