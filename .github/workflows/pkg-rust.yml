@@ -965,7 +965,7 @@ jobs:
           centos|rockylinux|almalinux)
             ;;
           *)
-            echo "::error::This workflow only supports 'debian', 'ubuntu', 'centos' or 'almalinux' operating systems: '${IMAGE}' is not supported."
+            echo "::error::This workflow only supports 'debian', 'ubuntu', 'centos', 'rockylinux' or 'almalinux' operating systems: '${IMAGE}' is not supported."
             exit 1
             ;;
         esac
