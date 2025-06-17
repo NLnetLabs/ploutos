@@ -211,12 +211,12 @@ The `<image>` **MUST** be one of the following:
 
 - `centos:<os_rel>` where `<os_rel>` is one of: `7` or `8`
 - `debian:<os_rel>` where `<os_rel>` is one of: `stretch`, `buster` or `bullseye`
-- `rockylinux:<os_rel>` where `<os_rel>` is one of: `8` or `9`.
+- `almalinux:<os_rel>` where `<os_rel>` is one of: `8` or `9`.
 - `ubuntu:<os_rel>` where `<os_rel>` is one of: `xenial`, `bionic`, `focal` or `jammy`
 
 Note the absence of RedHat, Fedora, Rocky Linux, Alma Linux, etc. which are all RPM compatible, and similarly no mention of other Debian derivatives such as Kali Linux or Raspbian.
 
-You can in principle build your package inside an alternate DEB or RPM compatible Docker image by setting `<image>` appropriately to a Docker image that is natively DEB or RPM compatible, e.g `redhat/ubi8`, `fedora:37`, `rockylinux:8` or `kalilinux/kali-rolling`, but then you **MUST** set `<os>` to one of the supported `<image>` values in order to guide the packaging process to produce a DEB or RPM and to take into account known issues with certain releases (especially older ones).
+You can in principle build your package inside an alternate DEB or RPM compatible Docker image by setting `<image>` appropriately to a Docker image that is natively DEB or RPM compatible, e.g `redhat/ubi8`, `fedora:37`, `almalinux:8` or `kalilinux/kali-rolling`, but then you **MUST** set `<os>` to one of the supported `<image>` values in order to guide the packaging process to produce a DEB or RPM and to take into account known issues with certain releases (especially older ones).
 
 It may not matter which O/S release the RPM or DEB package is built inside, except for example if your build process requires a dependency package that is only available in the package repositories of a particular O/S release, or if one O/S is known to bundle much newer or older versions of a dependency and that could impact your application, or if there is some other variation which matters in your case.
 
@@ -230,7 +230,7 @@ Testing packages is optional. To disable testing of packages completely set `pac
 
 To test package upgrade you must also supply the `deb_apt_xxx` and/or `rpm_yum_xxx` workflow inputs as needed by your packages. To test upgrade of all built packages without supplying `package_test_rules`, add a `test-mode` key to the `package_build_rules` matrix with value `upgrade-from-published`.
 
-If you wish to test only a subset of the built packages and/or wish to test package upgrade with only a subset of the packages, then you will either need to fully specify the `package_test_rules` input matrix, or add a `test-exclude` key to the `package_build_rules` matrix with values in the form supported by the special GitHub Actions `exclude` key. E.g. you can exclude `test-mode` value `upgrade-from-published` only for a new O/S version which is being packaged for for the first time (and thus has no prior releases to do upgrade testing against) by speciying a subkey of `test-exclude` like `image: rockylinux:9`.
+If you wish to test only a subset of the built packages and/or wish to test package upgrade with only a subset of the packages, then you will either need to fully specify the `package_test_rules` input matrix, or add a `test-exclude` key to the `package_build_rules` matrix with values in the form supported by the special GitHub Actions `exclude` key. E.g. you can exclude `test-mode` value `upgrade-from-published` only for a new O/S version which is being packaged for for the first time (and thus has no prior releases to do upgrade testing against) by speciying a subkey of `test-exclude` like `image: almalinux:9`.
 
 The testing process looks like this:
 
@@ -362,7 +362,7 @@ Ploutos is aware of certain cases that must be handled specially. Note that spec
 
 Examples of special cases handled by Ploutos include:
 
-- **CentOS 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus, when building the package, if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work. When testing the package if the image is `centos:8` it will be replaced by `rockylinux:8` because the CentOS 8 image no longer exists in the LXC image repository.
+- **CentOS 8 EOL:** Per https://www.centos.org/centos-linux-eol/ _"content will be removed from our mirrors, and moved to vault.centos.org"_, thus, when building the package, if `image` is `centos:8` the `yum` configuration is adjusted to use the vault so that `yum` commands continue to work. When testing the package if the image is `centos:8` it will be replaced by `almalinux:8` because the CentOS 8 image no longer exists in the LXC image repository.
 
 - **LZMA and older O/S releases:** DEB and RPM packages created for Ubuntu Xenial and CentOS 7 respectively must not be compressed with LZMA otherwise the packaging tools fail with errors such as  _"malformed-deb-archive newer compressed control.tar.xz"_ (on Ubuntu, see [cargo-deb issue #12](https://github.com/kornelski/cargo-deb/issues/12) and _"cpio: Bad magic"_ (on CentOS, see [cargo-generate-rpm issue #30](https://github.com/cat-in-136/cargo-generate-rpm/issues/30)).
 

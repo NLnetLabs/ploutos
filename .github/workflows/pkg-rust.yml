@@ -962,7 +962,7 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             ;;
           *)
             echo "::error::This workflow only supports 'debian', 'ubuntu', 'centos' or 'almalinux' operating systems: '${IMAGE}' is not supported."
@@ -1024,7 +1024,7 @@ jobs:
           debian|ubuntu)
             apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
             yum install epel-release -y
@@ -1114,7 +1114,7 @@ jobs:
       if: ${{ steps.cache-cargo-generate-rpm.outputs.cache-hit != 'true' }}
       run: |
         case ${OS_NAME} in
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             cargo install cargo-generate-rpm --version ${CARGO_GENERATE_RPM_VER}
             echo "installed=true" >> $GITHUB_OUTPUT
             ;;
@@ -1328,7 +1328,7 @@ jobs:
               ${EXTRA_BUILD_ARGS}
             ;;
 
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             # Build and strip our app binaries as cargo generate-rpm doesn't do this for us
             cargo build \
               ${{needs.prepare.outputs.cargo_manifest_path_arg}} \
@@ -1488,7 +1488,7 @@ jobs:
             popd
             ;;
 
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             ls -la ${TARGET_DIR}/generate-rpm/
 
             pushd ${TARGET_DIR}/generate-rpm
@@ -1579,7 +1579,7 @@ jobs:
             lintian --allow-root -v ${EXTRA_LINTIAN_ARGS} ${TARGET_DIR}/debian/*.deb
             ;;
 
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             # cargo generate-rpm creates RPMs that rpmlint considers to have errors so don't use the rpmlint exit code
             # otherwise we will always abort the workflow.
 
@@ -1934,7 +1934,7 @@ jobs:
             sudo incus exec testcon -- apt-get update
             sudo incus exec testcon -- apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https ca-certificates man sudo wget
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             if [[ "${MATRIX_IMAGE}" == "centos:8" ]]; then
               # allow CentOS 8 to continue working now that it is EOL
               # see: https://stackoverflow.com/a/70930049
@@ -1952,7 +1952,7 @@ jobs:
             sudo incus file push ${DEB_FILE} testcon/tmp/
             echo "PKG_FILE=$(basename $DEB_FILE)" >> $GITHUB_ENV
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             RPM_FILE=$(ls -1 generate-rpm/*.rpm)
             sudo incus file push ${RPM_FILE} testcon/tmp/
             echo "PKG_FILE=$(basename $RPM_FILE)" >> $GITHUB_ENV
@@ -1997,7 +1997,7 @@ jobs:
               fi
             fi
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             if [[ -f '${{ steps.verify.outputs.rpm_yum_repo }}' ]]; then
               sudo incus file push ${{ steps.verify.outputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
             else
@@ -2017,7 +2017,7 @@ jobs:
           debian|ubuntu)
             sudo incus exec testcon -- apt-get -y install /tmp/${PKG_FILE}
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             sudo incus exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee install.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' install.log
@@ -2042,7 +2042,7 @@ jobs:
             # See https://github.com/NLnetLabs/.github/issues/17 regarding --force-confXXX
             sudo incus exec testcon -- apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install /tmp/${PKG_FILE}
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             sudo incus exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee upgrade.log
             # yum install exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' upgrade.log
@@ -2080,7 +2080,7 @@ jobs:
           debian|ubuntu)
             sudo incus exec testcon -- apt-get -y remove ${{ steps.verify.outputs.pkg }}
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             sudo incus exec testcon -- yum remove -y ${{ steps.verify.outputs.pkg }} 2>&1 | tee remove.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' remove.log
@@ -2093,7 +2093,7 @@ jobs:
           debian|ubuntu)
             sudo incus exec testcon -- apt-get -y install /tmp/${PKG_FILE}
             ;;
-          centos|almalinux)
+          centos|rockylinux|almalinux)
             sudo incus exec testcon -- yum install -y /tmp/${PKG_FILE} 2>&1 | tee reinstall.log
             # yum remove exits with code 0 even if scriptlets fail, so look for some sign of failure
             ! grep -qE '(err|warn|fail)' reinstall.log
