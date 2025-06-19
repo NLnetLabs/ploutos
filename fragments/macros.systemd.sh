@@ -16,15 +16,15 @@
 systemd_update_helper_v239() {
     case "$command" in
         install-system-units)
-            systemctl --no-reload preset "$@" &>/dev/null
+            systemctl --no-reload preset "$@" \&>/dev/null
             ;;
 
         remove-system-units)
-            systemctl --no-reload disable --now "$@" &>/dev/null
+            systemctl --no-reload disable --now "$@" \&>/dev/null
             ;;
 
         mark-restart-system-units)
-            systemctl try-restart "$@" &>/dev/null 2>&1
+            systemctl try-restart "$@" \&>/dev/null 2>\&1
             ;;
 
         system-reload)
@@ -36,16 +36,16 @@ systemd_update_helper_v239() {
 systemd_update_helper_v219() {
     case "$command" in
         install-system-units)
-            systemctl preset "$@" &>/dev/null 2>&1
+            systemctl preset "$@" \&>/dev/null 2>\&1
             ;;
 
         remove-system-units)
-            systemctl --no-reload disable "$@" > /dev/null 2>&1
-            systemctl stop "$@" > /dev/null 2>&1
+            systemctl --no-reload disable "$@" > /dev/null 2>\&1
+            systemctl stop "$@" > /dev/null 2>\&1
             ;;
 
         mark-restart-system-units)
-            systemctl try-restart "$@" >/dev/null 2>&1
+            systemctl try-restart "$@" >/dev/null 2>\&1
             ;;
 
         system-reload)
