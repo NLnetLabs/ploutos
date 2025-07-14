@@ -437,6 +437,19 @@ jobs:
             fi
           fi
 
+          # Exclude debian:buster because the Debian repository is no longer available.
+          # Specifically:
+          #   E: The repository 'http://deb.debian.org/debian buster Release' does not have a Release file.
+          if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:buster")) | del(.include[]? | select(.image == "debian:buster"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:buster"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:buster image from package_build_rules because the http://deb.debian.org/debian buster Release file is no longer available"
+              PACKAGE_BUILD_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
@@ -465,6 +478,19 @@ jobs:
             MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:stretch"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed debian:stretch image from package_test_rules because the LXC/Incus image no longer exists"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
+          # Exclude debian:buster because the Debian repository is no longer available.
+          # Specifically:
+          #   E: The repository 'http://deb.debian.org/debian buster Release' does not have a Release file.
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:buster")) | del(.include[]? | select(.image == "debian:buster"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:buster"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:buster image from package_test_rules because the http://deb.debian.org/debian buster Release file is no longer available"
               PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
             fi
           fi
