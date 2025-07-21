@@ -1123,7 +1123,7 @@ jobs:
             else
               EXTRA_CARGO_INSTALL_ARGS=""
             fi
-            cargo install cargo-deb --version ${CARGO_DEB_VER} ${EXTRA_CARGO_INSTALL_ARGS}
+            cargo install cargo-deb ${EXTRA_CARGO_INSTALL_ARGS} --git https://github.com/Koenvh1/cargo-deb --branch usrmerge
             echo "installed=true" >> $GITHUB_OUTPUT
             ;;
         esac
