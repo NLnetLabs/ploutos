@@ -528,6 +528,17 @@ jobs:
             fi
           fi
 
+          # Exclude almalinux:10 because the LXC image is not yet available.
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "almalinux:10")) | del(.include[]? | select(.image == "almalinux:10"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "almalinux:10"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed almalinux:10 image from package_test_rules because the LXC/Incus image no longer exists"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           # Exclude non-x86_64 targets as we only run the tests on x86-64 GitHub runners.
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
