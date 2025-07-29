@@ -1999,7 +1999,7 @@ jobs:
             fi
             sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/apt/sources.list.d/ploutos.list
             sudo incus exec testcon -- wget -q ${{ steps.verify.outputs.deb_apt_key_url }} -Oaptkey.asc
-            sudo incus exec testcon -- gpg --dearmor -o /etc/apt/trusted.gpg.d/nlnetlabs-archive-keyring.asc ./aptkey.asc
+            sudo incus exec testcon -- gpg --dearmor -o /etc/apt/trusted.gpg.d/nlnetlabs-archive-keyring.gpg ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
             sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
