@@ -2006,9 +2006,7 @@ jobs:
             ;;
         esac
 
-    - name: Install previously published package
-      id: instprev
-      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
+    - name: Configure extra package repo
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -2022,6 +2020,25 @@ jobs:
             sudo incus exec testcon -- wget -q ${{ steps.verify.outputs.deb_apt_key_url }} -Oaptkey.asc
             sudo incus exec testcon -- gpg --dearmor -o /etc/apt/trusted.gpg.d/nlnetlabs-archive-keyring.gpg ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
+            ;;
+          centos|rockylinux|almalinux)
+            if [[ -f '${{ steps.verify.outputs.rpm_yum_repo }}' ]]; then
+              sudo incus file push ${{ steps.verify.outputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
+            else
+              echo -e '${{ steps.verify.outputs.rpm_yum_repo }}' >$HOME/ploutos.repo
+              sudo incus file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
+            fi
+            sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
+            sudo incus exec testcon -- rpm --import ${{ steps.verify.outputs.rpm_yum_key_url }}
+            ;;
+        esac
+
+    - name: Install previously published package
+      id: instprev
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
+      run: |
+        case ${OS_NAME} in
+          debian|ubuntu)
             sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
             if [[ "${{ steps.verify.outputs.pkg }}" == "${{ steps.verify.outputs.published_pkg }}" ]]; then
