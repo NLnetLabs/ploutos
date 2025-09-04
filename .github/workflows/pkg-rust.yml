@@ -276,6 +276,11 @@ on:
         type: string
         default: ''
 
+      package_test_always_add_repo:
+          description: "When testing a package, always add deb_apt_source and/or rpm_yum_repo, not only during package upgrade testing."
+          required: false
+          type: boolean
+          default: false
       package_test_scripts_path:
         description: "The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade."
         required: false
@@ -2007,6 +2012,7 @@ jobs:
         esac
 
     - name: Configure extra package repo
+      if: ${{ inputs.always_add_repo }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
