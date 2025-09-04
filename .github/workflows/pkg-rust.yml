@@ -276,6 +276,11 @@ on:
         type: string
         default: ''
 
+      package_test_always_add_repo:
+          description: "When testing a package, always add deb_apt_source and/or rpm_yum_repo, not only during package upgrade testing."
+          required: false
+          type: boolean
+          default: false
       package_test_scripts_path:
         description: "The path to find scripts for running tests. Invoked scripts take a single argument: post-install or post-upgrade."
         required: false
@@ -1407,7 +1412,17 @@ jobs:
 
             if [ -e "${SYSTEMD_SERVICE_UNIT_FILE}" ]; then
                 mkdir -p ${TARGET_DIR}/rpm/
-                cp ${SYSTEMD_SERVICE_UNIT_FILE} ${TARGET_DIR}/rpm/${MATRIX_PKG}.service
+                # Parse the Debian SystemD script file naming which the user may have used for input to cargo-deb
+                # but which we will then also have to deal with as well:
+                #   <package>.<unit>.<script> - strip out <package> and use the rest
+                #   <package.<script>         - use as-is
+                #   <unit>.<script>           - use as-is
+                #   <script>                  - use as-is
+                if [[ "${SYSTEMD_SERVICE_UNIT_FILE}" =~ ^[^.]+\.([^.]+\.[^.]+)$ ]]; then
+                    cp ${SYSTEMD_SERVICE_UNIT_FILE} ${TARGET_DIR}/rpm/${BASH_REMATCH[1]}
+                else
+                    cp ${SYSTEMD_SERVICE_UNIT_FILE} ${TARGET_DIR}/rpm/
+                fi
             elif [[ "${SYSTEMD_SERVICE_UNIT_FILE}" == *"*" ]]; then
                 mkdir -p ${TARGET_DIR}/rpm/
                 cp ${SYSTEMD_SERVICE_UNIT_FILE} ${TARGET_DIR}/rpm
@@ -1996,9 +2011,8 @@ jobs:
             ;;
         esac
 
-    - name: Install previously published package
-      id: instprev
-      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
+    - name: Configure extra package repo
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published'  || inputs.package_test_always_add_repo }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
@@ -2012,6 +2026,25 @@ jobs:
             sudo incus exec testcon -- wget -q ${{ steps.verify.outputs.deb_apt_key_url }} -Oaptkey.asc
             sudo incus exec testcon -- gpg --dearmor -o /etc/apt/trusted.gpg.d/nlnetlabs-archive-keyring.gpg ./aptkey.asc
             sudo incus exec testcon -- apt-get -y update
+            ;;
+          centos|rockylinux|almalinux)
+            if [[ -f '${{ steps.verify.outputs.rpm_yum_repo }}' ]]; then
+              sudo incus file push ${{ steps.verify.outputs.rpm_yum_repo }} testcon/etc/yum.repos.d/ploutos.repo
+            else
+              echo -e '${{ steps.verify.outputs.rpm_yum_repo }}' >$HOME/ploutos.repo
+              sudo incus file push $HOME/ploutos.repo testcon/etc/yum.repos.d/
+            fi
+            sudo incus exec testcon -- sed -i -e "s/\${OS_NAME}/${OS_NAME}/g" -e "s/\${OS_REL}/${OS_REL}/g" /etc/yum.repos.d/ploutos.repo
+            sudo incus exec testcon -- rpm --import ${{ steps.verify.outputs.rpm_yum_key_url }}
+            ;;
+        esac
+
+    - name: Install previously published package
+      id: instprev
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published' }}
+      run: |
+        case ${OS_NAME} in
+          debian|ubuntu)
             sudo incus exec testcon -- apt-get install -y ${{ steps.verify.outputs.published_pkg }}
 
             if [[ "${{ steps.verify.outputs.pkg }}" == "${{ steps.verify.outputs.published_pkg }}" ]]; then
