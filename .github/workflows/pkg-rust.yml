@@ -2012,7 +2012,7 @@ jobs:
         esac
 
     - name: Configure extra package repo
-      if: ${{ inputs.always_add_repo }}
+      if: ${{ steps.verify.outputs.mode == 'upgrade-from-published'  || inputs.package_test_always_add_repo }}
       run: |
         case ${OS_NAME} in
           debian|ubuntu)
