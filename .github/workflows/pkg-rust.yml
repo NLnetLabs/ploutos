@@ -1449,7 +1449,7 @@ jobs:
             # command line argument.
             if [ -f "${RPM_SCRIPTLETS_PATH}" ]; then
               # Download the RPM systemd macros shell functions file fragment
-              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/fix-systemd-rpm-macros/fragments/macros.systemd.sh"
+              SYSTEMD_RPM_MACROS_URL="https://raw.githubusercontent.com/NLnetLabs/ploutos/v9.0.1/fragments/macros.systemd.sh"
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
