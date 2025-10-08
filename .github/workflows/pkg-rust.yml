@@ -1461,6 +1461,11 @@ jobs:
               value=$(<$SYSTEMD_RPM_MACROS_FILE)
               echo "${templ//#RPM_SYSTEMD_MACROS#/$value}" > "$SCRIPTLET_FILE"
 
+              echo "DEBUGGING SCRIPTLET"
+              bash --version
+              echo cat SCRIPTLET_FILE
+              cat "$SCRIPTLET_FILE"
+
               # Configure ourselves to use the updated scriptlets file as input to cargo generate-rpm.
               SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
             fi
