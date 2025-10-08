@@ -1453,6 +1453,11 @@ jobs:
               SYSTEMD_RPM_MACROS_FILE="/tmp/systemd_rpm_macros"
               curl --proto '=https' --tlsv1.2 --fail --output ${SYSTEMD_RPM_MACROS_FILE} ${SYSTEMD_RPM_MACROS_URL}
 
+              # Bash 5.2 introduced the option patsub_replacement, which makes pattern substitution replace
+              # all occurances of `&` in the replacement string ($value in the case below) with the matched pattern
+              # (#RPM_SYSTEMD_MACROS# in the case below). The following line disables that behavior, if that option exists.
+              shopt | grep -q "^patsub_replacement" && shopt -u patsub_replacement
+
               # Replace any reference to #SYSTEMD_RPM_MACROS# in the scriptlet file with the downloaded RPM systemd macros
               # shell fragment.
               SCRIPTLET_FILE="${{ inputs.rpm_scriptlets_path }}"
