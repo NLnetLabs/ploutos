@@ -895,7 +895,12 @@ jobs:
       if: ${{ steps.skip.skip != 'true' }}
       run: |
         rm -f bins.tar
-        find target/${{ matrix.target }}/release/ -maxdepth 1 -type f -executable | xargs tar vpcf bins.tar
+        if [[ -z "${{ inputs.manifest_dir }}" ]]; then
+          CROSS_FIND_BASE=.
+        else
+          CROSS_FIND_BASE="${{ inputs.manifest_dir }}"
+        fi
+        find "$CROSS_FIND_BASE/target/${{ matrix.target }}/release/" -maxdepth 1 -type f -executable | xargs tar vpcf bins.tar
 
     # Upload cross compiled binaries as GitHub Actions artifacts for use by the `pkg` job below. We can't use job
     # outputs as those are limited to 50 MB which we could easily exceed. We can't use actions/cache as cached items
