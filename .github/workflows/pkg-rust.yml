@@ -1441,6 +1441,13 @@ jobs:
                      ${{ needs.prepare.outputs.cargo_package_toml_path }}
             fi
 
+            # If the manifest_dir is set, we will change the working directory down
+            # below. Therfore, we need to create a path to the scriptlets file that
+            # is relative to that working directory instead of the git repo's root.
+            if [[ -n "${{ inputs.manifest_dir }}" ]]; then
+              MANIFEST_RELATIVE_SCRIPTLETS_PATH=$(realpath --relative-to "${{ inputs.manifest_dir }}" "${RPM_SCRIPTLETS_PATH}")
+            fi
+
             # https://github.com/NLnetLabs/krill/issues/907
             # cargo-generate-rpm doesn't support setting scripts to files, and we can't refer to a file that 
             # installed such as /usr/share/krill/rpm/postuninst because 'yum remove' removes the file before it
@@ -1467,7 +1474,11 @@ jobs:
               echo "${templ//#RPM_SYSTEMD_MACROS#/$value}" > "$SCRIPTLET_FILE"
 
               # Configure ourselves to use the updated scriptlets file as input to cargo generate-rpm.
-              SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
+              if [[ -n "$MANIFEST_RELATIVE_SCRIPTLETS_PATH" ]]; then
+                SCRIPTLETS="--metadata-overwrite=$MANIFEST_RELATIVE_SCRIPTLETS_PATH"
+              else
+                SCRIPTLETS='--metadata-overwrite=${{ inputs.rpm_scriptlets_path }}'
+              fi
             fi
 
             find ${TARGET_DIR}/release -maxdepth 1 -type f -executable | xargs strip -s -v
