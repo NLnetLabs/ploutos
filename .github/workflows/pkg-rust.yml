@@ -1449,7 +1449,7 @@ jobs:
             # If the manifest_dir is set, we will change the working directory down
             # below. Therfore, we need to create a path to the scriptlets file that
             # is relative to that working directory instead of the git repo's root.
-            if [[ -n "${{ inputs.manifest_dir }}" ]]; then
+            if [[ -n "${{ inputs.manifest_dir }}" && -f "${RPM_SCRIPTLETS_PATH}" ]]; then
               MANIFEST_RELATIVE_SCRIPTLETS_PATH=$(realpath --relative-to "${{ inputs.manifest_dir }}" "${RPM_SCRIPTLETS_PATH}")
             fi
 
