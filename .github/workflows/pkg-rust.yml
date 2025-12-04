@@ -936,7 +936,7 @@ jobs:
       matrix: ${{ fromJSON(needs.prepare.outputs.package_build_rules) }}
     env:
       CARGO_DEB_VER: 4.0.0
-      CARGO_GENERATE_RPM_VER: 0.16.1
+      CARGO_GENERATE_RPM_VER: 0.19.0
       TOML_CLI_VER: 0.2.3
     steps:
     - name: Alma Linux GZIP workaround
