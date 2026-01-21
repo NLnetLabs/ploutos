@@ -16,30 +16,13 @@ extended-description = "{{ project_name }}"
 {% if 'rpm' in package_types %}
 [package.metadata.generate-rpm]
 {#
-Cargo.toml uses SPDX 2.1 license expression identifiers but RPMs must use a Short Name from the approved list. The user
-selects a license from a list of SPDX 2.1 licenses so here we handle any conversion necessary.
+Cargo.toml uses SPDX 2.1 license expression identifiers. RPM switched to SPDX too.
+No conversion necessary.
 See:
   - https://doc.rust-lang.org/cargo/reference/manifest.html#the-license-and-license-file-fields
-  - https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing
+  - https://docs.fedoraproject.org/en-US/legal/allowed-licenses/
+  - https://docs.fedoraproject.org/en-US/legal/license-field/
 -#}
-{% if license == 'Apache-2.0' %}license = "ASL 2.0"
-{% endif -%}
-{% if license == 'BSD-2-Clause' %}license = "BSD"
-{% endif -%}
-{% if license == 'BSD-3-Clause' %}license = "BSD"
-{% endif -%}
-{% if license == 'GPL-2.0' %}license = "GPLv2+"
-{% endif -%}
-{% if license == 'GPL-3.0' %}license = "GPLv2+"
-{% endif -%}
-{% if license == 'LGPL-2.0' %}license = "LGPLv2+"
-{% endif -%}
-{% if license == 'LGPL-2.1' %}license = "LGPLv2+"
-{% endif -%}
-{% if license == 'LGPL-3.0' %}license = "LGPLv2+"
-{% endif -%}
-{% if license == 'MPL-2.0' %}license = "MPLv1.0"
-{% endif -%}
 assets = [
   { source = "target/release/{{ project_name }}", dest = "/usr/bin/{{ project_name }}", mode = "755" },
 ]
