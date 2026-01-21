@@ -858,7 +858,7 @@ jobs:
     - name: Fetch cargo cross if available
       if: ${{ steps.skip.skip != 'true' }}
       id: cache-cargo-cross
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ steps.rust.outputs.bin_dir }}/cross
@@ -874,7 +874,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.skip.skip != 'true' && steps.install-cargo-cross.outputs.installed == 'true' }}
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: |
           ${{ steps.rust.outputs.bin_dir }}/cross
@@ -1097,7 +1097,7 @@ jobs:
     # Speed up Rust builds by caching unchanged built dependencies.
     # See: https://github.com/actions/cache/blob/master/examples.md#rust---cargo
     - name: Fetch .cargo from cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
@@ -1108,21 +1108,21 @@ jobs:
     # the tool that we are using.
     - name: Fetch cargo-deb from cache
       id: cache-cargo-deb
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
 
     - name: Fetch cargo-generate-rpm from cache
       id: cache-cargo-generate-rpm
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
 
     - name: Fetch toml-cli from cache
       id: cache-toml-cli
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/toml
         key: ${{ matrix.image }}-toml-cli-${{ env.TOML_CLI_VER }}
@@ -1151,7 +1151,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.install-cargo-deb.outputs.installed == 'true' }}
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-deb
         key: ${{ matrix.image }}-cargo-deb-${{ env.CARGO_DEB_VER }}-${{ endsWith(matrix.image, 'xenial')}}
@@ -1169,7 +1169,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.install-cargo-generate-rpm.outputs.installed == 'true' }}
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/cargo-generate-rpm
         key: ${{ matrix.image }}-cargo-generate-rpm-${{ env.CARGO_GENERATE_RPM_VER }}
@@ -1183,7 +1183,7 @@ jobs:
 
     - name: Force cache save
       if: ${{ steps.install-toml-cli.outputs.installed == 'true' }}
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       with:
         path: ${{ steps.rust.outputs.bin_dir }}/toml
         key: ${{ matrix.image }}-toml-cli-${{ env.TOML_CLI_VER }}
