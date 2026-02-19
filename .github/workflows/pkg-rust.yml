@@ -2352,6 +2352,8 @@ jobs:
             MODE=${{ steps.verify.outputs.mode }}
             CARGO_ARGS=${{ matrix.cargo_args }}
           push: true
+          provenance: false
+          sbom: false
 
 
   # -------------------------------------------------------------------------------------------------------------------
