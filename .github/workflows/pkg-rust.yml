@@ -1070,6 +1070,18 @@ jobs:
         case ${OS_NAME} in
           debian|ubuntu)
             apt-get install -y binutils gcc dpkg-dev jq lintian pkg-config ${{ inputs.deb_extra_build_packages }}
+
+            case ${OS_REL} in
+              xenial|bionic|focal|jammy|noble)
+                ;;
+
+              *)
+                # Fix for https://github.com/NLnetLabs/ploutos/issues/145.
+                # Currently appears to affect Ubuntu Resolute Raccoon 26.04
+                # but may also be needed for future releases too.
+                apt-get install -y gcc-multilib
+                ;;
+            esac
             ;;
           centos|rockylinux|almalinux)
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
