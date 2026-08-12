@@ -2152,7 +2152,7 @@ jobs:
 
     - name: Require successful upgrade
       if: ${{ steps.upgrade_package.outcome == 'failure' && !matrix.ignore_upgrade_failure }}
-      uses: actions/github-script@v7
+      uses: actions/github-script@v9
       with:
         script: |
           core.setFailed("Package upgrade failed unexpectedly")
