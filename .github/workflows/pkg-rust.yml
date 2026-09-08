@@ -2336,6 +2336,8 @@ jobs:
       # pushed if all architecture specific images build and (where supported) passt he sanity check below.
       - name: Build Docker image ${{ steps.gen.outputs.image_name }}
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_SUMMARY: false
         with:
           context: ${{ inputs.docker_context_path }}
           file: ${{ inputs.docker_file_path }}
@@ -2378,6 +2380,8 @@ jobs:
         id: publish
         if: ${{ fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_SUMMARY: false
         with:
           context: ${{ inputs.docker_context_path }}
           file: ${{ inputs.docker_file_path }}
