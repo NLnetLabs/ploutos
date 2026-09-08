@@ -510,6 +510,19 @@ jobs:
             fi
           fi
 
+          # Exclude debian:bullseye because it Bullseye LTS is EOL since 2026-08-31 and specifically:
+          # E: Release file for http://deb.debian.org/debian-security/dists/bullseye-security/InRelease is expired (invalid since 9h 49min 2s). Updates for this repository will not be applied.
+          #   E: The repository 'http://deb.debian.org/debian buster Release' does not have a Release file.
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:buster")) | del(.include[]? | select(.image == "debian:bullseye"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:bullseye"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:bullseye image from package_test_rules because the http://deb.debian.org/debian bullseye InRelease is expired (likley due to Debian Bullseye LTS EoL)"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           # Exclude ubuntu:bionic because the LXC image is no longer available.
           if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
             CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
@@ -657,7 +670,7 @@ jobs:
 
           echo
           echo "============================================================================="
-          echo "Packages test rules:"
+          echo "Package test rules:"
           echo "============================================================================="
           JSON='${{ steps.pre_process_rules.outputs.package_test_rules }}'
           if [[ "${JSON}" != "{}" ]]; then
