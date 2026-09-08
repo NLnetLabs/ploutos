@@ -453,6 +453,18 @@ jobs:
             fi
           fi
 
+          # Exclude debian:bullseye because it Bullseye LTS is EOL since 2026-08-31 and specifically:
+          # E: Release file for http://deb.debian.org/debian-security/dists/bullseye-security/InRelease is expired (invalid since 9h 49min 2s). Updates for this repository will not be applied.
+          if [[ "${PACKAGE_BUILD_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:bullseye")) | del(.include[]? | select(.image == "debian:bullseye"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:bullseye"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:bullseye image from package_build_rules because the http://deb.debian.org/debian bullseye InRelease is expired (likley due to Debian Bullseye LTS EoL)"
+              PACKAGE_BUILD_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
           echo "package_build_rules<<END_OF_PACKAGE_BUILD_RULES" >> $GITHUB_OUTPUT
           echo ${PACKAGE_BUILD_RULES_PROCESSED_JSON} | jq >> $GITHUB_OUTPUT
           echo 'END_OF_PACKAGE_BUILD_RULES' >> $GITHUB_OUTPUT
@@ -494,6 +506,19 @@ jobs:
             MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:buster"))')
             if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
               echo "::warning::Removed debian:buster image from package_test_rules because the http://deb.debian.org/debian buster Release file is no longer available"
+              PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
+            fi
+          fi
+
+          # Exclude debian:bullseye because it Bullseye LTS is EOL since 2026-08-31 and specifically:
+          # E: Release file for http://deb.debian.org/debian-security/dists/bullseye-security/InRelease is expired (invalid since 9h 49min 2s). Updates for this repository will not be applied.
+          #   E: The repository 'http://deb.debian.org/debian buster Release' does not have a Release file.
+          if [[ "${PACKAGE_TEST_RULES_PROCESSED_JSON}" != "{}" ]]; then
+            CONTROL_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c)
+            MODIFIED_JSON=$(echo ${PACKAGE_TEST_RULES_PROCESSED_JSON} | jq -c 'del(.image[]? | select(. == "debian:bullseye")) | del(.include[]? | select(.image == "debian:bullseye"))')
+            MODIFIED_JSON=$(echo ${MODIFIED_JSON} | jq -c 'del(.include[]? | select(.os == "debian:bullseye"))')
+            if [[ "${CONTROL_JSON}" != "${MODIFIED_JSON}" ]]; then
+              echo "::warning::Removed debian:bullseye image from package_test_rules because the http://deb.debian.org/debian bullseye InRelease is expired (likley due to Debian Bullseye LTS EoL)"
               PACKAGE_TEST_RULES_PROCESSED_JSON="${MODIFIED_JSON}"
             fi
           fi
@@ -645,7 +670,7 @@ jobs:
 
           echo
           echo "============================================================================="
-          echo "Packages test rules:"
+          echo "Package test rules:"
           echo "============================================================================="
           JSON='${{ steps.pre_process_rules.outputs.package_test_rules }}'
           if [[ "${JSON}" != "{}" ]]; then
@@ -2311,6 +2336,8 @@ jobs:
       # pushed if all architecture specific images build and (where supported) passt he sanity check below.
       - name: Build Docker image ${{ steps.gen.outputs.image_name }}
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_SUMMARY: false
         with:
           context: ${{ inputs.docker_context_path }}
           file: ${{ inputs.docker_file_path }}
@@ -2353,6 +2380,8 @@ jobs:
         id: publish
         if: ${{ fromJSON(needs.prepare.outputs.has_docker_secrets) == true && (contains(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main') }}
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_SUMMARY: false
         with:
           context: ${{ inputs.docker_context_path }}
           file: ${{ inputs.docker_file_path }}
