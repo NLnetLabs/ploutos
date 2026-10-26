@@ -1627,6 +1627,9 @@ jobs:
               # Use grep to exclude find only non-binary files that we can print
               find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
 
+              # Dump dependency information about binaries
+              find . -type f -exec grep -IL . "{}" \; -exec ldd {} \; -exec readelf --version-info {} \;
+
               popd
               rm -R t
 
