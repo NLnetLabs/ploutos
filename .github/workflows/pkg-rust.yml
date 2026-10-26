@@ -1599,6 +1599,12 @@ jobs:
               # Use grep to exclude find only non-binary files that we can print
               find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
 
+              echo
+              echo Printing dependency information about binary files contained within the package
+
+              # Dump dependency information about binaries
+              find . -type f -exec grep -IL . "{}" \; -exec readelf --version-info {} \;
+
               popd
               rm -R $D
             done
@@ -1627,8 +1633,11 @@ jobs:
               # Use grep to exclude find only non-binary files that we can print
               find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
 
+              echo
+              echo Printing dependency information about binary files contained within the package
+
               # Dump dependency information about binaries
-              find . -type f -exec grep -IL . "{}" \; -exec ldd {} \; -exec readelf --version-info {} \;
+              find . -type f -exec grep -IL . "{}" \; -exec readelf --version-info {} \;
 
               popd
               rm -R t
