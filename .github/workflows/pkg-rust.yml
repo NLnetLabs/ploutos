@@ -1110,7 +1110,8 @@ jobs:
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
             yum install epel-release -y
-            yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
+            # Install rpm-build to get /usr/lib/rpm/find-requires needed by cargo-generate-rpm --auto-req.
+            yum install -y findutils gcc jq rpm-build ${{ inputs.rpm_extra_build_packages }}
 
             # note: we also install python magic otherwise binaries are not identified as such and rpmlint outputs:
             #   E: no-binary
@@ -1438,6 +1439,14 @@ jobs:
             #    ;;
             #esac
 
+            # Force cargo-generate-rpm to use /usr/lib/rpm/find-requires
+            # instead of its fallback approach for determining dependencies
+            # based on ldd as that is known to fail.
+            # See:
+            #   - https://docs.rs/crate/cargo-generate-rpm/0.16.1 (look for --auto-req)
+            #   - https://shakenfist.com/components/instar/development/#rpm-dependency-generation
+            EXTRA_CARGO_GENERATE_RPM_ARGS="--auto-req find-requires"
+
             # Hack to use a different service file without having to duplicate almost the entire 
             # [package.metadata.generate-rpm.assets] setting with only one entry changed. We don't need this with
             # cargo-deb because it handles systemd service file selection automatically based on factors like the
@@ -1590,6 +1599,12 @@ jobs:
               # Use grep to exclude find only non-binary files that we can print
               find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
 
+              echo
+              echo Printing dependency information about binary files contained within the package
+
+              # Dump dependency information about binaries
+              for B in $(find . -type f -exec grep -IL . '{}' \;); do echo $B; readelf --version-info $B || true; done
+
               popd
               rm -R $D
             done
@@ -1617,6 +1632,12 @@ jobs:
 
               # Use grep to exclude find only non-binary files that we can print
               find . -type f -exec grep -Il '.' {} \; -exec cat {} \; -exec echo \; -exec echo \;
+
+              echo
+              echo Printing dependency information about binary files contained within the package
+
+              # Dump dependency information about binaries
+              for B in $(find . -type f -exec grep -IL . '{}' \;); do echo $B; readelf --version-info $B || true; done
 
               popd
               rm -R t
