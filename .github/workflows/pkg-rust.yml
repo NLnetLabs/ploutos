@@ -1438,6 +1438,14 @@ jobs:
             #    ;;
             #esac
 
+            # Force cargo-generate-rpm to use /usr/lib/rpm/find-requires
+            # instead of its fallback approach for determining dependencies
+            # based on ldd as that is known to fail.
+            # See:
+            #   - https://docs.rs/crate/cargo-generate-rpm/0.16.1 (look for --auto-req)
+            #   - https://shakenfist.com/components/instar/development/#rpm-dependency-generation
+            EXTRA_CARGO_GENERATE_RPM_ARGS="--auto-req find-requires"
+
             # Hack to use a different service file without having to duplicate almost the entire 
             # [package.metadata.generate-rpm.assets] setting with only one entry changed. We don't need this with
             # cargo-deb because it handles systemd service file selection automatically based on factors like the
