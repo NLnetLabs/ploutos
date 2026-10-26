@@ -966,7 +966,8 @@ jobs:
       if: ${{ matrix.image == 'almalinux:10' }}
       run: |
         yum update -y
-        yum install gzip -y
+        # Install rpm-build to get /usr/lib/rpm/find-requires needed by cargo-generate-rpm --auto-req.
+        yum install gzip rpm-build -y
 
     - name: Checkout repository
       uses: actions/checkout@v7 # v4 doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
