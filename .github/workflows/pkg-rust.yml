@@ -966,8 +966,7 @@ jobs:
       if: ${{ matrix.image == 'almalinux:10' }}
       run: |
         yum update -y
-        # Install rpm-build to get /usr/lib/rpm/find-requires needed by cargo-generate-rpm --auto-req.
-        yum install gzip rpm-build -y
+        yum install gzip -y
 
     - name: Checkout repository
       uses: actions/checkout@v7 # v4 doesn't work on containers with older GLIBC such as ubuntu:bionic or centos:7
@@ -1111,7 +1110,8 @@ jobs:
             #sed -i -e 's/enabled=1/enabled=0/' /etc/yum/pluginconf.d/fastestmirror.conf || true
             yum update -y # See: https://github.com/NLnetLabs/ploutos/issues/90
             yum install epel-release -y
-            yum install -y findutils gcc jq ${{ inputs.rpm_extra_build_packages }}
+            # Install rpm-build to get /usr/lib/rpm/find-requires needed by cargo-generate-rpm --auto-req.
+            yum install -y findutils gcc jq rpm-build ${{ inputs.rpm_extra_build_packages }}
 
             # note: we also install python magic otherwise binaries are not identified as such and rpmlint outputs:
             #   E: no-binary
