@@ -1603,7 +1603,7 @@ jobs:
               echo Printing dependency information about binary files contained within the package
 
               # Dump dependency information about binaries
-              for F in $(find . -type f -exec grep -IL . '{}' \;); do echo $F; readelf --version-info $F || true; done
+              for B in $(find . -type f -exec grep -IL . '{}' \;); do echo $B; readelf --version-info $B || true; done
 
               popd
               rm -R $D
@@ -1637,7 +1637,7 @@ jobs:
               echo Printing dependency information about binary files contained within the package
 
               # Dump dependency information about binaries
-              for F in $(find . -type f -exec grep -IL . '{}' \;); do echo $F; readelf --version-info $F || true; done
+              for B in $(find . -type f -exec grep -IL . '{}' \;); do echo $B; readelf --version-info $B || true; done
 
               popd
               rm -R t
